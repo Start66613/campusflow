@@ -60,7 +60,7 @@ export default function ProfileScreen() {
           </MotionPressable>
         ))}
       </View>
-      <Text style={[styles.visualNote, { color: theme.secondary }]}>{nativeGlass && !reduceTransparency ? '褰撳墠璁惧鏀寔 iOS 鍘熺敓 Liquid Glass銆? : Platform.OS === 'ios' && reduceTransparency ? '宸茶窡闅忕郴缁熲€滈檷浣庨€忔槑搴︹€濊缃紝鏀圭敤鏇存竻鏅扮殑涓嶉€忔槑鏉愯川銆? : Platform.OS === 'ios' ? '褰撳墠璁惧鏄剧ず鍏煎鏉愯川锛涘師鐢熸晥鏋滈渶瑕?iOS 26 鍙婄郴缁?API 鏀寔銆? : 'Android 浣跨敤楂樺姣旂幓鐠冩ā鎷熸潗璐紱鑻规灉鍘熺敓 Liquid Glass 浠呭湪鍏煎鐨?iPhone 涓婂彲鐢ㄣ€?}</Text>
+      <Text style={[styles.visualNote, { color: theme.secondary }]}>{nativeGlass && !reduceTransparency ? '褰撳墠璁惧鏀寔鍘熺敓 Liquid Glass锛沬OS 27鈥滆缃?> 澶栬 > Liquid Glass鈥濇粦鏉嗕細鐢辩郴缁熻嚜鍔ㄤ綔鐢ㄤ簬鍘熺敓鏉愯川銆? : Platform.OS === 'ios' && reduceTransparency ? '宸茶窡闅忕郴缁熲€滈檷浣庨€忔槑搴︹€濊缃紝鏀圭敤鏇存竻鏅扮殑涓嶉€忔槑鏉愯川銆? : Platform.OS === 'ios' ? '褰撳墠璁惧鏄剧ず鍏煎鏉愯川锛涘師鐢熸晥鏋滈渶瑕?iOS 26 鍙婄郴缁?API 鏀寔銆? : 'Android 浣跨敤楂樺姣旂幓鐠冩ā鎷熸潗璐紱鑻规灉鍘熺敓 Liquid Glass 浠呭湪鍏煎鐨?iPhone 涓婂彲鐢ㄣ€?}</Text>
       <SectionTitle title="鏁版嵁涓庡悓姝? />
       <Card style={styles.listCard}>
         <SettingRow icon={{ ios: 'building.columns.fill', android: 'school' }} title="婀樻江澶у鏁欏姟" subtitle="缃戦〉鐧诲綍鍚庡鍏ヨ琛ㄤ笌鎴愮哗" onPress={() => router.push('/school')} />
