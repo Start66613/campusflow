@@ -134,3 +134,17 @@ npx.cmd expo export --platform android --output-dir dist-android-check
 - `.env`、Apple 证书、Android keystore、provisioning profile、EAS 本地凭据和教务账号不提交。
 - 每个阶段更新 `CHANGELOG.md`；出现可复用故障时同步更新本文。
 - 推送前运行 `git status` 和敏感文件检查，构建目录保持在 `.gitignore` 中。
+
+## 14. GitHub 首次推送工作流被拒绝 / Git HTTPS 超时
+
+**现象**：`gh repo create --push` 已创建私有仓库，但因 `.github/workflows/ci.yml` 报 `workflow` scope 不足；补充授权后，`git push` 又连接 `github.com:443` 超时，而 `gh api` 可以访问。
+
+**最快处理**：
+
+1. 用 `gh auth refresh --hostname github.com --scopes workflow` 走官方设备授权；不要索要或记录用户密码、令牌。
+2. 重试普通 `git push`，先排除临时网络波动。
+3. 若仅 Git HTTPS 不通，可使用 GitHub 官方 Git Database API 上传已跟踪文件的 blob、完整 tree 和 commit。发布前比较远端 tree SHA 与本地 `git rev-parse HEAD^{tree}`，确保内容一致。
+4. 空仓库的 Git Database API 会对 blob 返回 HTTP 409；先用 Contents API 创建临时 README 初始化，再在确认远端没有别人写入后替换为核对过的完整提交。
+5. API 创建的提交可能与本地 Git 提交 SHA 不同（例如提交消息末尾换行）；需核对远端内容并将本地 `main` 对齐到远端 SHA，避免下次推送分叉。
+
+本次处理后，[私有仓库](https://github.com/Start66613/campusflow) 与本地 `main` 的源码树一致，首次 CI 已通过。
