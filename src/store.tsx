@@ -14,6 +14,7 @@ type Action =
   | { type: 'addExpense'; expense: Expense }
   | { type: 'addEvent'; event: CalendarItem }
   | { type: 'replaceCourses'; courses: Course[] }
+  | { type: 'updateCourse'; course: Course }
   | { type: 'addGrade'; grade: Grade }
   | { type: 'replaceGrades'; grades: Grade[] }
   | { type: 'addFocus'; minutes: number }
@@ -28,6 +29,7 @@ function reducer(state: AppData, action: Action): AppData {
     case 'addExpense': return { ...state, expenses: [action.expense, ...state.expenses] };
     case 'addEvent': return { ...state, events: [action.event, ...state.events] };
     case 'replaceCourses': return { ...state, courses: action.courses };
+    case 'updateCourse': return { ...state, courses: state.courses.map((course) => course.id === action.course.id ? action.course : course) };
     case 'addGrade': return { ...state, grades: [action.grade, ...state.grades] };
     case 'replaceGrades': return { ...state, grades: action.grades };
     case 'addFocus': return { ...state, focusMinutesThisWeek: state.focusMinutesThisWeek + action.minutes };
@@ -45,6 +47,7 @@ type AppContextValue = {
   addExpense: (expense: Omit<Expense, 'id'>) => void;
   addEvent: (event: Omit<CalendarItem, 'id'>) => void;
   replaceCourses: (courses: Course[]) => void;
+  updateCourse: (course: Course) => void;
   addGrade: (grade: Omit<Grade, 'id'>) => void;
   replaceGrades: (grades: Grade[]) => void;
   addFocus: (minutes: number) => void;
@@ -93,6 +96,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     addExpense: (expense) => dispatch({ type: 'addExpense', expense: { ...expense, id: makeId('expense') } }),
     addEvent: (event) => dispatch({ type: 'addEvent', event: { ...event, id: makeId('event') } }),
     replaceCourses: (courses) => dispatch({ type: 'replaceCourses', courses }),
+    updateCourse: (course) => dispatch({ type: 'updateCourse', course }),
     addGrade: (grade) => dispatch({ type: 'addGrade', grade: { ...grade, id: makeId('grade') } }),
     replaceGrades: (grades) => dispatch({ type: 'replaceGrades', grades }),
     addFocus: (minutes) => dispatch({ type: 'addFocus', minutes }),
