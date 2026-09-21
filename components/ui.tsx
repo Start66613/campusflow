@@ -11,12 +11,12 @@ import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
 import { useReduceTransparency } from '@/src/accessibility';
 
-export function Screen({ children, scroll = true, style }: PropsWithChildren<{ scroll?: boolean; style?: StyleProp<ViewStyle> }>) {
+export function Screen({ children, scroll = true, scrollEnabled = true, style }: PropsWithChildren<{ scroll?: boolean; scrollEnabled?: boolean; style?: StyleProp<ViewStyle> }>) {
   const theme = useAppTheme();
   const { data } = useApp();
   const glass = data.settings.visualMode === 'glass';
   const content = scroll ? (
-    <ScrollView bounces contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView scrollEnabled={scrollEnabled} bounces contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       <Animated.View entering={gentleEnter()} style={style}>{children}</Animated.View>
     </ScrollView>
   ) : (
