@@ -52,15 +52,20 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 
 ## 5. iOS Liquid Glass 看起来只是白色透明板
 
-**原因**：玻璃后方缺少可折射内容；自定义白色覆盖层过重；课程色只传入系统 tint 但对比不足；设备不支持 iOS 26 Glass API 时进入回退。
+**原因**：玻璃后方缺少可折射内容；自定义白色覆盖层过重；课程色只传入系统 tint 但对比不足；设备不支持 iOS 26 Glass API 时进入回退。把底栏背景和选中水珠放在同一个 `GlassContainer` 内也会让两层融合，看不出独立的液滴。
 
 **实现原则**：
 
 - 同时检查 `isLiquidGlassAvailable()` 和 `isGlassEffectAPIAvailable()`。
 - iOS 26 使用原生 `GlassView`，Android/旧 iOS 使用 BlurView 与渐变。
 - 不通过父级 `opacity: 0` 隐藏 GlassView；需要过渡时使用 `glassEffectStyle` 自带动画。
-- 导航和操作控件使用清透玻璃；课程块增加 45% 左右的课程色覆盖和文字阴影，优先保证可读性。
+- 底栏背景使用独立 `GlassView`；只有移动的选中水珠和短暂尾迹放在同一个 `GlassContainer`，让两者在运动时融合。
+- 导航和操作控件使用清透玻璃；课程块用适度的系统 tint + 半透明课程色覆盖和文字阴影，避免不透明颜色把折射全部盖住，并优先保证可读性。
 - 不把所有内容卡片都玻璃化；保留“经典原生”一键回退。
+
+**课表卡片出现横杠**：先检查卡片内部的人为高光层。本次是 `courseShine` 画在每张课程卡上方的 1 像素白线，并非系统玻璃折射；已删除。若仍看到线，再检查下方网格线是否穿透课程卡片。
+
+**验证边界**：Web 预览只能检查布局、文字和回退材质，不能证明 iOS 原生折射。必须在 iOS 26 兼容设备的 Expo Go 或开发版上核对移动水珠、深浅色和“降低透明度”系统设置。Android 是模拟材质，不应称作 Apple 原生 Liquid Glass。
 
 ## 6. 浮动底栏遮挡 AI 输入框
 

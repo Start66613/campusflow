@@ -89,21 +89,15 @@ export function GlassBackdrop({
 
   if (Platform.OS === 'ios' && isLiquidGlassAvailable() && isGlassEffectAPIAvailable()) {
     return (
-      <View pointerEvents="none" style={[styles.glassClip, StyleSheet.absoluteFill, { borderRadius: radius }, style]}>
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius }, style]}>
         <GlassView
           glassEffectStyle={effectStyle}
-          tintColor={tintColor ? tintWithAlpha(tintStrength === 'soft' ? '42' : 'D0') : undefined}
+          tintColor={tintColor ? tintWithAlpha(tintStrength === 'soft' ? '32' : '70') : undefined}
           colorScheme={dark ? 'dark' : 'light'}
           isInteractive={interactive}
-          style={StyleSheet.absoluteFill}
+          style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
         />
-        {tintColor ? <View style={[StyleSheet.absoluteFill, { backgroundColor: tintWithAlpha(tintStrength === 'soft' ? '16' : '72') }]} /> : null}
-        <LinearGradient
-          colors={dark ? ['rgba(255,255,255,0.12)', 'rgba(255,255,255,0.01)'] : ['rgba(255,255,255,0.40)', 'rgba(255,255,255,0.03)']}
-          start={{ x: 0.15, y: 0 }}
-          end={{ x: 0.85, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
+        {tintColor ? <View style={[StyleSheet.absoluteFill, { borderRadius: radius, backgroundColor: tintWithAlpha(tintStrength === 'soft' ? '12' : '50') }]} /> : null}
         <View style={[styles.glassEdge, { borderRadius: radius, borderColor: edgeColor }]} />
       </View>
     );

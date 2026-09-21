@@ -73,8 +73,7 @@ export default function ScheduleScreen() {
                   layout={gentleLayout}
                   style={[styles.courseBlock, { left: timeColumnWidth + (course.weekday - 1) * columnWidth + 2, top: (course.startPeriod - 1) * rowHeight + 3, width: columnWidth - 4, height: (course.endPeriod - course.startPeriod + 1) * rowHeight - 6, backgroundColor: glass ? 'transparent' : course.color }]}
                 >
-                  <GlassBackdrop radius={15} effectStyle="clear" tintColor={course.color} />
-                  <View pointerEvents="none" style={styles.courseShine} />
+                  <GlassBackdrop radius={15} effectStyle="regular" tintColor={course.color} />
                   <Text numberOfLines={3} style={[styles.courseName, compact && styles.courseNameCompact, { color: ink, textShadowColor: ink === '#FFFFFF' ? 'rgba(20,22,45,0.32)' : 'rgba(255,255,255,0.45)' }]}>{course.name}</Text><Text numberOfLines={2} style={[styles.courseMeta, compact && styles.courseMetaCompact, { color: ink, textShadowColor: ink === '#FFFFFF' ? 'rgba(20,22,45,0.28)' : 'rgba(255,255,255,0.45)' }]}>{course.location}</Text>
                 </Animated.View>
               })}
@@ -95,8 +94,7 @@ const styles = StyleSheet.create({
   gridCard: { padding: 6, borderRadius: 28, overflow: 'hidden' }, dayHeader: { flexDirection: 'row', height: 57, alignItems: 'center' }, dayCell: { alignItems: 'center', gap: 4 }, dayName: { fontSize: 11, fontWeight: '700' },
   dateDot: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, dayDate: { fontSize: 12, fontWeight: '700' }, grid: { position: 'relative' },
   gridLine: { position: 'absolute', left: 0, right: 0, borderTopWidth: StyleSheet.hairlineWidth, height: rowHeight }, period: { width: timeColumnWidth, textAlign: 'center', marginTop: 6, fontSize: 9, fontWeight: '700' },
-  verticalLine: { position: 'absolute', top: 0, bottom: 0, borderLeftWidth: StyleSheet.hairlineWidth }, courseBlock: { position: 'absolute', borderRadius: 15, padding: 8, overflow: 'hidden', shadowColor: '#203060', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.14, shadowRadius: 9, elevation: 3 },
-  courseShine: { position: 'absolute', left: 5, right: 5, top: 3, height: 1, borderRadius: 1, backgroundColor: 'rgba(255,255,255,0.72)' },
+  verticalLine: { position: 'absolute', top: 0, bottom: 0, borderLeftWidth: StyleSheet.hairlineWidth }, courseBlock: { position: 'absolute', borderRadius: 15, padding: 8, shadowColor: '#203060', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.14, shadowRadius: 9, elevation: 3 },
   courseName: { color: '#FFFFFF', fontSize: 10, lineHeight: 13, fontWeight: '800', textShadowColor: 'rgba(20,22,45,0.28)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }, courseNameCompact: { fontSize: 9, lineHeight: 11 }, courseMeta: { color: 'rgba(255,255,255,0.96)', fontSize: 8, lineHeight: 10, marginTop: 4, fontWeight: '700', textShadowColor: 'rgba(20,22,45,0.24)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }, courseMetaCompact: { fontSize: 7.5, lineHeight: 9 },
   buttonRow: { flexDirection: 'row', marginTop: 16 }, tip: { fontSize: 12, lineHeight: 18, marginTop: 10, paddingHorizontal: 4 },
 });

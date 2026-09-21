@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
+import { isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
 import type { ReactNode } from 'react';
-import { Alert, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Platform, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { AppIcon, type AppIconProps } from '@/components/app-icon';
 import { MotionPressable } from '@/components/motion';
@@ -15,6 +16,7 @@ type IconSpec = Pick<AppIconProps, 'ios' | 'android'>;
 export default function ProfileScreen() {
   const theme = useAppTheme();
   const { data, updateSettings } = useApp();
+  const nativeGlass = Platform.OS === 'ios' && isLiquidGlassAvailable() && isGlassEffectAPIAvailable();
   const setAlarm = async () => {
     try {
       await scheduleWakeReminder(data.settings.wakeHour, data.settings.wakeMinute);
@@ -56,7 +58,7 @@ export default function ProfileScreen() {
           </MotionPressable>
         ))}
       </View>
-      <Text style={[styles.visualNote, { color: theme.secondary }]}>iPhone 使用系统 GlassEffect；Android 使用实时模糊与 Material 图标适配。</Text>
+      <Text style={[styles.visualNote, { color: theme.secondary }]}>{nativeGlass ? '当前设备支持 iOS 原生 Liquid Glass；系统“降低透明度”设置也可能改变效果。' : Platform.OS === 'ios' ? '当前设备未启用原生 Liquid Glass，显示兼容材质；原生效果需要 iOS 26 及系统 API 支持。' : 'Android 使用高对比玻璃模拟材质；苹果原生 Liquid Glass 仅在兼容的 iPhone 上可用。'}</Text>
       <SectionTitle title="数据与同步" />
       <Card style={styles.listCard}>
         <SettingRow icon={{ ios: 'building.columns.fill', android: 'school' }} title="湘潭大学教务" subtitle="网页登录后导入课表与成绩" onPress={() => router.push('/school')} />
