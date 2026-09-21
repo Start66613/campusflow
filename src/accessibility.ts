@@ -1,7 +1,7 @@
 import { AccessibilityInfo, Platform } from 'react-native';
 import { useEffect, useState } from 'react';
 
-/** Mirrors iOS Settings > Accessibility > Display & Text Size > Reduce Transparency. */
+/** Mirrors the public iOS accessibility switch; iOS 27's Liquid Glass slider is system-owned. */
 export function useReduceTransparency() {
   const [enabled, setEnabled] = useState(false);
 
