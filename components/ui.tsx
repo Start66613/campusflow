@@ -99,7 +99,6 @@ export function GlassBackdrop({
           isInteractive={interactive}
           style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
         />
-        {tintColor ? <View style={[StyleSheet.absoluteFill, { borderRadius: radius, backgroundColor: tintWithAlpha(tintStrength === 'soft' ? '12' : '50') }]} /> : null}
         <View style={[styles.glassEdge, { borderRadius: radius, borderColor: edgeColor }]} />
       </View>
     );
