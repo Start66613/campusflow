@@ -47,14 +47,18 @@ export function Screen({ children, scroll = true, scrollEnabled = true, style }:
 
 export function Card({ children, style, onPress }: PropsWithChildren<{ style?: StyleProp<ViewStyle>; onPress?: () => void }>) {
   const theme = useAppTheme();
+  const { data } = useApp();
+  const glass = data.settings.visualMode === 'glass';
+  const cardStyle = [styles.card, { backgroundColor: glass ? 'transparent' : theme.surface, borderColor: `${theme.line}B8`, shadowColor: theme.shadow }, style];
   if (onPress) {
     return (
-      <MotionPressable onPress={onPress} style={[styles.card, { backgroundColor: theme.surface, borderColor: `${theme.line}B8`, shadowColor: theme.shadow }, style]}>
+      <MotionPressable onPress={onPress} style={cardStyle}>
+        {glass ? <GlassBackdrop radius={28} effectStyle="regular" /> : null}
         {children}
       </MotionPressable>
     );
   }
-  return <Animated.View layout={gentleLayout} style={[styles.card, { backgroundColor: theme.surface, borderColor: `${theme.line}B8`, shadowColor: theme.shadow }, style]}>{children}</Animated.View>;
+  return <Animated.View layout={gentleLayout} style={cardStyle}>{glass ? <GlassBackdrop radius={28} effectStyle="regular" /> : null}{children}</Animated.View>;
 }
 
 export function GlassBackdrop({
