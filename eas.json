@@ -1,0 +1,54 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": false
+      }
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "android-apk": {
+      "distribution": "internal",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "preview-lite": {
+      "distribution": "internal",
+      "credentialsSource": "local",
+      "env": {
+        "CAMPUSFLOW_LITE_BUILD": "1"
+      }
+    },
+    "altstore": {
+      "env": {
+        "CAMPUSFLOW_UNSIGNED_BUILD": "1"
+      },
+      "ios": {
+        "config": "altstore-ios.yml",
+        "withoutCredentials": true
+      }
+    },
+    "ios-official": {
+      "distribution": "internal",
+      "autoIncrement": true,
+      "env": {
+        "CAMPUSFLOW_NO_WIDGET": "1"
+      }
+    },
+    "production": {
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
