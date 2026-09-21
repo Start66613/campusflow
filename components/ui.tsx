@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { gentleEnter, gentleLayout, MotionPressable } from '@/components/motion';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
+import { useReduceTransparency } from '@/src/accessibility';
 
 export function Screen({ children, scroll = true, style }: PropsWithChildren<{ scroll?: boolean; style?: StyleProp<ViewStyle> }>) {
   const theme = useAppTheme();
@@ -75,14 +76,15 @@ export function GlassBackdrop({
   const { data } = useApp();
   const dark = theme.background === '#000000';
   const glass = data.settings.visualMode === 'glass';
+  const reduceTransparency = useReduceTransparency();
   const edgeColor = dark ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.76)';
   const tintWithAlpha = (alpha: string) => tintColor?.match(/^#[0-9A-Fa-f]{6}$/) ? `${tintColor}${alpha}` : tintColor;
 
-  if (!glass) {
+  if (!glass || reduceTransparency) {
     return (
       <View
         pointerEvents="none"
-        style={[StyleSheet.absoluteFill, { borderRadius: radius, backgroundColor: tintColor ? tintWithAlpha(tintStrength === 'soft' ? '24' : 'FF') : theme.surface, borderColor: theme.line, borderWidth: StyleSheet.hairlineWidth }, style]}
+        style={[StyleSheet.absoluteFill, { borderRadius: radius, backgroundColor: tintColor ? tintWithAlpha(tintStrength === 'soft' ? '32' : 'E8') : theme.surface, borderColor: theme.line, borderWidth: StyleSheet.hairlineWidth }, style]}
       />
     );
   }
