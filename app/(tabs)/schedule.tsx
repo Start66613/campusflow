@@ -158,7 +158,6 @@ export default function ScheduleScreen() {
         <Text style={[styles.weekHeroHint, { color: theme.primary }]}>涓€灞忕湅鍏?/Text>
       </View>
       <Card style={[styles.gridCard, glass && { backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.72)' }]}>
-          {glass ? <GlassBackdrop radius={28} effectStyle="regular" /> : null}
           <View style={{ width: gridWidth }}>
             <View style={styles.dayHeader}>
               <View style={{ width: timeColumnWidth }} />
