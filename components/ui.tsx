@@ -1,9 +1,10 @@
 import { BlurView } from 'expo-blur';
 import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { useIsFocused } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import type { PropsWithChildren, ReactNode } from 'react';
+import { useEffect, type PropsWithChildren, type ReactNode } from 'react';
 import { Image, Platform, ScrollView, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
+import Animated, { FadeIn, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { gentleEnter, gentleLayout, MotionPressable } from '@/components/motion';
@@ -15,12 +16,20 @@ export function Screen({ children, scroll = true, scrollEnabled = true, style }:
   const theme = useAppTheme();
   const { data } = useApp();
   const glass = data.settings.visualMode === 'glass';
+  const focused = useIsFocused();
+  const focusProgress = useSharedValue(1);
+  useEffect(() => {
+    if (!focused) return;
+    focusProgress.value = 0;
+    focusProgress.value = withTiming(1, { duration: 260, reduceMotion: ReduceMotion.System });
+  }, [focused, focusProgress]);
+  const focusStyle = useAnimatedStyle(() => ({ opacity: 0.96 + focusProgress.value * 0.04, transform: [{ translateY: (1 - focusProgress.value) * 7 }] }));
   const content = scroll ? (
     <ScrollView scrollEnabled={scrollEnabled} bounces contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-      <Animated.View entering={gentleEnter()} style={style}>{children}</Animated.View>
+      <Animated.View entering={gentleEnter()} style={[focusStyle, style]}>{children}</Animated.View>
     </ScrollView>
   ) : (
-    <Animated.View entering={FadeIn.duration(280).reduceMotion(ReduceMotion.System)} style={[styles.fill, style]}>{children}</Animated.View>
+    <Animated.View entering={FadeIn.duration(280).reduceMotion(ReduceMotion.System)} style={[styles.fill, focusStyle, style]}>{children}</Animated.View>
   );
   const dark = theme.background === '#000000';
   return (
@@ -98,11 +107,12 @@ export function GlassBackdrop({
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius }, style]}>
         <GlassView
           glassEffectStyle={effectStyle}
-          tintColor={tintColor ? tintWithAlpha(tintStrength === 'soft' ? '32' : '70') : undefined}
+          tintColor={tintColor ? tintWithAlpha(tintStrength === 'soft' ? '32' : 'A0') : undefined}
           colorScheme={dark ? 'dark' : 'light'}
           isInteractive={interactive}
           style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
         />
+        {tintColor ? <View style={[StyleSheet.absoluteFill, { borderRadius: radius, backgroundColor: tintWithAlpha(tintStrength === 'soft' ? '10' : '26') }]} /> : null}
         <View style={[styles.glassEdge, { borderRadius: radius, borderColor: edgeColor }]} />
       </View>
     );
