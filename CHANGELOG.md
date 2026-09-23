@@ -58,6 +58,10 @@
 - 页面每次重新切换到对应 Tab 时重置焦点动画，动画不再只在首次打开时播放，并遵守“减少动态效果”。
 - 将本次布局、玻璃可读性和重复动画的排查经验补充到 `docs/development-experience.md`。
 
+### 开发与真机联调
+
+- 修复 Expo Go 电脑端未登录时的项目清单 500：通过官方网页授权登录 `start66613`，重启局域网 Metro，并验证 iOS 清单与 JavaScript bundle 均返回 200。
+
 ## 2026-09-20
 
 - 创建 CampusFlow Expo/React Native 工程与基础数据模型。

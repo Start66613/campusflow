@@ -19,11 +19,11 @@ type IconName = Pick<AppIconProps, 'ios' | 'android' | 'fallback'>;
 const AnimatedGlassView = Animated.createAnimatedComponent(GlassView);
 
 const tabs: Record<string, { title: string; icon: IconName }> = {
-  index: { title: '棣栭〉', icon: { ios: 'house.fill', android: 'home', fallback: '鈱? } },
-  schedule: { title: '璇捐〃', icon: { ios: 'calendar', android: 'calendar_month', fallback: '鈻? } },
-  assistant: { title: 'AI 璁?, icon: { ios: 'sparkles', android: 'auto_awesome', fallback: '鉁? } },
-  insights: { title: '鏁版嵁', icon: { ios: 'chart.bar.fill', android: 'bar_chart', fallback: '鈻? } },
-  profile: { title: '鎴戠殑', icon: { ios: 'person.crop.circle', android: 'person', fallback: '鈼? } },
+  index: { title: '首页', icon: { ios: 'house.fill', android: 'home', fallback: '⌂' } },
+  schedule: { title: '课表', icon: { ios: 'calendar', android: 'calendar_month', fallback: '□' } },
+  assistant: { title: 'AI 记', icon: { ios: 'sparkles', android: 'auto_awesome', fallback: '✦' } },
+  insights: { title: '数据', icon: { ios: 'chart.bar.fill', android: 'bar_chart', fallback: '▥' } },
+  profile: { title: '我的', icon: { ios: 'person.crop.circle', android: 'person', fallback: '○' } },
 };
 
 export default function TabLayout() {
@@ -38,11 +38,11 @@ export default function TabLayout() {
         sceneStyle: { backgroundColor: theme.background },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: '棣栭〉' }} />
-      <Tabs.Screen name="schedule" options={{ title: '璇捐〃' }} />
-      <Tabs.Screen name="assistant" options={{ title: 'AI 璁? }} />
-      <Tabs.Screen name="insights" options={{ title: '鏁版嵁' }} />
-      <Tabs.Screen name="profile" options={{ title: '鎴戠殑' }} />
+      <Tabs.Screen name="index" options={{ title: '首页' }} />
+      <Tabs.Screen name="schedule" options={{ title: '课表' }} />
+      <Tabs.Screen name="assistant" options={{ title: 'AI 记' }} />
+      <Tabs.Screen name="insights" options={{ title: '数据' }} />
+      <Tabs.Screen name="profile" options={{ title: '我的' }} />
     </Tabs>
   );
 }

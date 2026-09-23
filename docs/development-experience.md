@@ -183,3 +183,16 @@ npx.cmd expo export --platform android --output-dir dist-android-check
 - `Screen` 监听 `useIsFocused()`，每次 Tab 重新获得焦点都把 Reanimated 进度归零再平滑过渡，因此返回页面时动画会再次播放；同时遵守系统“减少动态效果”设置。
 
 以后调整课表密度时，优先改 `rowHeight`、课程字号和标题占用空间，不要通过横向滚动隐藏星期列；调整玻璃颜色时保持 tint + 低透明度底层的分层结构。
+
+## 18. Expo Go 显示 HTTP 500 或提示 CLI 未登录
+
+**现象**：手机 Expo Go 已登录，但扫描局域网二维码后出现 `UnexpectedServerError`、HTTP 500，或提示“Expo Go 已登录，但 Expo CLI 未登录”。
+
+**根因**：Expo Go 的账号会话和电脑 Expo CLI 的账号会话彼此独立。生成项目清单时，CLI 会向 Expo 服务查询当前账号；网络受限或电脑没有完成网页登录时，清单请求会返回 500。手机热点场景还可能让手机无法稳定访问作为热点客户端的电脑局域网地址。
+
+**处理顺序**：
+
+1. 用 `npx expo login --browser` 完成电脑端网页登录，并用 `npx expo whoami` 确认用户名。
+2. 用 `npx expo start --go --lan --clear` 重启 Metro，扫描新二维码。
+3. 在电脑端带 `Accept: application/expo+json` 和 `Expo-Platform: ios` 请求 Metro 地址；应返回 `200 application/expo+json`。再确认 iOS bundle 地址返回 200，才让手机重试。
+4. 若手机作为热点提供方，改用同一普通 Wi-Fi、另一台设备热点，或可用的 Tunnel。不要把 Expo Go 的手机登录误当成电脑 CLI 已登录。

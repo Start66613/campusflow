@@ -22,52 +22,52 @@ export default function ProfileScreen() {
   const setAlarm = async () => {
     try {
       await scheduleWakeReminder(data.settings.wakeHour, data.settings.wakeMinute);
-      Alert.alert('宸茶缃?, `鏄庢棭 ${String(data.settings.wakeHour).padStart(2, '0')}:${String(data.settings.wakeMinute).padStart(2, '0')} 浼氬彂閫佽捣搴婃彁閱掋€俙);
-    } catch (error) { Alert.alert('璁剧疆澶辫触', error instanceof Error ? error.message : '璇锋鏌ラ€氱煡鏉冮檺'); }
+      Alert.alert('已设置', `明早 ${String(data.settings.wakeHour).padStart(2, '0')}:${String(data.settings.wakeMinute).padStart(2, '0')} 会发送起床提醒。`);
+    } catch (error) { Alert.alert('设置失败', error instanceof Error ? error.message : '请检查通知权限'); }
   };
   const toggleStudy = async (value: boolean) => {
     updateSettings({ studyReminders: value });
     if (value) {
-      try { await scheduleStudyReminder(data.courses); } catch (error) { Alert.alert('鎻愰啋鏈紑鍚?, error instanceof Error ? error.message : '璇锋鏌ラ€氱煡鏉冮檺'); }
+      try { await scheduleStudyReminder(data.courses); } catch (error) { Alert.alert('提醒未开启', error instanceof Error ? error.message : '请检查通知权限'); }
     }
   };
   return (
     <Screen>
-      <View style={styles.profileHeader}><View style={[styles.avatar, { backgroundColor: theme.primarySoft }]}><AppIcon ios="graduationcap.fill" android="school" color={theme.primary} size={30} /></View><View><Text style={[styles.name, { color: theme.text }]}>{data.settings.displayName}</Text><Text style={[styles.school, { color: theme.secondary }]}>{data.settings.schoolName} 路 鏈鐢?/Text></View></View>
+      <View style={styles.profileHeader}><View style={[styles.avatar, { backgroundColor: theme.primarySoft }]}><AppIcon ios="graduationcap.fill" android="school" color={theme.primary} size={30} /></View><View><Text style={[styles.name, { color: theme.text }]}>{data.settings.displayName}</Text><Text style={[styles.school, { color: theme.secondary }]}>{data.settings.schoolName} · 本科生</Text></View></View>
       <View style={styles.actionRow}>
-        <SmallAction icon={{ ios: 'square.and.arrow.down.fill', android: 'download' }} label="瀵煎叆璇捐〃" onPress={() => router.push('/import')} />
-        <SmallAction icon={{ ios: 'sparkles', android: 'auto_awesome' }} label="杩炴帴 AI" onPress={() => router.push('/ai-settings')} />
-        <SmallAction icon={{ ios: 'alarm.fill', android: 'alarm' }} label="鏃╁叓鎻愰啋" onPress={setAlarm} />
+        <SmallAction icon={{ ios: 'square.and.arrow.down.fill', android: 'download' }} label="导入课表" onPress={() => router.push('/import')} />
+        <SmallAction icon={{ ios: 'sparkles', android: 'auto_awesome' }} label="连接 AI" onPress={() => router.push('/ai-settings')} />
+        <SmallAction icon={{ ios: 'alarm.fill', android: 'alarm' }} label="早八提醒" onPress={setAlarm} />
       </View>
-      <SectionTitle title="鏅鸿兘鎻愰啋" />
+      <SectionTitle title="智能提醒" />
       <Card style={styles.listCard}>
-        <SettingRow icon={{ ios: 'book.fill', android: 'menu_book' }} title="绌洪棽瀛︿範鎻愰啋" subtitle="鏍规嵁璇捐〃瀵绘壘鏃犺鏃堕棿" right={<Switch value={data.settings.studyReminders} onValueChange={toggleStudy} trackColor={{ true: theme.primary }} />} />
-        <SettingRow icon={{ ios: 'alarm.fill', android: 'alarm' }} title="鏃╁叓璧峰簥鎻愰啋" subtitle={`${String(data.settings.wakeHour).padStart(2, '0')}:${String(data.settings.wakeMinute).padStart(2, '0')} 路 鐐瑰嚮閲嶆柊璁剧疆`} onPress={setAlarm} />
-        <SettingRow icon={{ ios: 'brain.head.profile.fill', android: 'psychology' }} title="AI 娣卞害鎬濊€? subtitle="澶嶆潅琛ㄨ揪浼氬涓€姝ユ牳瀵癸紝骞舵樉绀哄鐞嗘憳瑕? right={<Switch value={data.settings.aiThinking} onValueChange={(value) => updateSettings({ aiThinking: value })} trackColor={{ true: theme.primary }} />} last />
+        <SettingRow icon={{ ios: 'book.fill', android: 'menu_book' }} title="空闲学习提醒" subtitle="根据课表寻找无课时间" right={<Switch value={data.settings.studyReminders} onValueChange={toggleStudy} trackColor={{ true: theme.primary }} />} />
+        <SettingRow icon={{ ios: 'alarm.fill', android: 'alarm' }} title="早八起床提醒" subtitle={`${String(data.settings.wakeHour).padStart(2, '0')}:${String(data.settings.wakeMinute).padStart(2, '0')} · 点击重新设置`} onPress={setAlarm} />
+        <SettingRow icon={{ ios: 'brain.head.profile.fill', android: 'psychology' }} title="AI 深度思考" subtitle="复杂表达会多一步核对，并显示处理摘要" right={<Switch value={data.settings.aiThinking} onValueChange={(value) => updateSettings({ aiThinking: value })} trackColor={{ true: theme.primary }} />} last />
       </Card>
-      <SectionTitle title="鏄剧ず妯″紡" />
+      <SectionTitle title="显示模式" />
       <View style={[styles.themeRow, { backgroundColor: theme.surfaceAlt }]}>
-        {([['system', '璺熼殢绯荤粺'], ['light', '娴呰壊'], ['dark', '娣辫壊'], ['eye', '鎶ょ溂']] as [ThemeMode, string][]).map(([value, label]) => (
+        {([['system', '跟随系统'], ['light', '浅色'], ['dark', '深色'], ['eye', '护眼']] as [ThemeMode, string][]).map(([value, label]) => (
           <MotionPressable key={value} onPress={() => updateSettings({ themeMode: value })} style={[styles.themeItem, data.settings.themeMode === value && styles.themeActive, data.settings.themeMode === value && { backgroundColor: theme.surface, shadowColor: theme.shadow }]}><Text style={[styles.themeText, { color: data.settings.themeMode === value ? theme.primary : theme.secondary }]}>{label}</Text></MotionPressable>
         ))}
       </View>
-      <SectionTitle title="鐣岄潰璐ㄦ劅" />
+      <SectionTitle title="界面质感" />
       <View style={[styles.visualRow, { backgroundColor: theme.surfaceAlt }]}>
-        {([['glass', '娑叉€佺幓鐠?], ['native', '缁忓吀鍘熺敓']] as [VisualMode, string][]).map(([value, label]) => (
+        {([['glass', '液态玻璃'], ['native', '经典原生']] as [VisualMode, string][]).map(([value, label]) => (
           <MotionPressable key={value} onPress={() => updateSettings({ visualMode: value })} style={[styles.visualItem, data.settings.visualMode === value && styles.themeActive, data.settings.visualMode === value && { backgroundColor: theme.surface, shadowColor: theme.shadow }]}>
             <AppIcon ios={value === 'glass' ? 'drop.fill' : 'rectangle.inset.filled'} android={value === 'glass' ? 'blur_on' : 'view_agenda'} color={data.settings.visualMode === value ? theme.primary : theme.secondary} size={18} />
             <Text style={[styles.themeText, { color: data.settings.visualMode === value ? theme.primary : theme.secondary }]}>{label}</Text>
           </MotionPressable>
         ))}
       </View>
-      <Text style={[styles.visualNote, { color: theme.secondary }]}>{nativeGlass && !reduceTransparency ? '褰撳墠璁惧鏀寔鍘熺敓 Liquid Glass锛沬OS 27鈥滆缃?> 澶栬 > Liquid Glass鈥濇粦鏉嗕細鐢辩郴缁熻嚜鍔ㄤ綔鐢ㄤ簬鍘熺敓鏉愯川銆? : Platform.OS === 'ios' && reduceTransparency ? '宸茶窡闅忕郴缁熲€滈檷浣庨€忔槑搴︹€濊缃紝鏀圭敤鏇存竻鏅扮殑涓嶉€忔槑鏉愯川銆? : Platform.OS === 'ios' ? '褰撳墠璁惧鏄剧ず鍏煎鏉愯川锛涘師鐢熸晥鏋滈渶瑕?iOS 26 鍙婄郴缁?API 鏀寔銆? : 'Android 浣跨敤楂樺姣旂幓鐠冩ā鎷熸潗璐紱鑻规灉鍘熺敓 Liquid Glass 浠呭湪鍏煎鐨?iPhone 涓婂彲鐢ㄣ€?}</Text>
-      <SectionTitle title="鏁版嵁涓庡悓姝? />
+      <Text style={[styles.visualNote, { color: theme.secondary }]}>{nativeGlass && !reduceTransparency ? '当前设备支持原生 Liquid Glass；iOS 27“设置 > 外观 > Liquid Glass”滑杆会由系统自动作用于原生材质。' : Platform.OS === 'ios' && reduceTransparency ? '已跟随系统“降低透明度”设置，改用更清晰的不透明材质。' : Platform.OS === 'ios' ? '当前设备显示兼容材质；原生效果需要 iOS 26 及系统 API 支持。' : 'Android 使用高对比玻璃模拟材质；苹果原生 Liquid Glass 仅在兼容的 iPhone 上可用。'}</Text>
+      <SectionTitle title="数据与同步" />
       <Card style={styles.listCard}>
-        <SettingRow icon={{ ios: 'building.columns.fill', android: 'school' }} title="婀樻江澶у鏁欏姟" subtitle="缃戦〉鐧诲綍鍚庡鍏ヨ琛ㄤ笌鎴愮哗" onPress={() => router.push('/school')} />
-        <SettingRow icon={{ ios: 'cloud.fill', android: 'cloud' }} title="iCloud / 鏃ュ巻" subtitle="鐢?iOS 绯荤粺璐熻矗璺ㄨ澶囧悓姝? onPress={() => router.push('/schedule')} />
-        <SettingRow icon={{ ios: 'lock.shield.fill', android: 'lock' }} title="涓汉 AI 瀵嗛挜" subtitle="浣跨敤绯荤粺瀹夊叏鍖哄姞瀵嗕繚瀛? onPress={() => router.push('/ai-settings')} last />
+        <SettingRow icon={{ ios: 'building.columns.fill', android: 'school' }} title="湘潭大学教务" subtitle="网页登录后导入课表与成绩" onPress={() => router.push('/school')} />
+        <SettingRow icon={{ ios: 'cloud.fill', android: 'cloud' }} title="iCloud / 日历" subtitle="由 iOS 系统负责跨设备同步" onPress={() => router.push('/schedule')} />
+        <SettingRow icon={{ ios: 'lock.shield.fill', android: 'lock' }} title="个人 AI 密钥" subtitle="使用系统安全区加密保存" onPress={() => router.push('/ai-settings')} last />
       </Card>
-      <Text style={[styles.version, { color: theme.secondary }]}>CampusFlow 1.0.0 路 涓鸿嚜宸辩殑鏍″洯鐢熸椿鑰屽仛</Text>
+      <Text style={[styles.version, { color: theme.secondary }]}>CampusFlow 1.0.0 · 为自己的校园生活而做</Text>
     </Screen>
   );
 }

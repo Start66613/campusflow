@@ -19,8 +19,8 @@ import type { AssistantCommand } from '@/src/types';
 
 type Message = { id: string; role: 'assistant' | 'user'; text: string; detail?: string; processSummary?: string[] };
 
-const examples = ['鍗堥キ鑺变簡 25 鍏?, '鏄庡ぉ涓嬪崍 3 鐐瑰浘涔﹂澶嶄範涓ゅ皬鏃?, '涓嬪懆浜斾氦楂樻暟浣滀笟'];
-const loadingStages = ['鐞嗚В浣犵殑琛ㄨ揪鈥?, '鏍稿鏃堕棿涓庤绋嬧€?, '鍑嗗鍐欏叆瀵瑰簲椤甸潰鈥?];
+const examples = ['午饭花了 25 元', '明天下午 3 点图书馆复习两小时', '下周五交高数作业'];
+const loadingStages = ['理解你的表达…', '核对时间与课程…', '准备写入对应页面…'];
 
 export default function AssistantScreen() {
   const theme = useAppTheme();
@@ -34,7 +34,7 @@ export default function AssistantScreen() {
   const [loadingStage, setLoadingStage] = useState(0);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [messages, setMessages] = useState<Message[]>([
-    { id: 'hello', role: 'assistant', text: '鎯宠浠€涔堬紝鐩存帴鍛婅瘔鎴?, detail: '鎴戣兘鐞嗚В鏃ョ▼銆佸緟鍔炪€佷綔涓氬拰娑堣垂锛屼篃鑳戒粠鐓х墖閲岃瘑鍒綔涓氥€? },
+    { id: 'hello', role: 'assistant', text: '想记什么，直接告诉我', detail: '我能理解日程、待办、作业和消费，也能从照片里识别作业。' },
   ]);
   const assistantContext = useMemo(() => ({
     courses: app.data.courses.map(({ name, weekday, startTime, endTime }) => ({ name, weekday, startTime, endTime })),
@@ -63,44 +63,44 @@ export default function AssistantScreen() {
   const commit = (command: AssistantCommand) => {
     if (command.type === 'expense') {
       app.addExpense({ amount: command.amount, category: command.category, note: command.note, occurredAt: command.occurredAt });
-      return `宸茶璐?${formatCurrency(command.amount)} 路 ${command.category}`;
+      return `已记账 ${formatCurrency(command.amount)} · ${command.category}`;
     }
     if (command.type === 'task') {
       const courseId = app.data.courses.find((course) => command.courseName && command.courseName.includes(course.name))?.id;
       app.addTask({ title: command.title, dueAt: command.dueAt, courseId, completed: false, source: 'ai' });
-      return `宸叉坊鍔犲緟鍔?路 ${formatDateTime(command.dueAt)}`;
+      return `已添加待办 · ${formatDateTime(command.dueAt)}`;
     }
     if (command.type === 'event') {
       app.addEvent({ title: command.title, startAt: command.startAt, endAt: command.endAt, note: command.note, kind: 'study' });
-      return `宸插姞鍏ユ棩绋?路 ${formatDateTime(command.startAt)}`;
+      return `已加入日程 · ${formatDateTime(command.startAt)}`;
     }
     app.replaceCourses(command.courses);
-    return `宸插鍏?${command.courses.length} 闂ㄨ绋媊;
+    return `已导入 ${command.courses.length} 门课程`;
   };
 
   const submit = async (content = text, imageBase64?: string) => {
     if (!content.trim() && !imageBase64) return;
-    const userText = imageBase64 ? '馃摲 璇疯瘑鍒繖寮犱綔涓氱収鐗? : content.trim();
+    const userText = imageBase64 ? '📷 请识别这张作业照片' : content.trim();
     setMessages((current) => [...current, { id: `u-${Date.now()}`, role: 'user', text: userText }]);
     setText('');
     setLoading(true);
     try {
       let result;
       try {
-        result = await parseAssistantInput(content || '璇嗗埆鍥剧墖涓殑浣滀笟涓庢埅姝㈡椂闂?, imageBase64, app.data.settings.aiThinking, assistantContext);
+        result = await parseAssistantInput(content || '识别图片中的作业与截止时间', imageBase64, app.data.settings.aiThinking, assistantContext);
       } catch (error) {
         if (imageBase64) throw error;
-        result = { commands: parseLocally(content), usedAI: false, processSummary: ['璇嗗埆浜嬮」绫诲瀷', '鎻愬彇鏃堕棿淇℃伅', '瀹屾垚鏈湴鍐欏叆'] };
+        result = { commands: parseLocally(content), usedAI: false, processSummary: ['识别事项类型', '提取时间信息', '完成本地写入'] };
       }
       const summaries = result.commands.map(commit);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setMessages((current) => [...current, {
         id: `a-${Date.now()}`, role: 'assistant', text: summaries.join('\n'),
-        detail: result.usedAI ? '鐢?AI 璇嗗埆骞跺凡鍐欏叆锛屼綘鍙互鍦ㄥ搴旈〉闈㈡煡鐪嬨€? : '宸茬敤绂荤嚎璇箟瑙勫垯鍐欏叆锛涢厤缃?AI 鏈嶅姟鍚庡彲鐞嗚В鏇村鏉傜殑琛ㄨ揪銆?,
-        processSummary: result.processSummary.length ? result.processSummary : ['璇嗗埆浜嬮」', '鏍稿鏃堕棿', '瀹屾垚鍐欏叆'],
+        detail: result.usedAI ? '由 AI 识别并已写入，你可以在对应页面查看。' : '已用离线语义规则写入；配置 AI 服务后可理解更复杂的表达。',
+        processSummary: result.processSummary.length ? result.processSummary : ['识别事项', '核对时间', '完成写入'],
       }]);
     } catch (error) {
-      setMessages((current) => [...current, { id: `e-${Date.now()}`, role: 'assistant', text: '杩欐娌℃湁璇嗗埆鎴愬姛', detail: error instanceof Error ? error.message : '璇锋崲绉嶈娉曞啀璇曚竴娆°€? }]);
+      setMessages((current) => [...current, { id: `e-${Date.now()}`, role: 'assistant', text: '这次没有识别成功', detail: error instanceof Error ? error.message : '请换种说法再试一次。' }]);
     } finally {
       setLoading(false);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
@@ -111,7 +111,7 @@ export default function AssistantScreen() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7, base64: true });
-    if (!result.canceled && result.assets[0].base64) submit('璇嗗埆鍥剧墖涓殑浣滀笟銆佽€冭瘯鎴栨埅姝㈡椂闂?, result.assets[0].base64);
+    if (!result.canceled && result.assets[0].base64) submit('识别图片中的作业、考试或截止时间', result.assets[0].base64);
   };
 
   return (
@@ -122,8 +122,8 @@ export default function AssistantScreen() {
         keyboardVerticalOffset={0}
       >
         <View style={styles.header}>
-          <View><Text style={[styles.kicker, { color: theme.primary }]}>CAMPUS AI</Text><Text style={[styles.title, { color: theme.text }]}>涓€鍙ヨ瘽锛岃涓嬫潵</Text></View>
-          <MotionPressable onPress={() => router.push('/ai-settings')} style={[styles.online, { backgroundColor: theme.primarySoft }]}><View style={[styles.onlineDot, { backgroundColor: aiReady ? theme.green : theme.orange }]} /><Text style={[styles.onlineText, { color: theme.primary }]}>{aiReady ? 'DeepSeek' : '閰嶇疆 AI'}</Text></MotionPressable>
+          <View><Text style={[styles.kicker, { color: theme.primary }]}>CAMPUS AI</Text><Text style={[styles.title, { color: theme.text }]}>一句话，记下来</Text></View>
+          <MotionPressable onPress={() => router.push('/ai-settings')} style={[styles.online, { backgroundColor: theme.primarySoft }]}><View style={[styles.onlineDot, { backgroundColor: aiReady ? theme.green : theme.orange }]} /><Text style={[styles.onlineText, { color: theme.primary }]}>{aiReady ? 'DeepSeek' : '配置 AI'}</Text></MotionPressable>
         </View>
         <ScrollView ref={scrollRef} style={styles.messageList} contentContainerStyle={styles.messages} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}>
           {messages.map((message) => (
@@ -133,7 +133,7 @@ export default function AssistantScreen() {
               layout={gentleLayout}
               style={[styles.messageWrap, message.role === 'user' && styles.userWrap]}
             >
-              {message.role === 'assistant' ? <Animated.View entering={FadeIn.delay(100).reduceMotion(ReduceMotion.System)} style={[styles.botAvatar, { backgroundColor: theme.primary }]}><AppIcon ios="sparkles" android="auto_awesome" color="#FFFFFF" size={15} fallback="鉁? /></Animated.View> : null}
+              {message.role === 'assistant' ? <Animated.View entering={FadeIn.delay(100).reduceMotion(ReduceMotion.System)} style={[styles.botAvatar, { backgroundColor: theme.primary }]}><AppIcon ios="sparkles" android="auto_awesome" color="#FFFFFF" size={15} fallback="✦" /></Animated.View> : null}
               <View style={[styles.bubble, message.role === 'user' ? { backgroundColor: theme.primary } : { backgroundColor: theme.surface }, message.role === 'user' && styles.userBubble]}>
                 <Text style={[styles.messageText, { color: message.role === 'user' ? '#FFFFFF' : theme.text }]}>{message.text}</Text>
                 {message.detail ? <Text style={[styles.detail, { color: message.role === 'user' ? '#EEEEFF' : theme.secondary }]}>{message.detail}</Text> : null}
@@ -141,13 +141,13 @@ export default function AssistantScreen() {
                   <View style={styles.processArea}>
                     <MotionPressable onPress={() => setExpanded((current) => ({ ...current, [message.id]: !current[message.id] }))} style={styles.processButton}>
                       <AppIcon ios="brain.head.profile" android="psychology" color={theme.primary} size={15} />
-                      <Text style={[styles.processButtonText, { color: theme.primary }]}>{expanded[message.id] ? '鏀惰捣澶勭悊杩囩▼' : '鏌ョ湅澶勭悊杩囩▼'}</Text>
+                      <Text style={[styles.processButtonText, { color: theme.primary }]}>{expanded[message.id] ? '收起处理过程' : '查看处理过程'}</Text>
                       <AppIcon ios={expanded[message.id] ? 'chevron.up' : 'chevron.down'} android={expanded[message.id] ? 'keyboard_arrow_up' : 'keyboard_arrow_down'} color={theme.primary} size={14} />
                     </MotionPressable>
                     {expanded[message.id] ? (
                       <Animated.View entering={FadeIn.duration(150).reduceMotion(ReduceMotion.System)} style={[styles.processList, { borderColor: theme.line, backgroundColor: theme.surfaceAlt }]}>
                         {message.processSummary.map((step, index) => <View key={`${message.id}-${index}`} style={styles.processStep}><View style={[styles.processDot, { backgroundColor: theme.primary }]} /><Text style={[styles.processText, { color: theme.secondary }]}>{step}</Text></View>)}
-                        <Text style={[styles.processNote, { color: theme.secondary }]}>杩欐槸鍙牳瀵圭殑缁撴灉鎽樿锛屼笉灞曠ず妯″瀷鍐呴儴鑽夌銆?/Text>
+                        <Text style={[styles.processNote, { color: theme.secondary }]}>这是可核对的结果摘要，不展示模型内部草稿。</Text>
                       </Animated.View>
                     ) : null}
                   </View>
@@ -155,7 +155,7 @@ export default function AssistantScreen() {
               </View>
             </Animated.View>
           ))}
-          {loading ? <Animated.View entering={FadeIn.duration(180).reduceMotion(ReduceMotion.System)} style={styles.loadingRow}><ActivityIndicator color={theme.primary} /><Text style={[styles.loadingText, { color: theme.secondary }]}>{app.data.settings.aiThinking ? loadingStages[loadingStage] : '姝ｅ湪鐞嗚В骞舵暣鐞嗏€?}</Text></Animated.View> : null}
+          {loading ? <Animated.View entering={FadeIn.duration(180).reduceMotion(ReduceMotion.System)} style={styles.loadingRow}><ActivityIndicator color={theme.primary} /><Text style={[styles.loadingText, { color: theme.secondary }]}>{app.data.settings.aiThinking ? loadingStages[loadingStage] : '正在理解并整理…'}</Text></Animated.View> : null}
         </ScrollView>
         <View style={styles.composerDock}>
           <View style={styles.examples}>
@@ -169,20 +169,20 @@ export default function AssistantScreen() {
               value={text}
               onChangeText={setText}
               onSubmitEditing={() => submit()}
-              placeholder="鍜?Campus AI 璇磋鈥?
+              placeholder="和 Campus AI 说说…"
               placeholderTextColor={theme.secondary}
               style={[styles.input, { color: theme.text }]}
               multiline
             />
             <View style={styles.composerTools}>
-              <MotionPressable accessibilityLabel="閫夋嫨浣滀笟鐓х墖" onPress={pickHomework} style={styles.photoButton}><AppIcon ios="plus" android="add" color={theme.text} size={27} /></MotionPressable>
+              <MotionPressable accessibilityLabel="选择作业照片" onPress={pickHomework} style={styles.photoButton}><AppIcon ios="plus" android="add" color={theme.text} size={27} /></MotionPressable>
               <View style={styles.composerRight}>
-                <Text style={[styles.modelLabel, { color: theme.secondary }]}>{aiReady ? 'DeepSeek' : '绂荤嚎蹇'}{app.data.settings.aiThinking && aiReady ? ' 路 鎬濊€? : ''}</Text>
-                <MotionPressable accessibilityLabel="鍙戦€? disabled={loading || !text.trim()} onPress={() => submit()} pressedScale={0.9} style={[styles.send, { backgroundColor: text.trim() ? theme.primary : theme.secondary, opacity: text.trim() ? 1 : 0.7 }]}><AppIcon ios="arrow.up" android="arrow_upward" color="#FFFFFF" size={19} /></MotionPressable>
+                <Text style={[styles.modelLabel, { color: theme.secondary }]}>{aiReady ? 'DeepSeek' : '离线快记'}{app.data.settings.aiThinking && aiReady ? ' · 思考' : ''}</Text>
+                <MotionPressable accessibilityLabel="发送" disabled={loading || !text.trim()} onPress={() => submit()} pressedScale={0.9} style={[styles.send, { backgroundColor: text.trim() ? theme.primary : theme.secondary, opacity: text.trim() ? 1 : 0.7 }]}><AppIcon ios="arrow.up" android="arrow_upward" color="#FFFFFF" size={19} /></MotionPressable>
               </View>
             </View>
           </View>
-          <Text style={[styles.disclaimer, { color: theme.secondary }]}>AI 鍙兘浼氱悊瑙ｉ敊鏃堕棿锛岃鍦ㄩ噸瑕佽€冭瘯鍓嶆牳瀵逛竴娆°€?/Text>
+          <Text style={[styles.disclaimer, { color: theme.secondary }]}>AI 可能会理解错时间，请在重要考试前核对一次。</Text>
         </View>
       </KeyboardAvoidingView>
     </Screen>
