@@ -8,6 +8,7 @@ import Animated, { ReduceMotion, useAnimatedStyle, useReducedMotion, useSharedVa
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon, type AppIconProps } from '@/components/app-icon';
+import { motion } from '@/components/motion';
 import { GlassBackdrop } from '@/components/ui';
 import { FLOATING_TAB_BAR_HEIGHT, FLOATING_TAB_BAR_SIDE } from '@/src/layout';
 import { useApp } from '@/src/store';
@@ -33,7 +34,7 @@ export default function TabLayout() {
       tabBar={(props) => <LiquidTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        animation: 'fade',
+        animation: 'none',
         tabBarHideOnKeyboard: true,
         sceneStyle: { backgroundColor: theme.background },
       }}
@@ -81,15 +82,10 @@ function LiquidTabBar({ state, navigation }: TabBarProps) {
       return;
     }
     previousIndex.current = state.index;
-    travel.value = withSpring(state.index * itemWidth, {
-      damping: 18,
-      stiffness: 205,
-      mass: 0.82,
-      reduceMotion: ReduceMotion.System,
-    });
-    stretch.value = withSequence(
-      withTiming(1.3, { duration: 115, reduceMotion: ReduceMotion.System }),
-      withSpring(1, { damping: 11, stiffness: 220, mass: 0.48, reduceMotion: ReduceMotion.System }),
+    travel.value = withSpring(state.index * itemWidth, motion.spring);
+    stretch.value = reducedMotion ? 1 : withSequence(
+      withTiming(1.075, { duration: 100, reduceMotion: ReduceMotion.System }),
+      withSpring(1, motion.spring),
     );
   }, [glass, itemWidth, reducedMotion, state.index, stretch, travel]);
 

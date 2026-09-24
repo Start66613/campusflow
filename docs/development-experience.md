@@ -196,3 +196,18 @@ npx.cmd expo export --platform android --output-dir dist-android-check
 2. 用 `npx expo start --go --lan --clear` 重启 Metro，扫描新二维码。
 3. 在电脑端带 `Accept: application/expo+json` 和 `Expo-Platform: ios` 请求 Metro 地址；应返回 `200 application/expo+json`。再确认 iOS bundle 地址返回 200，才让手机重试。
 4. 若手机作为热点提供方，改用同一普通 Wi-Fi、另一台设备热点，或可用的 Tunnel。不要把 Expo Go 的手机登录误当成电脑 CLI 已登录。
+
+## 19. 液态玻璃和全局动效统一
+
+**设计判断**：Liquid Glass 的重点是触摸反馈、层级和可读性，不是把所有内容变得透明。Apple 建议在导航和控制层谨慎使用玻璃，让正文保持清晰；频繁交互的动画应短、准确，并遵守“减少动态效果”。参考 [Apple Liquid Glass](https://developer.apple.com/documentation/technologyoverviews/liquid-glass)、[Apple Motion](https://developer.apple.com/design/human-interface-guidelines/motion) 和 [Apple Layout](https://developer.apple.com/design/human-interface-guidelines/layout)。
+
+**Expo 限制**：[SDK 57 GlassEffect 文档](https://docs.expo.dev/versions/v57.0.0/sdk/glass-effect/)明确提示，`GlassView` 或其父层的 opacity 变为 0 可能导致原生玻璃不显示。以后给含玻璃的页面、课程块、快捷卡片做进入动画，优先使用小幅 transform，不在父层做 FadeIn/FadeOut；原生玻璃材质切换用组件提供的动画配置。`isLiquidGlassAvailable()` 和 `isGlassEffectAPIAvailable()` 仍需同时检查。
+
+**开源参考**：[expo-glass-tabs](https://github.com/davidmokos/expo-glass-tabs) 用 UI 线程的 transform 驱动选中胶囊，强调小幅页面过渡；[RN-Liquid-Glass-Tabs](https://github.com/3advance/RN-Liquid-Glass-Tabs) 展示了 React Native 原生标签栏的玻璃层处理。本项目借鉴“单一胶囊移动、触感反馈、平台回退”的思路，不直接复制其代码或新增依赖。
+
+**本项目约定**：
+
+- 动画参数集中放在 `components/motion.tsx`；高频点击只轻微缩小，Tab 和分段选择共享同类阻尼弹簧。
+- `Screen` 每次重新获得焦点时做 6 像素轻位移，不再与 Tab 默认淡入叠加；课程拖动视图已占用 transform，不叠加进入位移动画。
+- 课程卡玻璃要有课程色，但文字必须独立保证对比度；内容卡片比浮动控制层更不透明。已有实色主题 Hero 不要再盖玻璃层。
+- 先跑 `npm run typecheck` 和 `expo export --platform all`；随后在 iPhone/Android 真机检查底栏、AI 输入框、课程名称、深色模式、减少动态效果和拖动手感。导出成功只能证明可打包，不能证明视觉效果合格。

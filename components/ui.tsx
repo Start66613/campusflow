@@ -4,10 +4,10 @@ import { useIsFocused } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, type PropsWithChildren, type ReactNode } from 'react';
 import { Image, Platform, ScrollView, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, { FadeIn, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { gentleEnter, gentleLayout, MotionPressable } from '@/components/motion';
+import { gentleEnter, gentleLayout, motion, MotionPressable } from '@/components/motion';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
 import { useReduceTransparency } from '@/src/accessibility';
@@ -21,15 +21,16 @@ export function Screen({ children, scroll = true, scrollEnabled = true, style }:
   useEffect(() => {
     if (!focused) return;
     focusProgress.value = 0;
-    focusProgress.value = withTiming(1, { duration: 260, reduceMotion: ReduceMotion.System });
+    focusProgress.value = withTiming(1, { duration: motion.standard, reduceMotion: ReduceMotion.System });
   }, [focused, focusProgress]);
-  const focusStyle = useAnimatedStyle(() => ({ opacity: 0.96 + focusProgress.value * 0.04, transform: [{ translateY: (1 - focusProgress.value) * 7 }] }));
+  // Never fade a parent of native GlassView: iOS may drop the glass material.
+  const focusStyle = useAnimatedStyle(() => ({ transform: [{ translateY: (1 - focusProgress.value) * 6 }] }));
   const content = scroll ? (
     <ScrollView scrollEnabled={scrollEnabled} bounces contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-      <Animated.View entering={gentleEnter()} style={[focusStyle, style]}>{children}</Animated.View>
+      <Animated.View style={[focusStyle, style]}>{children}</Animated.View>
     </ScrollView>
   ) : (
-    <Animated.View entering={FadeIn.duration(280).reduceMotion(ReduceMotion.System)} style={[styles.fill, focusStyle, style]}>{children}</Animated.View>
+    <Animated.View style={[styles.fill, focusStyle, style]}>{children}</Animated.View>
   );
   const dark = theme.background === '#000000';
   return (
@@ -54,20 +55,21 @@ export function Screen({ children, scroll = true, scrollEnabled = true, style }:
   );
 }
 
-export function Card({ children, style, onPress }: PropsWithChildren<{ style?: StyleProp<ViewStyle>; onPress?: () => void }>) {
+export function Card({ children, style, onPress, glassSurface = true }: PropsWithChildren<{ style?: StyleProp<ViewStyle>; onPress?: () => void; glassSurface?: boolean }>) {
   const theme = useAppTheme();
   const { data } = useApp();
   const glass = data.settings.visualMode === 'glass';
-  const cardStyle = [styles.card, { backgroundColor: glass ? 'transparent' : theme.surface, borderColor: `${theme.line}B8`, shadowColor: theme.shadow }, style];
+  const showGlass = glass && glassSurface;
+  const cardStyle = [styles.card, { backgroundColor: showGlass ? 'transparent' : theme.surface, borderColor: `${theme.line}B8`, shadowColor: theme.shadow }, style];
   if (onPress) {
     return (
       <MotionPressable onPress={onPress} style={cardStyle}>
-        {glass ? <GlassBackdrop radius={28} effectStyle="regular" /> : null}
+        {showGlass ? <GlassBackdrop radius={28} effectStyle="regular" readable /> : null}
         {children}
       </MotionPressable>
     );
   }
-  return <Animated.View layout={gentleLayout} style={cardStyle}>{glass ? <GlassBackdrop radius={28} effectStyle="regular" /> : null}{children}</Animated.View>;
+  return <Animated.View layout={gentleLayout} style={cardStyle}>{showGlass ? <GlassBackdrop radius={28} effectStyle="regular" readable /> : null}{children}</Animated.View>;
 }
 
 export function GlassBackdrop({
@@ -77,6 +79,7 @@ export function GlassBackdrop({
   tintColor,
   tintStrength = 'strong',
   effectStyle = 'regular',
+  readable = false,
 }: {
   interactive?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -84,6 +87,7 @@ export function GlassBackdrop({
   tintColor?: string;
   tintStrength?: 'soft' | 'strong';
   effectStyle?: 'clear' | 'regular';
+  readable?: boolean;
 }) {
   const theme = useAppTheme();
   const { data } = useApp();
@@ -112,7 +116,8 @@ export function GlassBackdrop({
           isInteractive={interactive}
           style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
         />
-        {tintColor ? <View style={[StyleSheet.absoluteFill, { borderRadius: radius, backgroundColor: tintWithAlpha(tintStrength === 'soft' ? '10' : '26') }]} /> : null}
+        {tintColor ? <View style={[StyleSheet.absoluteFill, { borderRadius: radius, backgroundColor: tintWithAlpha(tintStrength === 'soft' ? '12' : '38') }]} /> : null}
+        {readable ? <View style={[StyleSheet.absoluteFill, { borderRadius: radius, backgroundColor: dark ? 'rgba(15,15,24,0.32)' : 'rgba(255,255,255,0.36)' }]} /> : null}
         <View style={[styles.glassEdge, { borderRadius: radius, borderColor: edgeColor }]} />
       </View>
     );
@@ -123,7 +128,7 @@ export function GlassBackdrop({
       <LinearGradient
         colors={tintColor
           ? [tintWithAlpha(tintStrength === 'soft' ? '52' : 'E8') ?? tintColor, tintWithAlpha(tintStrength === 'soft' ? '28' : 'C4') ?? tintColor]
-          : dark ? ['rgba(255,255,255,0.12)', 'rgba(20,20,26,0.38)'] : ['rgba(255,255,255,0.72)', 'rgba(255,255,255,0.26)']}
+          : dark ? ['rgba(255,255,255,0.12)', readable ? 'rgba(20,20,26,0.62)' : 'rgba(20,20,26,0.38)'] : ['rgba(255,255,255,0.78)', readable ? 'rgba(255,255,255,0.52)' : 'rgba(255,255,255,0.26)']}
         start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill}
       />
       <View style={[styles.glassEdge, { borderRadius: radius, borderColor: edgeColor }]} />
@@ -145,7 +150,7 @@ export function Pill({ children, tone = 'primary' }: PropsWithChildren<{ tone?: 
   const theme = useAppTheme();
   const background = tone === 'green' ? `${theme.green}22` : tone === 'orange' ? `${theme.orange}22` : tone === 'neutral' ? theme.surfaceAlt : theme.primarySoft;
   const color = tone === 'green' ? theme.green : tone === 'orange' ? theme.orange : tone === 'neutral' ? theme.secondary : theme.primary;
-  return <Animated.View entering={FadeIn.duration(160).reduceMotion(ReduceMotion.System)} style={[styles.pill, { backgroundColor: background }]}><Text style={[styles.pillText, { color }]}>{children}</Text></Animated.View>;
+  return <View style={[styles.pill, { backgroundColor: background }]}><Text style={[styles.pillText, { color }]}>{children}</Text></View>;
 }
 
 export function PrimaryButton({ label, onPress, icon, disabled = false, secondary = false }: { label: string; onPress: () => void; icon?: ReactNode; disabled?: boolean; secondary?: boolean }) {

@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, PanResponder, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import Animated, { FadeIn, ReduceMotion, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import { AppIcon } from '@/components/app-icon';
 import { gentleLayout, MotionPressable } from '@/components/motion';
@@ -22,9 +22,11 @@ const periodStarts = ['08:00', '08:55', '10:10', '11:05', '14:00', '14:55', '16:
 const periodEnds = ['08:45', '09:40', '10:55', '11:50', '14:45', '15:40', '16:55', '17:50', '19:45', '20:40', '21:35', '22:30'];
 
 function courseInk(color: string, glass: boolean, dark: boolean) {
+  // Native tint is translucent. In light mode a dark label stays legible
+  // across all six course hues; in dark mode use white on the dark material.
+  if (glass) return dark ? '#FFFFFF' : '#17233E';
   const channels = color.match(/[0-9a-f]{2}/gi)?.slice(0, 3).map((part) => parseInt(part, 16)) ?? [90, 100, 220];
-  const background = dark ? 0 : 255;
-  const composed = channels.map((channel) => (glass ? channel * 0.72 + background * 0.28 : channel) / 255);
+  const composed = channels.map((channel) => channel / 255);
   const linear = composed.map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
   const luminance = linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
   return luminance > 0.32 ? '#16213B' : '#FFFFFF';
@@ -95,7 +97,6 @@ function DraggableCourse({ course, left, top, width, height, ink, compact, onMov
       {dragging ? <Animated.View pointerEvents="none" style={[styles.dropTarget, { left, top, width, height, borderColor: `${course.color}B8`, backgroundColor: `${course.color}16` }, previewStyle]}><Text style={[styles.dropHint, { color: course.color }]}>释放调整</Text></Animated.View> : null}
       <Animated.View
         {...responder.panHandlers}
-        entering={FadeIn.duration(180).reduceMotion(ReduceMotion.System)}
         layout={gentleLayout}
         accessibilityRole="adjustable"
         accessibilityLabel={`${course.name}，按住拖动调整课程时间`}

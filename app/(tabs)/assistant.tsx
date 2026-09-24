@@ -3,11 +3,11 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import Animated, { FadeIn, FadeInLeft, FadeInRight, ReduceMotion } from 'react-native-reanimated';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon } from '@/components/app-icon';
-import { gentleLayout, MotionPressable } from '@/components/motion';
+import { gentleLayout, motion, MotionPressable } from '@/components/motion';
 import { GlassBackdrop, Pill, Screen } from '@/components/ui';
 import { hasAIKey } from '@/src/ai-config';
 import { parseAssistantInput, parseLocally } from '@/src/assistant';
@@ -129,11 +129,11 @@ export default function AssistantScreen() {
           {messages.map((message) => (
             <Animated.View
               key={message.id}
-              entering={(message.role === 'user' ? FadeInRight : FadeInLeft).duration(190).reduceMotion(ReduceMotion.System)}
+              entering={FadeIn.duration(motion.standard).reduceMotion(ReduceMotion.System)}
               layout={gentleLayout}
               style={[styles.messageWrap, message.role === 'user' && styles.userWrap]}
             >
-              {message.role === 'assistant' ? <Animated.View entering={FadeIn.delay(100).reduceMotion(ReduceMotion.System)} style={[styles.botAvatar, { backgroundColor: theme.primary }]}><AppIcon ios="sparkles" android="auto_awesome" color="#FFFFFF" size={15} fallback="✦" /></Animated.View> : null}
+              {message.role === 'assistant' ? <View style={[styles.botAvatar, { backgroundColor: theme.primary }]}><AppIcon ios="sparkles" android="auto_awesome" color="#FFFFFF" size={15} fallback="✦" /></View> : null}
               <View style={[styles.bubble, message.role === 'user' ? { backgroundColor: theme.primary } : { backgroundColor: theme.surface }, message.role === 'user' && styles.userBubble]}>
                 <Text style={[styles.messageText, { color: message.role === 'user' ? '#FFFFFF' : theme.text }]}>{message.text}</Text>
                 {message.detail ? <Text style={[styles.detail, { color: message.role === 'user' ? '#EEEEFF' : theme.secondary }]}>{message.detail}</Text> : null}
@@ -145,7 +145,7 @@ export default function AssistantScreen() {
                       <AppIcon ios={expanded[message.id] ? 'chevron.up' : 'chevron.down'} android={expanded[message.id] ? 'keyboard_arrow_up' : 'keyboard_arrow_down'} color={theme.primary} size={14} />
                     </MotionPressable>
                     {expanded[message.id] ? (
-                      <Animated.View entering={FadeIn.duration(150).reduceMotion(ReduceMotion.System)} style={[styles.processList, { borderColor: theme.line, backgroundColor: theme.surfaceAlt }]}>
+                      <Animated.View entering={FadeIn.duration(motion.quick).reduceMotion(ReduceMotion.System)} style={[styles.processList, { borderColor: theme.line, backgroundColor: theme.surfaceAlt }]}>
                         {message.processSummary.map((step, index) => <View key={`${message.id}-${index}`} style={styles.processStep}><View style={[styles.processDot, { backgroundColor: theme.primary }]} /><Text style={[styles.processText, { color: theme.secondary }]}>{step}</Text></View>)}
                         <Text style={[styles.processNote, { color: theme.secondary }]}>这是可核对的结果摘要，不展示模型内部草稿。</Text>
                       </Animated.View>
@@ -155,7 +155,7 @@ export default function AssistantScreen() {
               </View>
             </Animated.View>
           ))}
-          {loading ? <Animated.View entering={FadeIn.duration(180).reduceMotion(ReduceMotion.System)} style={styles.loadingRow}><ActivityIndicator color={theme.primary} /><Text style={[styles.loadingText, { color: theme.secondary }]}>{app.data.settings.aiThinking ? loadingStages[loadingStage] : '正在理解并整理…'}</Text></Animated.View> : null}
+          {loading ? <Animated.View entering={FadeIn.duration(motion.quick).reduceMotion(ReduceMotion.System)} style={styles.loadingRow}><ActivityIndicator color={theme.primary} /><Text style={[styles.loadingText, { color: theme.secondary }]}>{app.data.settings.aiThinking ? loadingStages[loadingStage] : '正在理解并整理…'}</Text></Animated.View> : null}
         </ScrollView>
         <View style={styles.composerDock}>
           <View style={styles.examples}>

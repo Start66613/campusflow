@@ -1,11 +1,11 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 
 import { gentleEnter, MotionPressable } from '@/components/motion';
-import { Card, Pill, Screen, SectionTitle } from '@/components/ui';
+import { Card, GlassBackdrop, Pill, Screen, SectionTitle } from '@/components/ui';
 import { currentWeek, formatDateTime, nextCourse, relativeDue, weekdays } from '@/src/date';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
@@ -49,7 +49,7 @@ export default function HomeScreen() {
               </View>
             </>
           ) : <Text style={styles.heroTitle}>近期没有课程</Text>}
-          <FloatingGlow />
+          <View pointerEvents="none" style={styles.heroGlow} />
         </LinearGradient>
       </Animated.View>
 
@@ -102,26 +102,19 @@ export default function HomeScreen() {
 
 function QuickAction({ icon, label, color, delay, onPress }: { icon: string; label: string; color: string; delay: number; onPress: () => void }) {
   const theme = useAppTheme();
+  const { data } = useApp();
+  const glass = data.settings.visualMode === 'glass';
   return (
     <Animated.View entering={gentleEnter(delay)} style={styles.quick}>
-      <MotionPressable onPress={onPress} pressedScale={0.91} style={styles.quickPressable}>
-        <View style={[styles.quickIcon, { backgroundColor: color }]}><Text style={styles.quickGlyph}>{icon}</Text></View>
+      <MotionPressable onPress={onPress} style={styles.quickPressable}>
+        <View style={[styles.quickIcon, { backgroundColor: glass ? 'transparent' : color }]}>
+          {glass ? <GlassBackdrop radius={19} tintColor={color} tintStrength="soft" /> : null}
+          <Text style={[styles.quickGlyph, { color: theme.text }]}>{icon}</Text>
+        </View>
         <Text style={[styles.quickLabel, { color: theme.text }]}>{label}</Text>
       </MotionPressable>
     </Animated.View>
   );
-}
-
-function FloatingGlow() {
-  const pulse = useSharedValue(0);
-  useEffect(() => {
-    pulse.value = withRepeat(withTiming(1, { duration: 2400, reduceMotion: ReduceMotion.System }), -1, true);
-  }, [pulse]);
-  const style = useAnimatedStyle(() => ({
-    opacity: 0.45 + pulse.value * 0.35,
-    transform: [{ scale: 1 + pulse.value * 0.14 }, { translateX: pulse.value * -8 }],
-  }));
-  return <Animated.View style={[styles.heroGlow, style]} />;
 }
 
 const styles = StyleSheet.create({
@@ -145,7 +138,7 @@ const styles = StyleSheet.create({
   quick: { width: '23%', alignItems: 'center' },
   quickPressable: { width: '100%', alignItems: 'center' },
   quickIcon: { width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  quickGlyph: { fontSize: 23, color: '#4B4D63', fontWeight: '800' },
+  quickGlyph: { fontSize: 23, fontWeight: '800' },
   quickLabel: { fontSize: 12, fontWeight: '600' },
   metricRow: { flexDirection: 'row', gap: 12 },
   metricCard: { flex: 1, padding: 16 },

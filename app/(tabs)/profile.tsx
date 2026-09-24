@@ -5,6 +5,7 @@ import { Alert, Platform, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { AppIcon, type AppIconProps } from '@/components/app-icon';
 import { MotionPressable } from '@/components/motion';
+import { SegmentedControl } from '@/components/segmented-control';
 import { Card, Screen, SectionTitle } from '@/components/ui';
 import { scheduleStudyReminder, scheduleWakeReminder } from '@/src/notifications';
 import { useApp } from '@/src/store';
@@ -46,20 +47,24 @@ export default function ProfileScreen() {
         <SettingRow icon={{ ios: 'brain.head.profile.fill', android: 'psychology' }} title="AI 深度思考" subtitle="复杂表达会多一步核对，并显示处理摘要" right={<Switch value={data.settings.aiThinking} onValueChange={(value) => updateSettings({ aiThinking: value })} trackColor={{ true: theme.primary }} />} last />
       </Card>
       <SectionTitle title="显示模式" />
-      <View style={[styles.themeRow, { backgroundColor: theme.surfaceAlt }]}>
-        {([['system', '跟随系统'], ['light', '浅色'], ['dark', '深色'], ['eye', '护眼']] as [ThemeMode, string][]).map(([value, label]) => (
-          <MotionPressable key={value} onPress={() => updateSettings({ themeMode: value })} style={[styles.themeItem, data.settings.themeMode === value && styles.themeActive, data.settings.themeMode === value && { backgroundColor: theme.surface, shadowColor: theme.shadow }]}><Text style={[styles.themeText, { color: data.settings.themeMode === value ? theme.primary : theme.secondary }]}>{label}</Text></MotionPressable>
-        ))}
-      </View>
+      <SegmentedControl
+        items={[{ value: 'system', label: '跟随系统' }, { value: 'light', label: '浅色' }, { value: 'dark', label: '深色' }, { value: 'eye', label: '护眼' }]}
+        value={data.settings.themeMode}
+        onChange={(value) => updateSettings({ themeMode: value as ThemeMode })}
+      />
       <SectionTitle title="界面质感" />
-      <View style={[styles.visualRow, { backgroundColor: theme.surfaceAlt }]}>
-        {([['glass', '液态玻璃'], ['native', '经典原生']] as [VisualMode, string][]).map(([value, label]) => (
-          <MotionPressable key={value} onPress={() => updateSettings({ visualMode: value })} style={[styles.visualItem, data.settings.visualMode === value && styles.themeActive, data.settings.visualMode === value && { backgroundColor: theme.surface, shadowColor: theme.shadow }]}>
-            <AppIcon ios={value === 'glass' ? 'drop.fill' : 'rectangle.inset.filled'} android={value === 'glass' ? 'blur_on' : 'view_agenda'} color={data.settings.visualMode === value ? theme.primary : theme.secondary} size={18} />
-            <Text style={[styles.themeText, { color: data.settings.visualMode === value ? theme.primary : theme.secondary }]}>{label}</Text>
-          </MotionPressable>
-        ))}
-      </View>
+      <SegmentedControl
+        items={([
+          ['glass', '液态玻璃', 'drop.fill', 'blur_on'],
+          ['native', '经典原生', 'rectangle.inset.filled', 'view_agenda'],
+        ] as const).map(([value, label, ios, android]) => ({
+          value,
+          label,
+          icon: <AppIcon ios={ios} android={android} color={data.settings.visualMode === value ? theme.primary : theme.secondary} size={18} />,
+        }))}
+        value={data.settings.visualMode}
+        onChange={(value) => updateSettings({ visualMode: value as VisualMode })}
+      />
       <Text style={[styles.visualNote, { color: theme.secondary }]}>{nativeGlass && !reduceTransparency ? '当前设备支持原生 Liquid Glass；iOS 27“设置 > 外观 > Liquid Glass”滑杆会由系统自动作用于原生材质。' : Platform.OS === 'ios' && reduceTransparency ? '已跟随系统“降低透明度”设置，改用更清晰的不透明材质。' : Platform.OS === 'ios' ? '当前设备显示兼容材质；原生效果需要 iOS 26 及系统 API 支持。' : 'Android 使用高对比玻璃模拟材质；苹果原生 Liquid Glass 仅在兼容的 iPhone 上可用。'}</Text>
       <SectionTitle title="数据与同步" />
       <Card style={styles.listCard}>
@@ -86,6 +91,5 @@ const styles = StyleSheet.create({
   profileHeader: { flexDirection: 'row', alignItems: 'center', gap: 15, paddingTop: 12, marginBottom: 22 }, avatar: { width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }, name: { fontSize: 27, fontWeight: '800', letterSpacing: -0.7, marginBottom: 5 }, school: { fontSize: 13 },
   actionRow: { flexDirection: 'row', gap: 10 }, smallAction: { flex: 1, gap: 7, alignItems: 'center', borderRadius: 21, paddingVertical: 15, borderWidth: StyleSheet.hairlineWidth, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 1 }, smallLabel: { fontSize: 12, fontWeight: '600' },
   listCard: { paddingVertical: 0, paddingHorizontal: 15 }, settingRow: { minHeight: 74, flexDirection: 'row', alignItems: 'center', gap: 12 }, settingIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, settingTitle: { fontSize: 15, fontWeight: '600', marginBottom: 4 }, settingSubtitle: { fontSize: 11.5 }, chevron: { fontSize: 25 },
-  themeRow: { flexDirection: 'row', padding: 3, borderRadius: 14 }, themeItem: { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: 11 }, themeActive: { shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 5, elevation: 2 }, themeText: { fontSize: 12, fontWeight: '600' },
-  visualRow: { flexDirection: 'row', padding: 4, borderRadius: 17, gap: 4 }, visualItem: { flex: 1, minHeight: 48, borderRadius: 14, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' }, visualNote: { fontSize: 11, lineHeight: 17, marginTop: 8, paddingHorizontal: 4 }, version: { textAlign: 'center', fontSize: 11, marginTop: 28 },
+  visualNote: { fontSize: 11, lineHeight: 17, marginTop: 8, paddingHorizontal: 4 }, version: { textAlign: 'center', fontSize: 11, marginTop: 28 },
 });
