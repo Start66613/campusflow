@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, type PropsWithChildren, useContext, useEffect, useMemo, useReducer, useState } from 'react';
 
 import { initialData } from './seed';
-import type { AppData, AppSettings, CalendarItem, Course, Expense, Grade, Task } from './types';
+import type { AppData, AppSettings, CalendarItem, Course, Expense, Grade, GradeCategory, Task } from './types';
 import { updateNextClassWidget } from './widget';
 
 const STORAGE_KEY = 'campusflow.data.v1';
@@ -17,6 +17,7 @@ type Action =
   | { type: 'updateCourse'; course: Course }
   | { type: 'addGrade'; grade: Grade }
   | { type: 'replaceGrades'; grades: Grade[] }
+  | { type: 'gradeCategory'; id: string; category: GradeCategory }
   | { type: 'addFocus'; minutes: number }
   | { type: 'settings'; settings: Partial<AppSettings> }
   | { type: 'reset' };
@@ -31,7 +32,16 @@ function reducer(state: AppData, action: Action): AppData {
     case 'replaceCourses': return { ...state, courses: action.courses };
     case 'updateCourse': return { ...state, courses: state.courses.map((course) => course.id === action.course.id ? action.course : course) };
     case 'addGrade': return { ...state, grades: [action.grade, ...state.grades] };
-    case 'replaceGrades': return { ...state, grades: action.grades };
+    case 'replaceGrades': {
+      const manualCategories = new Map(state.grades
+        .filter((grade) => grade.categoryManual)
+        .map((grade) => [`${grade.semester}|${grade.course}`, grade.category]));
+      return { ...state, grades: action.grades.map((grade) => {
+        const manualCategory = manualCategories.get(`${grade.semester}|${grade.course}`);
+        return manualCategory ? { ...grade, category: manualCategory, categoryManual: true } : grade;
+      }) };
+    }
+    case 'gradeCategory': return { ...state, grades: state.grades.map((grade) => grade.id === action.id ? { ...grade, category: action.category, categoryManual: true } : grade) };
     case 'addFocus': return { ...state, focusMinutesThisWeek: state.focusMinutesThisWeek + action.minutes };
     case 'settings': return { ...state, settings: { ...state.settings, ...action.settings } };
     case 'reset': return initialData;
@@ -50,6 +60,7 @@ type AppContextValue = {
   updateCourse: (course: Course) => void;
   addGrade: (grade: Omit<Grade, 'id'>) => void;
   replaceGrades: (grades: Grade[]) => void;
+  updateGradeCategory: (id: string, category: GradeCategory) => void;
   addFocus: (minutes: number) => void;
   updateSettings: (settings: Partial<AppSettings>) => void;
   resetData: () => void;
@@ -99,6 +110,7 @@ export function AppProvider({ children }: PropsWithChildren) {
     updateCourse: (course) => dispatch({ type: 'updateCourse', course }),
     addGrade: (grade) => dispatch({ type: 'addGrade', grade: { ...grade, id: makeId('grade') } }),
     replaceGrades: (grades) => dispatch({ type: 'replaceGrades', grades }),
+    updateGradeCategory: (id, category) => dispatch({ type: 'gradeCategory', id, category }),
     addFocus: (minutes) => dispatch({ type: 'addFocus', minutes }),
     updateSettings: (settings) => dispatch({ type: 'settings', settings }),
     resetData: () => dispatch({ type: 'reset' }),

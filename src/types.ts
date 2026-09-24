@@ -43,6 +43,8 @@ export type CalendarItem = {
   kind: 'study' | 'life' | 'exam';
 };
 
+export type GradeCategory = 'required' | 'elective' | 'unknown';
+
 export type Grade = {
   id: string;
   course: string;
@@ -50,6 +52,9 @@ export type Grade = {
   credit: number;
   gpa: number;
   semester: string;
+  courseNature?: string;
+  category?: GradeCategory;
+  categoryManual?: boolean;
 };
 
 export type Attendance = {

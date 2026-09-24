@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
 import { isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
 import type { ReactNode } from 'react';
-import { Alert, Platform, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
 
 import { AppIcon, type AppIconProps } from '@/components/app-icon';
 import { MotionPressable } from '@/components/motion';
 import { SegmentedControl } from '@/components/segmented-control';
+import { SettingToggle } from '@/components/setting-toggle';
 import { Card, Screen, SectionTitle } from '@/components/ui';
 import { scheduleStudyReminder, scheduleWakeReminder } from '@/src/notifications';
 import { useApp } from '@/src/store';
@@ -42,9 +43,9 @@ export default function ProfileScreen() {
       </View>
       <SectionTitle title="智能提醒" />
       <Card style={styles.listCard}>
-        <SettingRow icon={{ ios: 'book.fill', android: 'menu_book' }} title="空闲学习提醒" subtitle="根据课表寻找无课时间" right={<Switch value={data.settings.studyReminders} onValueChange={toggleStudy} trackColor={{ true: theme.primary }} />} />
+        <SettingRow icon={{ ios: 'book.fill', android: 'menu_book' }} title="空闲学习提醒" subtitle="根据课表寻找无课时间" right={<SettingToggle label="空闲学习提醒" value={data.settings.studyReminders} onValueChange={toggleStudy} />} />
         <SettingRow icon={{ ios: 'alarm.fill', android: 'alarm' }} title="早八起床提醒" subtitle={`${String(data.settings.wakeHour).padStart(2, '0')}:${String(data.settings.wakeMinute).padStart(2, '0')} · 点击重新设置`} onPress={setAlarm} />
-        <SettingRow icon={{ ios: 'brain.head.profile.fill', android: 'psychology' }} title="AI 深度思考" subtitle="复杂表达会多一步核对，并显示处理摘要" right={<Switch value={data.settings.aiThinking} onValueChange={(value) => updateSettings({ aiThinking: value })} trackColor={{ true: theme.primary }} />} last />
+        <SettingRow icon={{ ios: 'brain.head.profile.fill', android: 'psychology' }} title="AI 深度思考" subtitle="复杂表达会多一步核对，并显示处理摘要" right={<SettingToggle label="AI 深度思考" value={data.settings.aiThinking} onValueChange={(value) => updateSettings({ aiThinking: value })} />} last />
       </Card>
       <SectionTitle title="显示模式" />
       <SegmentedControl
@@ -84,12 +85,14 @@ function SmallAction({ icon, label, onPress }: { icon: IconSpec; label: string; 
 
 function SettingRow({ icon, title, subtitle, right, onPress, last = false }: { icon: IconSpec; title: string; subtitle: string; right?: ReactNode; onPress?: () => void; last?: boolean }) {
   const theme = useAppTheme();
-  return <MotionPressable onPress={onPress} style={[styles.settingRow, !last && { borderBottomColor: theme.line, borderBottomWidth: StyleSheet.hairlineWidth }]}><View style={[styles.settingIcon, { backgroundColor: theme.surfaceAlt }]}><AppIcon {...icon} color={theme.primary} size={19} /></View><View style={{ flex: 1 }}><Text style={[styles.settingTitle, { color: theme.text }]}>{title}</Text><Text style={[styles.settingSubtitle, { color: theme.secondary }]}>{subtitle}</Text></View>{right ?? <AppIcon ios="chevron.right" android="chevron_right" color={theme.secondary} size={17} />}</MotionPressable>;
+  const rowStyle = [styles.settingRow, !last && { borderBottomColor: theme.line, borderBottomWidth: StyleSheet.hairlineWidth }];
+  const content = <><View style={[styles.settingIcon, { backgroundColor: theme.surfaceAlt }]}><AppIcon {...icon} color={theme.primary} size={19} /></View><View style={styles.settingCopy}><Text style={[styles.settingTitle, { color: theme.text }]}>{title}</Text><Text style={[styles.settingSubtitle, { color: theme.secondary }]}>{subtitle}</Text></View>{right ? <View style={styles.settingTrailing}>{right}</View> : <AppIcon ios="chevron.right" android="chevron_right" color={theme.secondary} size={17} />}</>;
+  return onPress ? <MotionPressable onPress={onPress} style={rowStyle}>{content}</MotionPressable> : <View style={rowStyle}>{content}</View>;
 }
 
 const styles = StyleSheet.create({
   profileHeader: { flexDirection: 'row', alignItems: 'center', gap: 15, paddingTop: 12, marginBottom: 22 }, avatar: { width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }, name: { fontSize: 27, fontWeight: '800', letterSpacing: -0.7, marginBottom: 5 }, school: { fontSize: 13 },
   actionRow: { flexDirection: 'row', gap: 10 }, smallAction: { flex: 1, gap: 7, alignItems: 'center', borderRadius: 21, paddingVertical: 15, borderWidth: StyleSheet.hairlineWidth, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 1 }, smallLabel: { fontSize: 12, fontWeight: '600' },
-  listCard: { paddingVertical: 0, paddingHorizontal: 15 }, settingRow: { minHeight: 74, flexDirection: 'row', alignItems: 'center', gap: 12 }, settingIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, settingTitle: { fontSize: 15, fontWeight: '600', marginBottom: 4 }, settingSubtitle: { fontSize: 11.5 }, chevron: { fontSize: 25 },
+  listCard: { paddingVertical: 0, paddingHorizontal: 15 }, settingRow: { minHeight: 74, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }, settingIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, settingCopy: { flex: 1, minWidth: 0 }, settingTrailing: { width: 56, height: 48, alignItems: 'center', justifyContent: 'center' }, settingTitle: { fontSize: 15, fontWeight: '600', marginBottom: 4 }, settingSubtitle: { fontSize: 11.5, lineHeight: 17 }, chevron: { fontSize: 25 },
   visualNote: { fontSize: 11, lineHeight: 17, marginTop: 8, paddingHorizontal: 4 }, version: { textAlign: 'center', fontSize: 11, marginTop: 28 },
 });

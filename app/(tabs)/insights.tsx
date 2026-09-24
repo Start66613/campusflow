@@ -1,20 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 
-import { gentleEnter, gentleLayout } from '@/components/motion';
+import { gentleEnter, gentleLayout, MotionPressable } from '@/components/motion';
 import { SegmentedControl } from '@/components/segmented-control';
 import { Card, Pill, Screen, SectionTitle } from '@/components/ui';
 import { formatCurrency } from '@/src/date';
+import { gradeCategory, summarizeGrades } from '@/src/grades';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
 
 export default function InsightsScreen() {
   const theme = useAppTheme();
-  const { data } = useApp();
+  const { data, updateGradeCategory } = useApp();
   const [mode, setMode] = useState<'overview' | 'grades'>('overview');
-  const totalCredits = data.grades.reduce((sum, grade) => sum + grade.credit, 0);
-  const gpa = totalCredits ? data.grades.reduce((sum, grade) => sum + grade.gpa * grade.credit, 0) / totalCredits : 0;
+  const gradeSummary = useMemo(() => summarizeGrades(data.grades), [data.grades]);
   const weekExpense = data.expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const completed = data.tasks.filter((task) => task.completed).length;
   const completion = data.tasks.length ? completed / data.tasks.length : 0;
@@ -60,16 +61,26 @@ export default function InsightsScreen() {
       ) : (
         <Animated.View key="grades" entering={gentleEnter()} layout={gentleLayout}>
           <Card glassSurface={false} style={[styles.gpaHero, { backgroundColor: theme.primary }]}>
-            <Text style={styles.gpaLabel}>加权 GPA</Text><Text style={styles.gpaValue}>{gpa.toFixed(2)}</Text><Text style={styles.gpaMeta}>{totalCredits} 学分 · 4.0 满绩</Text>
+            <Text style={styles.gpaLabel}>必修课 GPA</Text><Text style={styles.gpaValue}>{gradeSummary.gpa?.toFixed(2) ?? '--'}</Text><Text style={styles.gpaMeta}>{gradeSummary.requiredCredits} 必修学分 · 4.0 满绩</Text>
           </Card>
-          <SectionTitle title="课程成绩" action="教务同步" />
+          <Card style={styles.creditCard}>
+            <View style={styles.creditRow}><Text style={[styles.creditLabel, { color: theme.secondary }]}>已获选修学分</Text><Text style={[styles.creditValue, { color: theme.text }]}>{gradeSummary.electiveCredits}</Text></View>
+            <Text style={[styles.creditNote, { color: theme.secondary }]}>选修课只计入上方学分，不参与此处必修课 GPA；其他用途的官方绩点请以教务系统为准。</Text>
+            {gradeSummary.unknownCount > 0 ? <Text style={[styles.unknownNote, { color: theme.orange }]}>{gradeSummary.unknownCount} 门课程性质待确认，暂未纳入计算。点下方课程可更正。</Text> : null}
+          </Card>
+          <SectionTitle title="课程成绩" action="教务同步" onAction={() => router.push('/school')} />
           <Card style={styles.gradeList}>
             {data.grades.map((grade, index) => (
-              <View key={grade.id} style={[styles.gradeRow, index > 0 && { borderTopColor: theme.line, borderTopWidth: StyleSheet.hairlineWidth }]}>
+              <MotionPressable key={grade.id} accessibilityRole="button" accessibilityLabel={`${grade.course}，设置课程性质`} onPress={() => Alert.alert('设置课程性质', `${grade.course}${grade.courseNature ? ` · 教务：${grade.courseNature}` : ''}`, [
+                { text: '必修课', onPress: () => updateGradeCategory(grade.id, 'required') },
+                { text: '选修课', onPress: () => updateGradeCategory(grade.id, 'elective') },
+                { text: '暂不确定', onPress: () => updateGradeCategory(grade.id, 'unknown') },
+                { text: '取消', style: 'cancel' },
+              ])} style={[styles.gradeRow, index > 0 && { borderTopColor: theme.line, borderTopWidth: StyleSheet.hairlineWidth }]}>
                 <View style={[styles.scoreBadge, { backgroundColor: grade.score >= 90 ? `${theme.green}22` : theme.primarySoft }]}><Text style={[styles.score, { color: grade.score >= 90 ? theme.green : theme.primary }]}>{grade.score}</Text></View>
-                <View style={{ flex: 1 }}><Text style={[styles.gradeName, { color: theme.text }]}>{grade.course}</Text><Text style={[styles.gradeMeta, { color: theme.secondary }]}>{grade.credit} 学分</Text></View>
+                <View style={{ flex: 1 }}><Text style={[styles.gradeName, { color: theme.text }]}>{grade.course}</Text><Text style={[styles.gradeMeta, { color: theme.secondary }]}>{grade.credit} 学分 · {gradeCategory(grade) === 'required' ? '必修' : gradeCategory(grade) === 'elective' ? '选修' : '待确认'}{grade.categoryManual ? ' · 已更正' : ''}</Text></View>
                 <Text style={[styles.gradeGpa, { color: theme.text }]}>{grade.gpa.toFixed(1)}</Text>
-              </View>
+              </MotionPressable>
             ))}
           </Card>
         </Animated.View>
@@ -100,5 +111,6 @@ const styles = StyleSheet.create({
   barRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 9 }, barLabel: { width: 45, fontSize: 13, fontWeight: '700' }, barTrack: { flex: 1, height: 8, borderRadius: 5, overflow: 'hidden' }, barFill: { width: '100%', height: 8, borderRadius: 5, transformOrigin: 'left center' }, barValue: { width: 44, textAlign: 'right', fontSize: 12, fontWeight: '700' },
   attendance: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, attendanceValue: { fontSize: 29, fontWeight: '900' }, attendanceLabel: { fontSize: 12, marginTop: 4 }, ring: { width: 52, height: 52, borderRadius: 26, borderWidth: 6, alignItems: 'center', justifyContent: 'center' }, ringEmoji: { fontSize: 18, color: '#2D9B75', fontWeight: '900' },
   gpaHero: { alignItems: 'center', paddingVertical: 28, borderColor: 'transparent' }, gpaLabel: { color: '#E8E9FF', fontSize: 13, fontWeight: '600' }, gpaValue: { color: '#FFFFFF', fontSize: 58, fontWeight: '800', letterSpacing: -2, marginVertical: 6 }, gpaMeta: { color: '#E8E9FF', fontSize: 12 },
+  creditCard: { marginTop: 12, paddingVertical: 16 }, creditRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, creditLabel: { fontSize: 13, fontWeight: '700' }, creditValue: { fontSize: 22, fontWeight: '800' }, creditNote: { fontSize: 11, lineHeight: 17, marginTop: 8 }, unknownNote: { fontSize: 11, lineHeight: 17, fontWeight: '700', marginTop: 8 },
   gradeList: { paddingVertical: 2 }, gradeRow: { flexDirection: 'row', alignItems: 'center', minHeight: 72, gap: 12 }, scoreBadge: { width: 47, height: 47, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }, score: { fontWeight: '900', fontSize: 16 }, gradeName: { fontSize: 15, fontWeight: '800', marginBottom: 4 }, gradeMeta: { fontSize: 12 }, gradeGpa: { fontSize: 17, fontWeight: '900' },
 });

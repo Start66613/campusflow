@@ -117,10 +117,11 @@ export default function AssistantScreen() {
   return (
     <Screen scroll={false}>
       <KeyboardAvoidingView
-        style={[styles.fill, { paddingBottom: dockClearance }]}
+        style={styles.keyboardFrame}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={0}
       >
+        <View style={[styles.fill, { paddingBottom: dockClearance }]}>
         <View style={styles.header}>
           <View><Text style={[styles.kicker, { color: theme.primary }]}>CAMPUS AI</Text><Text style={[styles.title, { color: theme.text }]}>一句话，记下来</Text></View>
           <MotionPressable onPress={() => router.push('/ai-settings')} style={[styles.online, { backgroundColor: theme.primarySoft }]}><View style={[styles.onlineDot, { backgroundColor: aiReady ? theme.green : theme.orange }]} /><Text style={[styles.onlineText, { color: theme.primary }]}>{aiReady ? 'DeepSeek' : '配置 AI'}</Text></MotionPressable>
@@ -184,13 +185,14 @@ export default function AssistantScreen() {
           </View>
           <Text style={[styles.disclaimer, { color: theme.secondary }]}>AI 可能会理解错时间，请在重要考试前核对一次。</Text>
         </View>
+        </View>
       </KeyboardAvoidingView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1, paddingHorizontal: 18 }, header: { paddingTop: 8, paddingBottom: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  keyboardFrame: { flex: 1 }, fill: { flex: 1, paddingHorizontal: 18 }, header: { paddingTop: 8, paddingBottom: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   kicker: { fontSize: 11, letterSpacing: 1.5, fontWeight: '700', marginBottom: 5 }, title: { fontSize: 32, fontWeight: '800', letterSpacing: -1.05 },
   online: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 99 }, onlineDot: { width: 7, height: 7, borderRadius: 4 }, onlineText: { fontSize: 11, fontWeight: '800' },
   messageList: { flex: 1 }, messages: { flexGrow: 1, paddingTop: 12, paddingBottom: 20, gap: 16 }, messageWrap: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, maxWidth: '92%' }, userWrap: { alignSelf: 'flex-end', justifyContent: 'flex-end' },

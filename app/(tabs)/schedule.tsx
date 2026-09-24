@@ -2,10 +2,10 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, PanResponder, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 import { AppIcon } from '@/components/app-icon';
-import { gentleLayout, MotionPressable } from '@/components/motion';
+import { MotionPressable } from '@/components/motion';
 import { Card, GlassBackdrop, PrimaryButton, Screen } from '@/components/ui';
 import { syncCoursesToSystemCalendar } from '@/src/calendar';
 import { currentWeek, dateForWeekday, weekdays } from '@/src/date';
@@ -17,7 +17,7 @@ import type { Course } from '@/src/types';
 // seven-day grid. The grid remains horizontally complete while scrolling
 // vertically only when the device is short.
 const rowHeight = 66;
-const timeColumnWidth = 24;
+const timeColumnWidth = 36;
 const periodStarts = ['08:00', '08:55', '10:10', '11:05', '14:00', '14:55', '16:10', '17:05', '19:00', '19:55', '20:50', '21:45'];
 const periodEnds = ['08:45', '09:40', '10:55', '11:50', '14:45', '15:40', '16:55', '17:50', '19:45', '20:40', '21:35', '22:30'];
 
@@ -65,19 +65,21 @@ function DraggableCourse({ course, left, top, width, height, ink, compact, onMov
       dragY.value = gesture.dy;
     },
     onPanResponderRelease: (_, gesture) => {
-      const dx = Math.round(gesture.dx / width);
-      const dy = Math.round(gesture.dy / rowHeight);
+      const dx = Math.min(7 - course.weekday, Math.max(1 - course.weekday, Math.round(gesture.dx / width)));
+      const dy = Math.min(12 - course.endPeriod, Math.max(1 - course.startPeriod, Math.round(gesture.dy / rowHeight)));
+      // Commit a single grid snap. The visual offset must not be replayed on
+      // top of the new left/top position (that was the "flying" release).
       onMove(course, dx, dy);
-      dragX.value = withSpring(0, { damping: 17, stiffness: 220, mass: 0.55, reduceMotion: ReduceMotion.System });
-      dragY.value = withSpring(0, { damping: 17, stiffness: 220, mass: 0.55, reduceMotion: ReduceMotion.System });
-      dragScale.value = withSpring(1, { damping: 18, stiffness: 240, mass: 0.42, reduceMotion: ReduceMotion.System });
+      dragX.value = 0;
+      dragY.value = 0;
+      dragScale.value = withTiming(1, { duration: 120, reduceMotion: ReduceMotion.System });
       setDragging(false);
       onDragState(course.id, false);
     },
     onPanResponderTerminate: () => {
-      dragX.value = withSpring(0, { damping: 17, stiffness: 220, mass: 0.55, reduceMotion: ReduceMotion.System });
-      dragY.value = withSpring(0, { damping: 17, stiffness: 220, mass: 0.55, reduceMotion: ReduceMotion.System });
-      dragScale.value = withSpring(1, { damping: 18, stiffness: 240, mass: 0.42, reduceMotion: ReduceMotion.System });
+      dragX.value = withTiming(0, { duration: 145, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System });
+      dragY.value = withTiming(0, { duration: 145, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System });
+      dragScale.value = withTiming(1, { duration: 120, reduceMotion: ReduceMotion.System });
       setDragging(false);
       onDragState(course.id, false);
     },
@@ -97,7 +99,6 @@ function DraggableCourse({ course, left, top, width, height, ink, compact, onMov
       {dragging ? <Animated.View pointerEvents="none" style={[styles.dropTarget, { left, top, width, height, borderColor: `${course.color}B8`, backgroundColor: `${course.color}16` }, previewStyle]}><Text style={[styles.dropHint, { color: course.color }]}>释放调整</Text></Animated.View> : null}
       <Animated.View
         {...responder.panHandlers}
-        layout={gentleLayout}
         accessibilityRole="adjustable"
         accessibilityLabel={`${course.name}，按住拖动调整课程时间`}
         style={[styles.courseBlock, { left, top, width, height, zIndex: dragging ? 10 : 1, shadowOpacity: dragging ? 0.2 : 0.1, backgroundColor: 'transparent' }, dragStyle]}
@@ -123,7 +124,7 @@ export default function ScheduleScreen() {
   const weekStart = dateForWeekday(1);
   const weekEnd = dateForWeekday(7);
   const days = Array.from({ length: 7 }, (_, index) => index + 1);
-  const gridWidth = Math.max(300, width - 48);
+  const gridWidth = Math.max(0, width - 48);
   const columnWidth = (gridWidth - timeColumnWidth) / 7;
   const compact = width < 400;
   const glass = data.settings.visualMode === 'glass';
@@ -166,7 +167,15 @@ export default function ScheduleScreen() {
               })}
             </View>
             <View style={[styles.grid, { height: 12 * rowHeight }]}>
-              {Array.from({ length: 12 }, (_, index) => <View key={index} style={[styles.gridLine, { top: index * rowHeight, borderTopColor: theme.line }]}><Text style={[styles.periodNumber, { color: theme.secondary }]}>{index + 1}</Text><Text style={[styles.periodTime, { color: theme.secondary }]}>{periodStarts[index]}</Text><Text style={[styles.periodTime, { color: theme.secondary }]}>{periodEnds[index]}</Text></View>)}
+              {Array.from({ length: 12 }, (_, index) => (
+                <View key={index} style={[styles.gridLine, { top: index * rowHeight, borderTopColor: theme.line }]}>
+                  <View style={styles.periodMarker}>
+                    <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[styles.periodTime, { color: theme.secondary }]}>{periodStarts[index]}</Text>
+                    <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[styles.periodNumber, { color: theme.secondary }]}>{index + 1}</Text>
+                    <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[styles.periodTime, { color: theme.secondary }]}>{periodEnds[index]}</Text>
+                  </View>
+                </View>
+              ))}
               {days.map((_, index) => <View key={index} style={[styles.verticalLine, { left: timeColumnWidth + index * columnWidth, borderLeftColor: theme.line }]} />)}
               {data.courses.filter((course) => course.weekday >= 1 && course.weekday <= 7 && course.weeks.includes(week)).map((course) => {
                 const ink = courseInk(course.color, glass, dark);
@@ -198,7 +207,10 @@ const styles = StyleSheet.create({
   importButton: { borderRadius: 17, paddingHorizontal: 15, paddingVertical: 10 }, importText: { fontWeight: '700', fontSize: 14 },
   gridCard: { padding: 6, borderRadius: 28, overflow: 'hidden' }, dayHeader: { flexDirection: 'row', height: 47, alignItems: 'center' }, dayCell: { alignItems: 'center', gap: 3 }, dayName: { fontSize: 11, fontWeight: '700' },
   dateDot: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, dayDate: { fontSize: 12, fontWeight: '700' }, grid: { position: 'relative' },
-  gridLine: { position: 'absolute', left: 0, right: 0, borderTopWidth: StyleSheet.hairlineWidth, height: rowHeight }, periodNumber: { position: 'absolute', width: timeColumnWidth, textAlign: 'center', top: 5, fontSize: 9, fontWeight: '800' }, periodTime: { width: timeColumnWidth, textAlign: 'center', fontSize: 6, lineHeight: 9 },
+  gridLine: { position: 'absolute', left: 0, right: 0, borderTopWidth: StyleSheet.hairlineWidth, height: rowHeight },
+  periodMarker: { width: timeColumnWidth, height: rowHeight, paddingVertical: 5, alignItems: 'center', justifyContent: 'space-between' },
+  periodNumber: { width: timeColumnWidth, textAlign: 'center', fontSize: 11, lineHeight: 14, fontWeight: '800' },
+  periodTime: { width: timeColumnWidth, textAlign: 'center', fontSize: 8, lineHeight: 10, fontVariant: ['tabular-nums'] },
   verticalLine: { position: 'absolute', top: 0, bottom: 0, borderLeftWidth: StyleSheet.hairlineWidth }, courseBlock: { position: 'absolute', borderRadius: 15, padding: 8, shadowColor: '#203060', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.1, shadowRadius: 9, elevation: 3 }, dropTarget: { position: 'absolute', borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 15, justifyContent: 'center', alignItems: 'center', zIndex: 0 }, dropHint: { fontSize: 8, fontWeight: '800', opacity: 0.8 }, courseGlyph: { width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.42)', alignItems: 'center', justifyContent: 'center', marginBottom: 5 },
   courseName: { color: '#FFFFFF', fontSize: 11, lineHeight: 14, fontWeight: '800', textShadowColor: 'rgba(20,22,45,0.28)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }, courseNameCompact: { fontSize: 10, lineHeight: 13 }, courseMeta: { color: 'rgba(255,255,255,0.96)', fontSize: 8.5, lineHeight: 10, marginTop: 4, fontWeight: '700', textShadowColor: 'rgba(20,22,45,0.24)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }, courseMetaCompact: { fontSize: 8, lineHeight: 9 }, courseTeacher: { fontSize: 8, lineHeight: 10, marginTop: 5, fontWeight: '700', opacity: 0.72 },
   buttonRow: { flexDirection: 'row', marginTop: 16 }, tip: { fontSize: 12, lineHeight: 18, marginTop: 10, paddingHorizontal: 4 },

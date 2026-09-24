@@ -1,4 +1,5 @@
 import { courseColors } from './theme';
+import { classifyGradeNature, xtuGradePoint } from './grades';
 import type { Course, CourseType, Grade } from './types';
 
 export type SchoolPageSnapshot = {
@@ -125,13 +126,19 @@ export function parseZfGradeRows(rows: ZfRow[], fallbackSemester = '湘潭大学
     if (!course || !rawScore) return null;
     const score = scoreNumber(rawScore);
     const credit = parseNumber(field(row, 'xf', 'credit'));
-    const providedGpa = parseNumber(field(row, 'jd', 'xfjd', 'gradePoint', 'gpa'));
-    const gpa = providedGpa || (score >= 60 ? Math.min(4, Math.max(1, (score - 50) / 10)) : 0);
+    const rawGpa = field(row, 'jd', 'gradePoint', 'gpa');
+    const rawQualityPoints = field(row, 'xfjd');
+    // 正方的「学分绩点」是学分 × 单课绩点，不可再乘一次学分。
+    const gpa = rawGpa ? parseNumber(rawGpa) : rawQualityPoints && credit > 0
+      ? parseNumber(rawQualityPoints) / credit : xtuGradePoint(score);
+    const courseNature = field(row, 'kcxzmc', 'kclbmc', 'kclxmc', 'courseNature');
+    const natureSignals = [courseNature, field(row, 'kcxz', 'kclb', 'courseCategory')].filter(Boolean).join(' ');
+    const category = classifyGradeNature(natureSignals);
     const year = field(row, 'xnmmc', 'xnmc', 'xnm', 'academicYear');
     const term = field(row, 'xqmmc', 'xqmc', 'xqm', 'semester');
     const semester = [year, term].filter(Boolean).join(' · ') || fallbackSemester;
     const identity = [semester, course, field(row, 'kch_id', 'kch'), rawScore].join('|');
-    return { id: `xtu-grade-${stableHash(identity)}`, course, score, credit, gpa, semester };
+    return { id: `xtu-grade-${stableHash(identity)}`, course, score, credit, gpa, semester, courseNature, category };
   }).filter((grade): grade is Grade => Boolean(grade));
   return [...new Map(grades.map((grade) => [`${grade.semester}|${grade.course}`, grade])).values()];
 }
@@ -145,16 +152,20 @@ function gradeFromRow(headers: string[], row: string[], index: number): Grade | 
   if (!course || !clean(rawScore)) return null;
   const creditIndex = findColumn(headers, [/学分/]);
   const gpaIndex = findColumn(headers, [/绩点/]);
+  const natureIndex = findColumn(headers, [/课程性质/, /课程类别/, /课程属性/, /修读性质/]);
   const yearIndex = findColumn(headers, [/学年/]);
   const termIndex = findColumn(headers, [/学期/]);
   const semester = [yearIndex >= 0 ? clean(row[yearIndex]) : '', termIndex >= 0 ? clean(row[termIndex]) : ''].filter(Boolean).join('-') || '湘潭大学教务';
   const score = scoreNumber(rawScore);
+  const courseNature = natureIndex >= 0 ? clean(row[natureIndex]) : '';
   return {
     id: `xtu-grade-${stableHash(`${semester}|${course}|${index}`)}`,
     course, score,
     credit: creditIndex >= 0 ? parseNumber(row[creditIndex]) : 0,
-    gpa: gpaIndex >= 0 ? parseNumber(row[gpaIndex]) : (score >= 60 ? Math.min(4, (score - 50) / 10) : 0),
+    gpa: gpaIndex >= 0 && clean(row[gpaIndex]) ? parseNumber(row[gpaIndex]) : xtuGradePoint(score),
     semester,
+    courseNature,
+    category: classifyGradeNature(courseNature),
   };
 }
 
