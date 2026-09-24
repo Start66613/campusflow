@@ -5,14 +5,14 @@
     "version": "1.0.0",
     "description": "AI 驱动的个人课表、任务、消费与专注助手。",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/icon-2026.png",
     "scheme": "campusflow",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.start66613.campusflow",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "用于选择课表或作业截图并进行智能识别。",
+        "NSPhotoLibraryUsageDescription": "用于选择头像、应用或课程背景，以及课表和作业图片进行智能识别。",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -22,10 +22,9 @@
         "android.permission.RECORD_AUDIO"
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#526DDE",
+        "foregroundImage": "./assets/images/android-icon-foreground-2026.png",
+        "monochromeImage": "./assets/images/android-icon-foreground-2026.png"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -36,7 +35,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/icon-2026.png"
     },
     "plugins": [
       "expo-router",
@@ -60,7 +59,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "用于选择课表或作业截图并进行智能识别。"
+          "photosPermission": "用于选择头像、应用或课程背景，以及课表和作业图片进行智能识别。"
         }
       ],
       [

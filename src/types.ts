@@ -1,4 +1,5 @@
 export type CourseType = 'major' | 'general' | 'lab' | 'elective';
+export type CourseIcon = 'book' | 'flask' | 'code' | 'atom' | 'art' | 'sport' | 'calendar' | 'sparkles';
 
 export type Course = {
   id: string;
@@ -13,6 +14,9 @@ export type Course = {
   weeks: number[];
   color: string;
   type: CourseType;
+  icon?: CourseIcon;
+  backgroundUri?: string;
+  customized?: boolean;
 };
 
 export type Task = {
@@ -65,10 +69,17 @@ export type Attendance = {
 
 export type ThemeMode = 'system' | 'light' | 'dark' | 'eye';
 export type VisualMode = 'glass' | 'native';
+export type AccentPreset = 'purple' | 'blue' | 'mint' | 'sky' | 'black' | 'coral' | 'rainbow';
 
 export type AppSettings = {
   displayName: string;
   schoolName: string;
+  major?: string;
+  studyGoal?: string;
+  avatarUri?: string;
+  backgroundUri?: string;
+  backgroundOpacity?: number;
+  accentPreset?: AccentPreset;
   termStart: string;
   themeMode: ThemeMode;
   visualMode: VisualMode;

@@ -19,7 +19,8 @@ export default function ImportScreen() {
   const [busy, setBusy] = useState(false);
 
   const acceptCourses = (courses: Course[], source: string) => {
-    Alert.alert('识别完成', `${source}读取到 ${courses.length} 门课程，是否替换当前课表？`, [
+    if (!courses.length) return Alert.alert('没有识别到完整课程', '请检查图片中是否有课程名称、星期、节次和上课周次；原课表未更改。');
+    Alert.alert('识别完成', `${source}读取到 ${courses.length} 门课程，是否替换当前课表？手动添加或编辑过的课程也会被替换。`, [
       { text: '取消', style: 'cancel' },
       { text: '导入', onPress: () => { app.replaceCourses(courses); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); router.back(); } },
     ]);

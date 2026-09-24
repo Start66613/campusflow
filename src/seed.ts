@@ -70,6 +70,8 @@ export const initialData: AppData = {
     schoolName: '我的大学',
     termStart: '2026-09-07',
     themeMode: 'system',
+    accentPreset: 'purple',
+    backgroundOpacity: 0.42,
     visualMode: 'glass',
     aiThinking: true,
     wakeHour: 7,

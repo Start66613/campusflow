@@ -27,6 +27,13 @@ export const gentleEnter = (delay = 0) => new Keyframe({
   100: { transform: [{ translateY: 0 }], easing: Easing.out(Easing.cubic) },
 }).delay(delay).duration(motion.standard).reduceMotion(ReduceMotion.System);
 
+// A short directional slide makes week changes legible without fading native
+// GlassView ancestors or adding a spring to timetable cards.
+export const weekSlideIn = (direction: number) => new Keyframe({
+  0: { transform: [{ translateX: direction * 14 }] },
+  100: { transform: [{ translateX: 0 }], easing: Easing.out(Easing.cubic) },
+}).duration(205).reduceMotion(ReduceMotion.System);
+
 export const gentleLayout = LinearTransition
   .springify()
   .damping(motion.spring.damping)

@@ -14,6 +14,10 @@ type Action =
   | { type: 'addExpense'; expense: Expense }
   | { type: 'addEvent'; event: CalendarItem }
   | { type: 'replaceCourses'; courses: Course[] }
+  | { type: 'mergeSchoolCourses'; courses: Course[] }
+  | { type: 'addCourse'; course: Course }
+  | { type: 'addCourses'; courses: Course[] }
+  | { type: 'deleteCourse'; id: string }
   | { type: 'updateCourse'; course: Course }
   | { type: 'addGrade'; grade: Grade }
   | { type: 'replaceGrades'; grades: Grade[] }
@@ -30,7 +34,25 @@ function reducer(state: AppData, action: Action): AppData {
     case 'addExpense': return { ...state, expenses: [action.expense, ...state.expenses] };
     case 'addEvent': return { ...state, events: [action.event, ...state.events] };
     case 'replaceCourses': return { ...state, courses: action.courses };
-    case 'updateCourse': return { ...state, courses: state.courses.map((course) => course.id === action.course.id ? action.course : course) };
+    case 'mergeSchoolCourses': {
+      const customized = new Map(state.courses.filter((course) => course.customized).map((course) => [course.id, course]));
+      const incoming = action.courses.map((course) => customized.get(course.id) ?? course);
+      const incomingIds = new Set(incoming.map((course) => course.id));
+      return { ...state, courses: [...incoming, ...state.courses.filter((course) => course.customized && !incomingIds.has(course.id))] };
+    }
+    case 'addCourse': return { ...state, courses: [...state.courses, { ...action.course, customized: true }] };
+    case 'addCourses': {
+      const existing = new Set(state.courses.map((course) => `${course.name.trim()}|${course.weekday}|${course.startPeriod}|${course.endPeriod}|${course.weeks.join(',')}`));
+      const incoming = action.courses.filter((course) => {
+        const key = `${course.name.trim()}|${course.weekday}|${course.startPeriod}|${course.endPeriod}|${course.weeks.join(',')}`;
+        if (existing.has(key)) return false;
+        existing.add(key);
+        return true;
+      });
+      return { ...state, courses: [...state.courses, ...incoming.map((course) => ({ ...course, customized: true }))] };
+    }
+    case 'deleteCourse': return { ...state, courses: state.courses.filter((course) => course.id !== action.id) };
+    case 'updateCourse': return { ...state, courses: state.courses.map((course) => course.id === action.course.id ? { ...action.course, customized: true } : course) };
     case 'addGrade': return { ...state, grades: [action.grade, ...state.grades] };
     case 'replaceGrades': {
       const manualCategories = new Map(state.grades
@@ -57,6 +79,10 @@ type AppContextValue = {
   addExpense: (expense: Omit<Expense, 'id'>) => void;
   addEvent: (event: Omit<CalendarItem, 'id'>) => void;
   replaceCourses: (courses: Course[]) => void;
+  mergeSchoolCourses: (courses: Course[]) => void;
+  addCourse: (course: Omit<Course, 'id'>) => void;
+  addCourses: (courses: Course[]) => void;
+  deleteCourse: (id: string) => void;
   updateCourse: (course: Course) => void;
   addGrade: (grade: Omit<Grade, 'id'>) => void;
   replaceGrades: (grades: Grade[]) => void;
@@ -107,6 +133,10 @@ export function AppProvider({ children }: PropsWithChildren) {
     addExpense: (expense) => dispatch({ type: 'addExpense', expense: { ...expense, id: makeId('expense') } }),
     addEvent: (event) => dispatch({ type: 'addEvent', event: { ...event, id: makeId('event') } }),
     replaceCourses: (courses) => dispatch({ type: 'replaceCourses', courses }),
+    mergeSchoolCourses: (courses) => dispatch({ type: 'mergeSchoolCourses', courses }),
+    addCourse: (course) => dispatch({ type: 'addCourse', course: { ...course, id: makeId('course') } }),
+    addCourses: (courses) => dispatch({ type: 'addCourses', courses: courses.map((course) => ({ ...course, id: makeId('course') })) }),
+    deleteCourse: (id) => dispatch({ type: 'deleteCourse', id }),
     updateCourse: (course) => dispatch({ type: 'updateCourse', course }),
     addGrade: (grade) => dispatch({ type: 'addGrade', grade: { ...grade, id: makeId('grade') } }),
     replaceGrades: (grades) => dispatch({ type: 'replaceGrades', grades }),

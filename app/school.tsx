@@ -168,7 +168,7 @@ export default function SchoolScreen() {
         setDetail('接口已连接，但没有识别到课程或成绩字段；教务页面可能刚刚更新。');
         return;
       }
-      if (courses.length) app.replaceCourses(courses);
+      if (courses.length) app.mergeSchoolCourses(courses);
       if (grades.length) app.replaceGrades(grades);
       setState('success');
       setDetail(`已自动导入 ${courses.length} 门课程、${grades.length} 门成绩，数据只保存在本机。`);

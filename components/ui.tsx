@@ -35,7 +35,13 @@ export function Screen({ children, scroll = true, scrollEnabled = true, style }:
   const dark = theme.background === '#000000';
   return (
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: theme.background }]}>
-      {glass ? (
+      {data.settings.backgroundUri ? (
+        <Image
+          source={{ uri: data.settings.backgroundUri }}
+          resizeMode="cover"
+          style={[StyleSheet.absoluteFill, { opacity: Math.min(0.82, Math.max(0.12, data.settings.backgroundOpacity ?? 0.42)) }]}
+        />
+      ) : glass ? (
         <Image
           source={require('../assets/images/glass-wallpaper-v1.png')}
           resizeMode="cover"
@@ -48,6 +54,7 @@ export function Screen({ children, scroll = true, scrollEnabled = true, style }:
         locations={[0, 0.48, 1]}
         style={StyleSheet.absoluteFill}
       />
+      {data.settings.accentPreset === 'rainbow' ? <LinearGradient pointerEvents="none" colors={['rgba(170,108,247,0.12)', 'rgba(93,191,248,0.09)', 'rgba(75,207,159,0.10)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} /> : null}
       <View pointerEvents="none" style={[styles.ambientOrb, styles.ambientOrbTop, { backgroundColor: `${theme.primary}0A` }]} />
       <View pointerEvents="none" style={[styles.ambientOrb, styles.ambientOrbBottom, { backgroundColor: `${theme.green}08` }]} />
       {content}

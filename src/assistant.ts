@@ -1,5 +1,7 @@
 import type { AssistantCommand, Course, ExpenseCategory, Task } from './types';
 import { getAIConfig } from './ai-config';
+import { periodEnds, periodStarts } from './periods';
+import { courseColors } from './theme';
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, '');
 const deepSeekUrl = 'https://api.deepseek.com/chat/completions';
@@ -9,8 +11,8 @@ Return only JSON in this exact shape: {"summary":["short user-facing step",...],
 - {"type":"expense","amount":number,"category":"餐饮|交通|学习|娱乐|生活|其他","note":string,"occurredAt":ISO8601}
 - {"type":"task","title":string,"dueAt":ISO8601,"courseName"?:string}
 - {"type":"event","title":string,"startAt":ISO8601,"endAt":ISO8601,"note"?:string}
-- {"type":"courses","courses":[{"id":string,"name":string,"teacher":string,"location":string,"weekday":1-7,"startPeriod":number,"endPeriod":number,"startTime":"HH:mm","endTime":"HH:mm","weeks":number[],"color":string,"type":"major|general|lab|elective"}]}
-Never invent a due time when the image or text does not contain one; use 20:00 local time only when a date is clear. Keep Chinese titles concise.`;
+- {"type":"courses","courses":[{"name":string,"teacher":string,"location":string,"weekday":1-7,"startPeriod":number,"endPeriod":number,"startTime":"HH:mm","endTime":"HH:mm","weeks":number[],"color":string,"type":"major|general|lab|elective"}]}
+When the user asks to add a class, lab session, or uploads a course arrangement, use the courses command. Extract each explicit class/week; never replace an existing timetable. Do not invent weekday, periods or weeks. If any essential scheduling field is missing, return no courses and explain what to clarify in summary. Never invent a due time when the image or text does not contain one; use 20:00 local time only when a date is clear. Keep Chinese titles concise.`;
 
 export type AssistantParseResult = {
   commands: AssistantCommand[];
@@ -37,6 +39,59 @@ function cleanSummary(value: unknown) {
     .slice(0, 3);
 }
 
+function validDate(value: unknown): value is string {
+  return typeof value === 'string' && Number.isFinite(Date.parse(value));
+}
+
+function sanitizeCommands(value: unknown): AssistantCommand[] {
+  if (!Array.isArray(value)) return [];
+  const categories: ExpenseCategory[] = ['餐饮', '交通', '学习', '娱乐', '生活', '其他'];
+  return value.slice(0, 30).flatMap((raw): AssistantCommand[] => {
+    if (!raw || typeof raw !== 'object') return [];
+    const command = raw as Record<string, unknown>;
+    if (command.type === 'courses') {
+      const courses = sanitizeAICourses(command.courses);
+      return courses.length ? [{ type: 'courses', courses }] : [];
+    }
+    if (command.type === 'expense') {
+      const amount = Number(command.amount);
+      if (!Number.isFinite(amount) || amount <= 0 || amount > 1_000_000) return [];
+      const category = categories.includes(command.category as ExpenseCategory) ? command.category as ExpenseCategory : '其他';
+      return [{ type: 'expense', amount, category, note: typeof command.note === 'string' ? command.note.trim().slice(0, 120) : '', occurredAt: validDate(command.occurredAt) ? command.occurredAt : new Date().toISOString() }];
+    }
+    if (command.type === 'task') {
+      const title = typeof command.title === 'string' ? command.title.trim().slice(0, 120) : '';
+      if (!title || !validDate(command.dueAt)) return [];
+      return [{ type: 'task', title, dueAt: command.dueAt, courseName: typeof command.courseName === 'string' ? command.courseName.slice(0, 80) : undefined }];
+    }
+    if (command.type === 'event') {
+      const title = typeof command.title === 'string' ? command.title.trim().slice(0, 120) : '';
+      if (!title || !validDate(command.startAt) || !validDate(command.endAt) || Date.parse(command.endAt) <= Date.parse(command.startAt)) return [];
+      return [{ type: 'event', title, startAt: command.startAt, endAt: command.endAt, note: typeof command.note === 'string' ? command.note.slice(0, 200) : undefined }];
+    }
+    return [];
+  });
+}
+
+export function sanitizeAICourses(value: unknown): Course[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 80).flatMap((raw, index) => {
+    if (!raw || typeof raw !== 'object') return [];
+    const item = raw as Record<string, unknown>;
+    const name = typeof item.name === 'string' ? item.name.trim().slice(0, 80) : '';
+    const weekday = Number(item.weekday);
+    const startPeriod = Number(item.startPeriod);
+    const endPeriod = Number(item.endPeriod);
+    const weeks = Array.isArray(item.weeks) ? [...new Set(item.weeks.map(Number).filter((week) => Number.isInteger(week) && week >= 1 && week <= 30))].sort((a, b) => a - b) : [];
+    if (!name || !Number.isInteger(weekday) || weekday < 1 || weekday > 7 || !Number.isInteger(startPeriod) || !Number.isInteger(endPeriod) || startPeriod < 1 || endPeriod > 12 || endPeriod < startPeriod || weeks.length === 0) return [];
+    const color = typeof item.color === 'string' && /^#[0-9a-fA-F]{6}$/.test(item.color) ? item.color : courseColors[index % courseColors.length];
+    const type = ['major', 'general', 'lab', 'elective'].includes(String(item.type)) ? item.type as Course['type'] : /实验|实训/.test(name) ? 'lab' : 'major';
+    const startTime = typeof item.startTime === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(item.startTime) ? item.startTime : periodStarts[startPeriod - 1];
+    const endTime = typeof item.endTime === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(item.endTime) ? item.endTime : periodEnds[endPeriod - 1];
+    return [{ id: `ai-course-${Date.now()}-${index}`, name, teacher: typeof item.teacher === 'string' ? item.teacher.trim().slice(0, 40) : '', location: typeof item.location === 'string' ? item.location.trim().slice(0, 60) : '', weekday, startPeriod, endPeriod, startTime, endTime, weeks, color, type }];
+  });
+}
+
 async function callDeepSeek(text: string, imageBase64?: string, thinking = false, context?: AssistantContext) {
   const config = await getAIConfig();
   if (!config.apiKey) return null;
@@ -58,7 +113,7 @@ async function callDeepSeek(text: string, imageBase64?: string, thinking = false
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: config.model,
+      model: imageBase64 ? 'deepseek-flash' : config.model,
       temperature: 0.1,
       ...(thinking ? { thinking: { type: 'enabled' }, reasoning_effort: 'high' } : {}),
       response_format: { type: 'json_object' },
@@ -77,7 +132,7 @@ async function callDeepSeek(text: string, imageBase64?: string, thinking = false
   if (!content) throw new Error('DeepSeek 没有返回可识别的内容');
   const result = extractJson(content);
   return {
-    commands: Array.isArray(result?.commands) ? result.commands as AssistantCommand[] : [],
+    commands: sanitizeCommands(result?.commands),
     processSummary: cleanSummary(result?.summary),
   };
 }
@@ -156,7 +211,7 @@ export async function parseAssistantInput(text: string, imageBase64?: string, th
   if (!response.ok) throw new Error(`AI 服务暂不可用（${response.status}）`);
   const result = await response.json();
   return {
-    commands: result.commands as AssistantCommand[],
+    commands: sanitizeCommands(result.commands),
     usedAI: true,
     processSummary: cleanSummary(result.summary).length ? cleanSummary(result.summary) : ['识别事项', '校验时间', '完成写入'],
   };
@@ -167,7 +222,7 @@ export async function parseTimetableImage(imageBase64: string): Promise<Course[]
   if (directResult) {
     const coursesCommand = directResult.commands.find((command) => command.type === 'courses');
     if (!coursesCommand || coursesCommand.type !== 'courses') throw new Error('图片里没有识别到完整课表');
-    return coursesCommand.courses;
+    return sanitizeAICourses(coursesCommand.courses);
   }
   if (!apiUrl) throw new Error('请先配置 EXPO_PUBLIC_API_URL，截图识别需要后端 AI 代理。');
   const response = await fetch(`${apiUrl}/api/parse`, {
@@ -177,5 +232,5 @@ export async function parseTimetableImage(imageBase64: string): Promise<Course[]
   });
   if (!response.ok) throw new Error(`课表识别失败（${response.status}）`);
   const result = await response.json();
-  return result.courses as Course[];
+  return sanitizeAICourses(result.courses);
 }

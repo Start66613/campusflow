@@ -10,55 +10,63 @@ export default function AISettingsScreen() {
   const theme = useAppTheme();
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState(DEFAULT_DEEPSEEK_MODEL);
+  const [searchKey, setSearchKey] = useState('');
+  const [searchSaved, setSearchSaved] = useState(false);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     getAIConfig().then((config) => {
       setSaved(Boolean(config.apiKey));
+      setSearchSaved(Boolean(config.searchKey));
       setModel(config.model);
     }).catch(() => undefined);
   }, []);
 
   const save = async () => {
-    if (!apiKey.trim() && !saved) return Alert.alert('还没有填写 API Key', '请粘贴 DeepSeek API Key。');
+    if (!apiKey.trim() && !saved && !searchKey.trim()) return Alert.alert('还没有填写 API Key', '请先填写 DeepSeek API Key；联网功能可另填 Tavily Key。');
     setBusy(true);
     try {
       const previous = await getAIConfig();
       const key = apiKey.trim() || previous.apiKey;
-      const response = await fetch('https://api.deepseek.com/models', { headers: { Authorization: `Bearer ${key}` } });
-      if (!response.ok) throw new Error(`密钥验证失败（${response.status}）`);
-      await saveAIConfig({ apiKey: key, model });
+      if (key) {
+        const response = await fetch('https://api.deepseek.com/models', { headers: { Authorization: `Bearer ${key}` } });
+        if (!response.ok) throw new Error(`DeepSeek 密钥验证失败（${response.status}）`);
+      }
+      await saveAIConfig({ apiKey: key, model, searchKey: searchKey.trim() || previous.searchKey });
       setApiKey('');
-      setSaved(true);
+      setSearchKey('');
+      setSaved(Boolean(key));
+      setSearchSaved(Boolean(searchKey.trim() || previous.searchKey));
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('AI 已连接', '密钥已写入系统安全存储，不会进入源码、日志或普通 App 数据。');
+      Alert.alert('AI 配置已保存', 'DeepSeek Key 已验证；Tavily Key 会在首次联网检索时验证。密钥保存在本机系统安全区，不会进入源码或日志。');
     } catch (error) {
-      Alert.alert('无法连接 DeepSeek', error instanceof Error ? error.message : '请检查网络和密钥');
+      Alert.alert('无法保存 AI 配置', error instanceof Error ? error.message : '请检查网络和密钥');
     } finally {
       setBusy(false);
     }
   };
 
-  const remove = () => Alert.alert('移除 API Key？', '移除后 AI 记会自动退回本地语义规则。', [
+  const remove = () => Alert.alert('移除所有 AI Key？', '移除后 AI 记会退回本地规则，联网问答也会关闭。', [
     { text: '取消', style: 'cancel' },
-    { text: '移除', style: 'destructive', onPress: async () => { await clearAIConfig(); setSaved(false); setApiKey(''); } },
+    { text: '移除', style: 'destructive', onPress: async () => { await clearAIConfig(); setSaved(false); setSearchSaved(false); setApiKey(''); setSearchKey(''); } },
   ]);
 
   return (
     <Screen>
       <Text style={[styles.title, { color: theme.text }]}>个人 AI</Text>
-      <Text style={[styles.subtitle, { color: theme.secondary }]}>文字和图片识别先统一走 DeepSeek，避免维护多套密钥。你的 Key 只从本机通过 HTTPS 发送给 DeepSeek。</Text>
+      <Text style={[styles.subtitle, { color: theme.secondary }]}>文字、图片由 DeepSeek 处理；联网检索可选 Tavily。两把 Key 分别只从本机通过 HTTPS 发送给对应服务。</Text>
       <Card style={styles.card}>
         <View style={styles.statusRow}><View style={[styles.dot, { backgroundColor: saved ? theme.green : theme.secondary }]} /><Text style={[styles.status, { color: theme.text }]}>{saved ? '已安全保存' : '尚未配置'}</Text></View>
         <Field label="DeepSeek API Key" value={apiKey} onChangeText={setApiKey} placeholder={saved ? '已保存；留空则不更换' : 'sk-…'} secureTextEntry />
         <Field label="模型" value={model} onChangeText={setModel} placeholder={DEFAULT_DEEPSEEK_MODEL} />
-        <PrimaryButton label={busy ? '正在验证…' : '验证并安全保存'} disabled={busy} onPress={save} />
-        {saved ? <PrimaryButton label="移除密钥" secondary onPress={remove} /> : null}
+        <Field label={`Tavily 搜索 Key（${searchSaved ? '已保存，可留空' : '可选'}）`} value={searchKey} onChangeText={setSearchKey} placeholder={searchSaved ? '已保存；留空则不更换' : 'tvly-…'} secureTextEntry />
+        <PrimaryButton label={busy ? '正在验证…' : '验证 DeepSeek 并保存'} disabled={busy} onPress={save} />
+        {saved || searchSaved ? <PrimaryButton label="移除所有密钥" secondary onPress={remove} /> : null}
       </Card>
       <Card style={[styles.note, { backgroundColor: theme.primarySoft }]}>
         <Text style={[styles.noteTitle, { color: theme.text }]}>模型安排</Text>
-        <Text style={[styles.noteBody, { color: theme.secondary }]}>• 对话与图片：DeepSeek {DEFAULT_DEEPSEEK_MODEL}{'\n'}• 语音：下一步接 Qwen Audio ASR 流式识别，中文和湘语更合适。{Platform.OS === 'web' ? '\n• 网页预览仅保存在当前内存，真机才使用系统安全区。' : ''}</Text>
+        <Text style={[styles.noteBody, { color: theme.secondary }]}>• 文字与图片：DeepSeek；图片自动使用支持视觉的 deepseek-flash。{'\n'}• 联网研究：Tavily 检索网页、DeepSeek 分析，结果附来源。{'\n'}• 语音：后续单独接入 ASR。{Platform.OS === 'web' ? '\n• 网页预览仅保存在当前内存，真机才使用系统安全区。' : ''}</Text>
       </Card>
       <Text style={[styles.security, { color: theme.secondary }]}>提示：个人直连适合你自己使用。以后若公开发布，应该改成由你控制的后端代理，并给每位用户做配额和风控。</Text>
     </Screen>

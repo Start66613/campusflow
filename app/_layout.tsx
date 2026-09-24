@@ -88,6 +88,8 @@ function RootLayoutNav() {
         <Stack.Screen name="school" options={{ title: '湘潭大学教务', presentation: 'modal', animation: 'slide_from_right' }} />
         <Stack.Screen name="ai-settings" options={{ title: '个人 AI', presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="focus" options={{ title: '专注计时', presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="personalize" options={{ title: '个性化', presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="course-editor" options={{ title: '编辑课程', presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="modal" options={{ title: '关于 CampusFlow', presentation: 'modal', animation: 'slide_from_bottom' }} />
       </Stack>
     </ThemeProvider>

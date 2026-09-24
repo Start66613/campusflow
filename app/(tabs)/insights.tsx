@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 
 import { gentleEnter, gentleLayout, MotionPressable } from '@/components/motion';
 import { SegmentedControl } from '@/components/segmented-control';
-import { Card, Pill, Screen, SectionTitle } from '@/components/ui';
+import { SettingToggle } from '@/components/setting-toggle';
+import { Card, Pill, PrimaryButton, Screen, SectionTitle } from '@/components/ui';
 import { formatCurrency } from '@/src/date';
+import { generateGradeAnalysis, type GradeAnalysis } from '@/src/grade-analysis';
 import { gradeCategory, summarizeGrades } from '@/src/grades';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
@@ -15,6 +17,10 @@ export default function InsightsScreen() {
   const theme = useAppTheme();
   const { data, updateGradeCategory } = useApp();
   const [mode, setMode] = useState<'overview' | 'grades'>('overview');
+  const [online, setOnline] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<GradeAnalysis | null>(null);
+  useEffect(() => setAnalysis(null), [data.grades, data.settings.major, data.settings.studyGoal, online]);
   const gradeSummary = useMemo(() => summarizeGrades(data.grades), [data.grades]);
   const weekExpense = data.expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const completed = data.tasks.filter((task) => task.completed).length;
@@ -23,6 +29,15 @@ export default function InsightsScreen() {
     result[expense.category] = (result[expense.category] || 0) + expense.amount;
     return result;
   }, {})).sort((a, b) => b[1] - a[1]), [data.expenses]);
+
+  const analyze = async () => {
+    setAnalyzing(true);
+    try {
+      setAnalysis(await generateGradeAnalysis({ grades: data.grades, major: data.settings.major ?? '', goal: data.settings.studyGoal ?? '', online }));
+    } catch (error) {
+      Alert.alert('暂时无法分析', error instanceof Error ? error.message : '请检查 AI 配置和网络');
+    } finally { setAnalyzing(false); }
+  };
 
   return (
     <Screen>
@@ -68,6 +83,23 @@ export default function InsightsScreen() {
             <Text style={[styles.creditNote, { color: theme.secondary }]}>选修课只计入上方学分，不参与此处必修课 GPA；其他用途的官方绩点请以教务系统为准。</Text>
             {gradeSummary.unknownCount > 0 ? <Text style={[styles.unknownNote, { color: theme.orange }]}>{gradeSummary.unknownCount} 门课程性质待确认，暂未纳入计算。点下方课程可更正。</Text> : null}
           </Card>
+          <SectionTitle title="AI 学业与未来方向" />
+          <Card style={styles.analysisCard}>
+            <MotionPressable onPress={() => router.push('/personalize')}><Text style={[styles.goalLink, { color: theme.primary }]}>当前专业：{data.settings.major || '未填写'} · 目标：{data.settings.studyGoal || '未填写'}　› 编辑</Text></MotionPressable>
+            <View style={styles.onlineRow}><View style={styles.onlineCopy}><Text style={[styles.onlineTitle, { color: theme.text }]}>联网参考新政策与方向</Text><Text style={[styles.creditNote, { color: theme.secondary }]}>可选；需要 Tavily 搜索 Key。网页会列出来源，供你自行核对。</Text></View><SettingToggle label="联网参考新政策" value={online} onValueChange={setOnline} /></View>
+            <Text style={[styles.creditNote, { color: theme.secondary }]}>仅在你点击时，把成绩、专业与目标发给 DeepSeek；联网时还会把查询词发送给 Tavily。</Text>
+            <PrimaryButton label={analyzing ? '正在分析…' : analysis ? '重新生成分析' : '生成个性化分析'} onPress={analyze} disabled={analyzing} />
+            {analyzing ? <ActivityIndicator color={theme.primary} /> : null}
+            {analysis ? <View style={styles.analysisResult}>
+              <Text style={[styles.analysisOverview, { color: theme.text }]}>{analysis.overview}</Text>
+              <AnalysisSection title="你的优势" items={analysis.strengths} />
+              <AnalysisSection title="优先补强" items={analysis.priorities} />
+              <AnalysisSection title="接下来怎么做" items={analysis.nextSteps} />
+              <AnalysisSection title="考研方向" items={[analysis.postgraduate]} />
+              <AnalysisSection title="求职方向" items={[analysis.career]} />
+              {analysis.sources.length ? <View style={styles.sources}><Text style={[styles.analysisHeading, { color: theme.text }]}>联网参考来源</Text>{analysis.sources.map((source, index) => <MotionPressable key={source.url} onPress={() => Linking.openURL(source.url).catch(() => undefined)}><Text style={[styles.sourceLink, { color: theme.primary }]}>[{index + 1}] {source.title}{source.publishedDate ? ` · ${source.publishedDate}` : ''}</Text></MotionPressable>)}</View> : <Text style={[styles.creditNote, { color: theme.secondary }]}>本次未联网；政策、招生与招聘信息需查看最新官方公告。</Text>}
+            </View> : null}
+          </Card>
           <SectionTitle title="课程成绩" action="教务同步" onAction={() => router.push('/school')} />
           <Card style={styles.gradeList}>
             {data.grades.map((grade, index) => (
@@ -87,6 +119,12 @@ export default function InsightsScreen() {
       )}
     </Screen>
   );
+}
+
+function AnalysisSection({ title, items }: { title: string; items: string[] }) {
+  const theme = useAppTheme();
+  if (!items.length) return null;
+  return <View style={styles.analysisSection}><Text style={[styles.analysisHeading, { color: theme.text }]}>{title}</Text>{items.map((item, index) => <Text key={`${title}-${index}`} style={[styles.analysisBody, { color: theme.secondary }]}>• {item}</Text>)}</View>;
 }
 
 function Metric({ value, label, color, delay }: { value: string; label: string; color: string; delay: number }) {
@@ -112,5 +150,7 @@ const styles = StyleSheet.create({
   attendance: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, attendanceValue: { fontSize: 29, fontWeight: '900' }, attendanceLabel: { fontSize: 12, marginTop: 4 }, ring: { width: 52, height: 52, borderRadius: 26, borderWidth: 6, alignItems: 'center', justifyContent: 'center' }, ringEmoji: { fontSize: 18, color: '#2D9B75', fontWeight: '900' },
   gpaHero: { alignItems: 'center', paddingVertical: 28, borderColor: 'transparent' }, gpaLabel: { color: '#E8E9FF', fontSize: 13, fontWeight: '600' }, gpaValue: { color: '#FFFFFF', fontSize: 58, fontWeight: '800', letterSpacing: -2, marginVertical: 6 }, gpaMeta: { color: '#E8E9FF', fontSize: 12 },
   creditCard: { marginTop: 12, paddingVertical: 16 }, creditRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, creditLabel: { fontSize: 13, fontWeight: '700' }, creditValue: { fontSize: 22, fontWeight: '800' }, creditNote: { fontSize: 11, lineHeight: 17, marginTop: 8 }, unknownNote: { fontSize: 11, lineHeight: 17, fontWeight: '700', marginTop: 8 },
+  analysisCard: { gap: 13 }, onlineRow: { flexDirection: 'row', alignItems: 'center', gap: 8 }, onlineCopy: { flex: 1 }, onlineTitle: { fontSize: 13, fontWeight: '700' }, analysisResult: { gap: 13, paddingTop: 8 }, analysisOverview: { fontSize: 14, lineHeight: 22, fontWeight: '600' }, analysisSection: { gap: 5 }, analysisHeading: { fontSize: 14, fontWeight: '800' }, analysisBody: { fontSize: 12, lineHeight: 19 }, sources: { gap: 8 }, sourceLink: { fontSize: 11, lineHeight: 17, textDecorationLine: 'underline' },
+  goalLink: { fontSize: 11, lineHeight: 17, fontWeight: '700' },
   gradeList: { paddingVertical: 2 }, gradeRow: { flexDirection: 'row', alignItems: 'center', minHeight: 72, gap: 12 }, scoreBadge: { width: 47, height: 47, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }, score: { fontWeight: '900', fontSize: 16 }, gradeName: { fontSize: 15, fontWeight: '800', marginBottom: 4 }, gradeMeta: { fontSize: 12 }, gradeGpa: { fontSize: 17, fontWeight: '900' },
 });

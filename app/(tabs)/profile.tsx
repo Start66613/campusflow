@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
 import type { ReactNode } from 'react';
-import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Platform, StyleSheet, Text, View } from 'react-native';
 
 import { AppIcon, type AppIconProps } from '@/components/app-icon';
 import { MotionPressable } from '@/components/motion';
@@ -35,7 +35,7 @@ export default function ProfileScreen() {
   };
   return (
     <Screen>
-      <View style={styles.profileHeader}><View style={[styles.avatar, { backgroundColor: theme.primarySoft }]}><AppIcon ios="graduationcap.fill" android="school" color={theme.primary} size={30} /></View><View><Text style={[styles.name, { color: theme.text }]}>{data.settings.displayName}</Text><Text style={[styles.school, { color: theme.secondary }]}>{data.settings.schoolName} · 本科生</Text></View></View>
+      <MotionPressable onPress={() => router.push('/personalize')} style={styles.profileHeader}><View style={[styles.avatar, { backgroundColor: theme.primarySoft }]}>{data.settings.avatarUri ? <Image source={{ uri: data.settings.avatarUri }} style={styles.avatarImage} /> : <AppIcon ios="graduationcap.fill" android="school" color={theme.primary} size={30} />}</View><View style={styles.profileText}><Text style={[styles.name, { color: theme.text }]}>{data.settings.displayName}</Text><Text style={[styles.school, { color: theme.secondary }]}>{data.settings.schoolName}{data.settings.major ? ` · ${data.settings.major}` : ' · 本科生'}</Text><Text style={[styles.profileEdit, { color: theme.primary }]}>点击编辑个人信息与头像</Text></View></MotionPressable>
       <View style={styles.actionRow}>
         <SmallAction icon={{ ios: 'square.and.arrow.down.fill', android: 'download' }} label="导入课表" onPress={() => router.push('/import')} />
         <SmallAction icon={{ ios: 'sparkles', android: 'auto_awesome' }} label="连接 AI" onPress={() => router.push('/ai-settings')} />
@@ -48,6 +48,7 @@ export default function ProfileScreen() {
         <SettingRow icon={{ ios: 'brain.head.profile.fill', android: 'psychology' }} title="AI 深度思考" subtitle="复杂表达会多一步核对，并显示处理摘要" right={<SettingToggle label="AI 深度思考" value={data.settings.aiThinking} onValueChange={(value) => updateSettings({ aiThinking: value })} />} last />
       </Card>
       <SectionTitle title="显示模式" />
+      <Card onPress={() => router.push('/personalize')} style={styles.personalizeCard}><AppIcon ios="paintpalette.fill" android="palette" color={theme.primary} size={22} /><View style={styles.settingCopy}><Text style={[styles.settingTitle, { color: theme.text }]}>背景、头像与主题色</Text><Text style={[styles.settingSubtitle, { color: theme.secondary }]}>上传图片 · 七种色调 · 自由定制</Text></View><AppIcon ios="chevron.right" android="chevron_right" color={theme.secondary} size={17} /></Card>
       <SegmentedControl
         items={[{ value: 'system', label: '跟随系统' }, { value: 'light', label: '浅色' }, { value: 'dark', label: '深色' }, { value: 'eye', label: '护眼' }]}
         value={data.settings.themeMode}
@@ -91,8 +92,8 @@ function SettingRow({ icon, title, subtitle, right, onPress, last = false }: { i
 }
 
 const styles = StyleSheet.create({
-  profileHeader: { flexDirection: 'row', alignItems: 'center', gap: 15, paddingTop: 12, marginBottom: 22 }, avatar: { width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }, name: { fontSize: 27, fontWeight: '800', letterSpacing: -0.7, marginBottom: 5 }, school: { fontSize: 13 },
+  profileHeader: { flexDirection: 'row', alignItems: 'center', gap: 15, paddingTop: 12, marginBottom: 22 }, avatar: { width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, avatarImage: { width: '100%', height: '100%' }, profileText: { flex: 1 }, profileEdit: { fontSize: 11, marginTop: 5, fontWeight: '700' }, name: { fontSize: 27, fontWeight: '800', letterSpacing: -0.7, marginBottom: 5 }, school: { fontSize: 13 },
   actionRow: { flexDirection: 'row', gap: 10 }, smallAction: { flex: 1, gap: 7, alignItems: 'center', borderRadius: 21, paddingVertical: 15, borderWidth: StyleSheet.hairlineWidth, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 1 }, smallLabel: { fontSize: 12, fontWeight: '600' },
-  listCard: { paddingVertical: 0, paddingHorizontal: 15 }, settingRow: { minHeight: 74, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }, settingIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, settingCopy: { flex: 1, minWidth: 0 }, settingTrailing: { width: 56, height: 48, alignItems: 'center', justifyContent: 'center' }, settingTitle: { fontSize: 15, fontWeight: '600', marginBottom: 4 }, settingSubtitle: { fontSize: 11.5, lineHeight: 17 }, chevron: { fontSize: 25 },
+  personalizeCard: { flexDirection: 'row', alignItems: 'center', gap: 13, marginBottom: 14 }, listCard: { paddingVertical: 0, paddingHorizontal: 15 }, settingRow: { minHeight: 74, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }, settingIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, settingCopy: { flex: 1, minWidth: 0 }, settingTrailing: { width: 56, height: 48, alignItems: 'center', justifyContent: 'center' }, settingTitle: { fontSize: 15, fontWeight: '600', marginBottom: 4 }, settingSubtitle: { fontSize: 11.5, lineHeight: 17 }, chevron: { fontSize: 25 },
   visualNote: { fontSize: 11, lineHeight: 17, marginTop: 8, paddingHorizontal: 4 }, version: { textAlign: 'center', fontSize: 11, marginTop: 28 },
 });
