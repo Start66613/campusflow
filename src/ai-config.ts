@@ -10,26 +10,23 @@ export const DEFAULT_DEEPSEEK_MODEL = 'deepseek-flash';
 export type AIConfig = {
   apiKey: string;
   model: string;
-  searchKey: string;
 };
 
-let webMemoryConfig: AIConfig = { apiKey: '', model: DEFAULT_DEEPSEEK_MODEL, searchKey: '' };
+let webMemoryConfig: AIConfig = { apiKey: '', model: DEFAULT_DEEPSEEK_MODEL };
 
 export async function getAIConfig(): Promise<AIConfig> {
   if (Platform.OS === 'web') return webMemoryConfig;
-  const [apiKey, model, searchKey] = await Promise.all([
+  const [apiKey, model] = await Promise.all([
     SecureStore.getItemAsync(DEEPSEEK_KEY),
     SecureStore.getItemAsync(DEEPSEEK_MODEL),
-    SecureStore.getItemAsync(SEARCH_KEY),
   ]);
-  return { apiKey: apiKey ?? '', model: model || DEFAULT_DEEPSEEK_MODEL, searchKey: searchKey ?? '' };
+  return { apiKey: apiKey ?? '', model: model || DEFAULT_DEEPSEEK_MODEL };
 }
 
 export async function saveAIConfig(config: AIConfig) {
   const normalized = {
     apiKey: config.apiKey.trim(),
     model: config.model.trim() || DEFAULT_DEEPSEEK_MODEL,
-    searchKey: config.searchKey.trim(),
   };
   if (Platform.OS === 'web') {
     webMemoryConfig = normalized;
@@ -39,13 +36,12 @@ export async function saveAIConfig(config: AIConfig) {
   await Promise.all([
     SecureStore.setItemAsync(DEEPSEEK_KEY, normalized.apiKey, options),
     SecureStore.setItemAsync(DEEPSEEK_MODEL, normalized.model, options),
-    SecureStore.setItemAsync(SEARCH_KEY, normalized.searchKey, options),
   ]);
 }
 
 export async function clearAIConfig() {
   if (Platform.OS === 'web') {
-    webMemoryConfig = { apiKey: '', model: DEFAULT_DEEPSEEK_MODEL, searchKey: '' };
+    webMemoryConfig = { apiKey: '', model: DEFAULT_DEEPSEEK_MODEL };
     return;
   }
   await Promise.all([

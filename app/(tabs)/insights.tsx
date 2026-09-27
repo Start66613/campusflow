@@ -86,8 +86,8 @@ export default function InsightsScreen() {
           <SectionTitle title="AI 学业与未来方向" />
           <Card style={styles.analysisCard}>
             <MotionPressable onPress={() => router.push('/personalize')}><Text style={[styles.goalLink, { color: theme.primary }]}>当前专业：{data.settings.major || '未填写'} · 目标：{data.settings.studyGoal || '未填写'}　› 编辑</Text></MotionPressable>
-            <View style={styles.onlineRow}><View style={styles.onlineCopy}><Text style={[styles.onlineTitle, { color: theme.text }]}>联网参考新政策与方向</Text><Text style={[styles.creditNote, { color: theme.secondary }]}>可选；需要 Tavily 搜索 Key。网页会列出来源，供你自行核对。</Text></View><SettingToggle label="联网参考新政策" value={online} onValueChange={setOnline} /></View>
-            <Text style={[styles.creditNote, { color: theme.secondary }]}>仅在你点击时，把成绩、专业与目标发给 DeepSeek；联网时还会把查询词发送给 Tavily。</Text>
+            <View style={styles.onlineRow}><View style={styles.onlineCopy}><Text style={[styles.onlineTitle, { color: theme.text }]}>联网参考新政策与方向</Text><Text style={[styles.creditNote, { color: theme.secondary }]}>可选；只需 DeepSeek Key，网页会列出来源供你核对。</Text></View><SettingToggle label="联网参考新政策" value={online} onValueChange={setOnline} /></View>
+            <Text style={[styles.creditNote, { color: theme.secondary }]}>仅在你点击时，把成绩、专业与目标发给 DeepSeek；联网由 DeepSeek 搜索，会产生额外 token 消耗。</Text>
             <PrimaryButton label={analyzing ? '正在分析…' : analysis ? '重新生成分析' : '生成个性化分析'} onPress={analyze} disabled={analyzing} />
             {analyzing ? <ActivityIndicator color={theme.primary} /> : null}
             {analysis ? <View style={styles.analysisResult}>

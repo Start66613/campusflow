@@ -1,7 +1,7 @@
 import { getAIConfig } from './ai-config';
 import { gradeCategory, summarizeGrades } from './grades';
 import type { Grade } from './types';
-import { searchWeb, type WebSource } from './web-search';
+import { researchWeb, type WebSource } from './web-search';
 
 export type GradeAnalysis = {
   overview: string;
@@ -27,8 +27,9 @@ export async function generateGradeAnalysis(input: { grades: Grade[]; major: str
   if (!config.apiKey) throw new Error('请先到「个人 AI」配置 DeepSeek API Key。');
   if (!input.grades.length) throw new Error('还没有成绩数据，请先从教务系统导入成绩。');
   const stats = summarizeGrades(input.grades);
-  const sources = input.online ? await searchWeb(`${input.major || '大学生'} ${input.goal || '考研 就业'} ${new Date().getFullYear()} 招生政策 行业趋势`) : [];
-  const evidence = sources.map((source, index) => `[${index + 1}] ${source.title} (${source.publishedDate ?? '日期未知'}) ${source.url}\n${source.content}`).join('\n\n');
+  const research = input.online ? await researchWeb(`请联网查找并概括 ${new Date().getFullYear()} 年与「${input.major || '大学生'}」及「${input.goal || '考研、就业'}」相关的招生政策和就业方向，优先官方来源，说明不确定性。`) : null;
+  const sources = research?.sources ?? [];
+  const evidence = research ? `${research.answer}\n\n参考来源：\n${sources.map((source, index) => `[${index + 1}] ${source.title} ${source.url}\n${source.content}`).join('\n\n')}` : '';
   const gradeData = input.grades.map((grade) => ({ course: grade.course, score: grade.score, credit: grade.credit, semester: grade.semester, nature: gradeCategory(grade) }));
   const response = await fetch('https://api.deepseek.com/chat/completions', {
     method: 'POST',
