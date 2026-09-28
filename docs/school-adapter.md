@@ -9,8 +9,11 @@
 - `N305005`：学生成绩查询，`/jwglxt/cjcx/cjcx_cxDgXscj.html`
 - `N309104`：平均学分绩点排名统计，`/jwglxt/cjpmtj/cjpmtj_cxPjxfjdpmtjIndex.html`
 - `N358105`：考试信息查询，`/jwglxt/kwgl/kscx_cxXsksxxIndex.html`
+- `N558020`：学生成绩总表打印（主修），`/jwglxt/bysxxcx/xscjzbdy_cxXscjzbdyIndex.html`
 
-App 的首版适配采用内置 WebView：用户在学校页面自行登录，App 复用 WebView 的短期 Cookie，从用户已查询并显示的表格中读取课表或成绩。App 不注入、不读取、不保存账号密码。若页面结构发生变化，更新 `app/school.tsx` 的 DOM 提取脚本与 `src/school-importer.ts` 的字段映射即可。
+成绩总表打印页只展示学生记录和「打印」按钮；详细成绩会另开一份 PDF，而不是出现在该页 HTML 表格里。因此不能把打印页的学生信息表误当成绩表，也不能仅凭这一入口宣称已支持 PDF 自动导入。PDF 的列名、课程性质字段及生成接口尚待脱敏样本核实。现阶段自动导入仍以成绩查询接口为准，缺失的课程性质按下文的教务证据规则处理。
+
+App 的首版适配采用内置 WebView：用户在学校页面自行登录，App 在已登录的同源页面中调用课表和成绩查询接口，解析返回的课程记录。App 不注入、不读取、不保存账号密码。若接口路径或字段变化，更新 `app/school.tsx` 的请求脚本与 `src/school-importer.ts` 的字段映射。
 
 不要在外部浏览器与 App 之间复制 Cookie，也不要把 Cookie、页面原文或学生身份信息写入日志。
 
