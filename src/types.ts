@@ -48,6 +48,7 @@ export type CalendarItem = {
 };
 
 export type GradeCategory = 'required' | 'elective' | 'unknown';
+export type GradeCategorySource = 'school-grade' | 'school-course';
 
 export type Grade = {
   id: string;
@@ -58,6 +59,7 @@ export type Grade = {
   semester: string;
   courseNature?: string;
   category?: GradeCategory;
+  categorySource?: GradeCategorySource;
   categoryManual?: boolean;
 };
 

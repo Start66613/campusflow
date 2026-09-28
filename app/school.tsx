@@ -110,7 +110,7 @@ function makeAutoSyncScript() {
       }
       send({
         type: 'auto-sync-result',
-        payload: { courseRows: courseRows, gradeRows: gradeRows, semester: '${xnm} 学年 · ${xqm === '3' ? '第一学期' : '第二学期'}' }
+        payload: { courseRows: courseRows, gradeRows: gradeRows, semester: '${xnm} 学年 · ${xqm === '3' ? '第一学期' : '第二学期'}', courseTerm: { xnm: '${xnm}', xqm: '${xqm}' } }
       });
     } catch (error) {
       send({ type: 'auto-sync-error', error: String(error && error.message || error) });
@@ -149,7 +149,7 @@ export default function SchoolScreen() {
         type?: string;
         authenticated?: boolean;
         error?: string;
-        payload?: { courseRows?: ZfRow[]; gradeRows?: ZfRow[]; semester?: string };
+        payload?: { courseRows?: ZfRow[]; gradeRows?: ZfRow[]; semester?: string; courseTerm?: { xnm: string; xqm: string } };
       };
       if (message.type === 'auth-state') {
         if (message.authenticated) startSync();
@@ -162,7 +162,7 @@ export default function SchoolScreen() {
       }
       if (message.type !== 'auto-sync-result' || !message.payload) return;
       const courses = parseZfCourseRows(message.payload.courseRows ?? []);
-      const grades = parseZfGradeRows(message.payload.gradeRows ?? [], message.payload.semester);
+      const grades = parseZfGradeRows(message.payload.gradeRows ?? [], message.payload.semester, message.payload.courseRows ?? [], message.payload.courseTerm);
       if (!courses.length && !grades.length) {
         setState('error');
         setDetail('接口已连接，但没有识别到课程或成绩字段；教务页面可能刚刚更新。');
@@ -171,7 +171,9 @@ export default function SchoolScreen() {
       if (courses.length) app.mergeSchoolCourses(courses);
       if (grades.length) app.replaceGrades(grades);
       setState('success');
-      setDetail(`已自动导入 ${courses.length} 门课程、${grades.length} 门成绩，数据只保存在本机。`);
+      const classified = grades.filter((grade) => grade.category !== 'unknown').length;
+      const pending = grades.length - classified;
+      setDetail(`已自动导入 ${courses.length} 门课程、${grades.length} 门成绩；自动识别 ${classified} 门课程性质${pending ? `，${pending} 门待教务资料补全` : ''}。数据只保存在本机。`);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {
       setState('error');

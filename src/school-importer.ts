@@ -1,6 +1,6 @@
 import { courseColors } from './theme';
 import { classifyGradeNature, xtuGradePoint } from './grades';
-import type { Course, CourseType, Grade } from './types';
+import type { Course, CourseType, Grade, GradeCategory } from './types';
 
 export type SchoolPageSnapshot = {
   url: string;
@@ -95,6 +95,36 @@ function courseType(value: string): CourseType {
   return 'major';
 }
 
+type NatureEvidence = { category: Exclude<GradeCategory, 'unknown'>; nature: string };
+
+function schoolNature(row: ZfRow) {
+  return [...new Set(['kcxzmc', 'kclbmc', 'kclxmc', 'courseNature', 'courseCategory']
+    .map((key) => clean(row[key])).filter(Boolean))].join(' · ');
+}
+
+function courseCode(row: ZfRow) {
+  return field(row, 'kch_id', 'kch', 'courseCode', 'KCH');
+}
+
+function buildCourseNatureIndex(rows: ZfRow[]) {
+  const byCode = new Map<string, NatureEvidence | null>();
+  const byName = new Map<string, NatureEvidence | null>();
+  const insert = (index: Map<string, NatureEvidence | null>, key: string, evidence: NatureEvidence) => {
+    if (!key) return;
+    if (!index.has(key)) index.set(key, evidence);
+    else if (index.get(key)?.category !== evidence.category) index.set(key, null);
+  };
+  for (const row of rows) {
+    const nature = schoolNature(row);
+    const category = classifyGradeNature(nature);
+    if (category === 'unknown') continue;
+    const evidence = { category, nature };
+    insert(byCode, courseCode(row), evidence);
+    insert(byName, field(row, 'kcmc', 'courseName', 'KCMC'), evidence);
+  }
+  return { byCode, byName };
+}
+
 export function parseZfCourseRows(rows: ZfRow[]) {
   const courses = rows.map((row): Course | null => {
     const name = field(row, 'kcmc', 'courseName', 'KCMC');
@@ -119,7 +149,8 @@ export function parseZfCourseRows(rows: ZfRow[]) {
   return [...new Map(courses.map((course) => [course.id, course])).values()];
 }
 
-export function parseZfGradeRows(rows: ZfRow[], fallbackSemester = '湘潭大学教务') {
+export function parseZfGradeRows(rows: ZfRow[], fallbackSemester = '湘潭大学教务', courseRows: ZfRow[] = [], courseTerm?: { xnm: string; xqm: string }) {
+  const courseNatures = buildCourseNatureIndex(courseRows);
   const grades = rows.map((row): Grade | null => {
     const course = field(row, 'kcmc', 'courseName', 'KCMC');
     const rawScore = field(row, 'bfzcj', 'cj', 'zzcj', 'score');
@@ -131,14 +162,25 @@ export function parseZfGradeRows(rows: ZfRow[], fallbackSemester = '湘潭大学
     // 正方的「学分绩点」是学分 × 单课绩点，不可再乘一次学分。
     const gpa = rawGpa ? parseNumber(rawGpa) : rawQualityPoints && credit > 0
       ? parseNumber(rawQualityPoints) / credit : xtuGradePoint(score);
-    const courseNature = field(row, 'kcxzmc', 'kclbmc', 'kclxmc', 'courseNature');
-    const natureSignals = [courseNature, field(row, 'kcxz', 'kclb', 'courseCategory')].filter(Boolean).join(' ');
-    const category = classifyGradeNature(natureSignals);
+    const recordedNature = schoolNature(row);
+    const natureSignals = [recordedNature, field(row, 'kcxz', 'kclb')].filter(Boolean).join(' ');
+    const recordedCategory = classifyGradeNature(natureSignals);
+    const code = courseCode(row);
+    const conflictingRecord = /必修/.test(natureSignals) && /选修|限选|任选|公选|跨学科|自主发展/.test(natureSignals);
+    // Names can repeat in different academic years. Only use a name match
+    // when the grade and imported timetable are known to be the same term.
+    const sameTerm = Boolean(courseTerm && field(row, 'xnm') === courseTerm.xnm && field(row, 'xqm') === courseTerm.xqm);
+    const matchedNature = recordedCategory === 'unknown' && !conflictingRecord
+      ? (code && courseNatures.byCode.has(code) ? courseNatures.byCode.get(code) : sameTerm ? courseNatures.byName.get(course) : undefined)
+      : undefined;
+    const category = recordedCategory !== 'unknown' ? recordedCategory : matchedNature?.category ?? 'unknown';
+    const courseNature = recordedNature || matchedNature?.nature || '';
+    const categorySource = recordedCategory !== 'unknown' ? 'school-grade' : matchedNature ? 'school-course' : undefined;
     const year = field(row, 'xnmmc', 'xnmc', 'xnm', 'academicYear');
     const term = field(row, 'xqmmc', 'xqmc', 'xqm', 'semester');
     const semester = [year, term].filter(Boolean).join(' · ') || fallbackSemester;
     const identity = [semester, course, field(row, 'kch_id', 'kch'), rawScore].join('|');
-    return { id: `xtu-grade-${stableHash(identity)}`, course, score, credit, gpa, semester, courseNature, category };
+    return { id: `xtu-grade-${stableHash(identity)}`, course, score, credit, gpa, semester, courseNature, category, categorySource };
   }).filter((grade): grade is Grade => Boolean(grade));
   return [...new Map(grades.map((grade) => [`${grade.semester}|${grade.course}`, grade])).values()];
 }

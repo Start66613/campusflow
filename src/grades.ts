@@ -3,14 +3,20 @@ import type { Grade, GradeCategory } from './types';
 // Course nature comes from the school's grade row, not from a timetable's
 // broad display type. Ambiguous rows remain unclassified until confirmed.
 export function classifyGradeNature(nature: string): GradeCategory {
-  const value = nature.replace(/\s+/g, '');
-  if (/选修|限选|任选|公选|跨学科|自主发展/.test(value)) return 'elective';
-  if (/必修/.test(value)) return 'required';
+  const value = nature.replace(/[\s（）()【】\[\]·]/g, '');
+  const elective = /选修|限选|任选|公选|跨学科|自主发展/.test(value);
+  const required = /必修/.test(value);
+  // Conflicting school labels must not silently change a GPA.
+  if (elective && required) return 'unknown';
+  if (elective) return 'elective';
+  if (required) return 'required';
   return 'unknown';
 }
 
 export function gradeCategory(grade: Grade): GradeCategory {
-  return grade.category ?? classifyGradeNature(grade.courseNature ?? '');
+  if (grade.categoryManual) return grade.category ?? 'unknown';
+  const fromSchool = classifyGradeNature(grade.courseNature ?? '');
+  return fromSchool !== 'unknown' ? fromSchool : grade.category ?? 'unknown';
 }
 
 // 湘潭大学本科生学籍管理规定（2017 版）第十二条的分段绩点表。

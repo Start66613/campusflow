@@ -81,7 +81,7 @@ export default function InsightsScreen() {
           <Card style={styles.creditCard}>
             <View style={styles.creditRow}><Text style={[styles.creditLabel, { color: theme.secondary }]}>已获选修学分</Text><Text style={[styles.creditValue, { color: theme.text }]}>{gradeSummary.electiveCredits}</Text></View>
             <Text style={[styles.creditNote, { color: theme.secondary }]}>选修课只计入上方学分，不参与此处必修课 GPA；其他用途的官方绩点请以教务系统为准。</Text>
-            {gradeSummary.unknownCount > 0 ? <Text style={[styles.unknownNote, { color: theme.orange }]}>{gradeSummary.unknownCount} 门课程性质待确认，暂未纳入计算。点下方课程可更正。</Text> : null}
+            {gradeSummary.unknownCount > 0 ? <Text style={[styles.unknownNote, { color: theme.orange }]}>{gradeSummary.unknownCount} 门课程缺少明确的教务性质，暂未纳入必修课 GPA。重新同步可尝试用课表字段补全；仍不明确时点课程更正。</Text> : null}
           </Card>
           <SectionTitle title="AI 学业与未来方向" />
           <Card style={styles.analysisCard}>
@@ -110,7 +110,7 @@ export default function InsightsScreen() {
                 { text: '取消', style: 'cancel' },
               ])} style={[styles.gradeRow, index > 0 && { borderTopColor: theme.line, borderTopWidth: StyleSheet.hairlineWidth }]}>
                 <View style={[styles.scoreBadge, { backgroundColor: grade.score >= 90 ? `${theme.green}22` : theme.primarySoft }]}><Text style={[styles.score, { color: grade.score >= 90 ? theme.green : theme.primary }]}>{grade.score}</Text></View>
-                <View style={{ flex: 1 }}><Text style={[styles.gradeName, { color: theme.text }]}>{grade.course}</Text><Text style={[styles.gradeMeta, { color: theme.secondary }]}>{grade.credit} 学分 · {gradeCategory(grade) === 'required' ? '必修' : gradeCategory(grade) === 'elective' ? '选修' : '待确认'}{grade.categoryManual ? ' · 已更正' : ''}</Text></View>
+                <View style={{ flex: 1 }}><Text style={[styles.gradeName, { color: theme.text }]}>{grade.course}</Text><Text style={[styles.gradeMeta, { color: theme.secondary }]}>{grade.credit} 学分 · {gradeCategory(grade) === 'required' ? '必修' : gradeCategory(grade) === 'elective' ? '选修' : '待确认'}{grade.categoryManual ? ' · 手动更正' : grade.categorySource === 'school-grade' ? ' · 教务成绩' : grade.categorySource === 'school-course' ? ' · 教务课表' : ''}</Text></View>
                 <Text style={[styles.gradeGpa, { color: theme.text }]}>{grade.gpa.toFixed(1)}</Text>
               </MotionPressable>
             ))}
