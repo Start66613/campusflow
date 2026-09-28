@@ -2,12 +2,12 @@ import { BlurView } from 'expo-blur';
 import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useIsFocused } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, type PropsWithChildren, type ReactNode } from 'react';
+import { useEffect, useRef, type PropsWithChildren, type ReactNode } from 'react';
 import { Image, Platform, ScrollView, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { gentleEnter, gentleLayout, motion, MotionPressable } from '@/components/motion';
+import { gentleLayout, gentleTextEnter, motion, MotionPressable } from '@/components/motion';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
 import { useReduceTransparency } from '@/src/accessibility';
@@ -17,14 +17,16 @@ export function Screen({ children, scroll = true, scrollEnabled = true, style }:
   const { data } = useApp();
   const glass = data.settings.visualMode === 'glass';
   const focused = useIsFocused();
+  const firstFocus = useRef(true);
   const focusProgress = useSharedValue(1);
   useEffect(() => {
     if (!focused) return;
+    if (firstFocus.current) { firstFocus.current = false; return; }
     focusProgress.value = 0;
-    focusProgress.value = withTiming(1, { duration: motion.standard, reduceMotion: ReduceMotion.System });
+    focusProgress.value = withTiming(1, { duration: motion.page, reduceMotion: ReduceMotion.System });
   }, [focused, focusProgress]);
-  // Never fade a parent of native GlassView: iOS may drop the glass material.
-  const focusStyle = useAnimatedStyle(() => ({ transform: [{ translateY: (1 - focusProgress.value) * 6 }] }));
+  // Transform can repeat on focus; fading this ancestor can hide native GlassView.
+  const focusStyle = useAnimatedStyle(() => ({ transform: [{ translateY: (1 - focusProgress.value) * 12 }] }));
   const content = scroll ? (
     <ScrollView scrollEnabled={scrollEnabled} bounces contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       <Animated.View style={[focusStyle, style]}>{children}</Animated.View>
@@ -146,7 +148,7 @@ export function GlassBackdrop({
 export function SectionTitle({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
   const theme = useAppTheme();
   return (
-    <Animated.View entering={gentleEnter(40)} style={styles.sectionRow}>
+    <Animated.View entering={gentleTextEnter(30)} style={styles.sectionRow}>
       <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
       {action ? <MotionPressable onPress={onAction}><Text style={[styles.sectionAction, { color: theme.primary }]}>{action}</Text></MotionPressable> : null}
     </Animated.View>
@@ -180,7 +182,7 @@ export function PrimaryButton({ label, onPress, icon, disabled = false, secondar
 export function EmptyState({ emoji, title, body }: { emoji: string; title: string; body: string }) {
   const theme = useAppTheme();
   return (
-    <Animated.View entering={gentleEnter()} style={styles.empty}>
+    <Animated.View entering={gentleTextEnter()} style={styles.empty}>
       <Text style={styles.emptyEmoji}>{emoji}</Text>
       <Text style={[styles.emptyTitle, { color: theme.text }]}>{title}</Text>
       <Text style={[styles.emptyBody, { color: theme.secondary }]}>{body}</Text>

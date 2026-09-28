@@ -17,22 +17,23 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 // interactions short; the spring only settles the last few pixels.
 export const motion = {
   quick: 150,
-  standard: 240,
+  page: 180,
+  standard: 220,
   reveal: 300,
   spring: { damping: 22, stiffness: 270, mass: 0.72, reduceMotion: ReduceMotion.System },
+  springSoft: { damping: 24, stiffness: 220, mass: 0.76, overshootClamping: true, reduceMotion: ReduceMotion.System },
 } as const;
 
 export const gentleEnter = (delay = 0) => new Keyframe({
-  0: { transform: [{ translateY: 8 }] },
+  0: { transform: [{ translateY: 11 }] },
   100: { transform: [{ translateY: 0 }], easing: Easing.out(Easing.cubic) },
 }).delay(delay).duration(motion.standard).reduceMotion(ReduceMotion.System);
 
-// A short directional slide makes week changes legible without fading native
-// GlassView ancestors or adding a spring to timetable cards.
-export const weekSlideIn = (direction: number) => new Keyframe({
-  0: { transform: [{ translateX: direction * 14 }] },
-  100: { transform: [{ translateX: 0 }], easing: Easing.out(Easing.cubic) },
-}).duration(205).reduceMotion(ReduceMotion.System);
+// Only use on content without a native GlassView ancestor.
+export const gentleTextEnter = (delay = 0) => new Keyframe({
+  0: { opacity: 0.65, transform: [{ translateY: 10 }] },
+  100: { opacity: 1, transform: [{ translateY: 0 }], easing: Easing.out(Easing.cubic) },
+}).delay(delay).duration(motion.standard).reduceMotion(ReduceMotion.System);
 
 export const gentleLayout = LinearTransition
   .springify()

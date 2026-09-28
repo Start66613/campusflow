@@ -1,11 +1,11 @@
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Image, PanResponder, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import Animated, { Easing, ReduceMotion, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, ReduceMotion, runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 import { AppIcon } from '@/components/app-icon';
-import { MotionPressable, weekSlideIn } from '@/components/motion';
+import { motion, MotionPressable } from '@/components/motion';
 import { Card, GlassBackdrop, PrimaryButton, Screen } from '@/components/ui';
 import { syncCoursesToSystemCalendar } from '@/src/calendar';
 import { courseIconSpec } from '@/src/course-icons';
@@ -14,12 +14,25 @@ import { periodEnds, periodStarts } from '@/src/periods';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
 import type { Course } from '@/src/types';
+import { canChangeWeek, resolveWeekSwipe } from '@/src/week-swipe';
 
 // Taller rows keep course cards readable on a phone without widening the
 // seven-day grid. The grid remains horizontally complete while scrolling
 // vertically only when the device is short.
 const rowHeight = 66;
 const timeColumnWidth = 36;
+
+function currentTimeY(now: Date) {
+  const minute = now.getHours() * 60 + now.getMinutes();
+  for (let index = 0; index < periodStarts.length; index += 1) {
+    const [startHour, startMinute] = periodStarts[index].split(':').map(Number);
+    const [endHour, endMinute] = periodEnds[index].split(':').map(Number);
+    const start = startHour * 60 + startMinute;
+    const end = endHour * 60 + endMinute;
+    if (minute >= start && minute <= end) return (index + (minute - start) / Math.max(1, end - start)) * rowHeight;
+  }
+  return null;
+}
 
 function courseInk(color: string, glass: boolean, dark: boolean) {
   // Native tint is translucent. In light mode a dark label stays legible
@@ -30,6 +43,27 @@ function courseInk(color: string, glass: boolean, dark: boolean) {
   const linear = composed.map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
   const luminance = linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
   return luminance > 0.32 ? '#16213B' : '#FFFFFF';
+}
+
+function CourseFace({ course, height, ink, compact, onEdit }: {
+  course: Course;
+  height: number;
+  ink: string;
+  compact: boolean;
+  onEdit?: () => void;
+}) {
+  const icon = courseIconSpec(course.icon, course.type);
+  const content = <>
+    <View style={styles.courseGlyph}><AppIcon ios={icon.ios} android={icon.android} color={ink} size={compact ? 13 : 15} fallback="·" /></View>
+    <Text numberOfLines={3} style={[styles.courseName, compact && styles.courseNameCompact, { color: ink, textShadowColor: ink === '#FFFFFF' ? 'rgba(20,22,45,0.32)' : 'rgba(255,255,255,0.45)' }]}>{course.name}</Text>
+    <Text numberOfLines={2} style={[styles.courseMeta, compact && styles.courseMetaCompact, { color: ink, textShadowColor: ink === '#FFFFFF' ? 'rgba(20,22,45,0.28)' : 'rgba(255,255,255,0.45)' }]}>{course.location}</Text>
+    {height > rowHeight * 1.7 ? <Text numberOfLines={1} style={[styles.courseTeacher, { color: ink }]}>{course.teacher}</Text> : null}
+  </>;
+  return <>
+    <GlassBackdrop radius={15} effectStyle="regular" tintColor={course.color} />
+    {course.backgroundUri ? <Image source={{ uri: course.backgroundUri }} resizeMode="cover" style={[StyleSheet.absoluteFill, { borderRadius: 15, opacity: 0.29 }]} /> : null}
+    {onEdit ? <MotionPressable onPress={onEdit} style={styles.courseContents}>{content}</MotionPressable> : <View style={styles.courseContents}>{content}</View>}
+  </>;
 }
 
 function DraggableCourse({ course, left, top, width, height, ink, compact, onMove, onDragState, onEdit }: {
@@ -94,7 +128,6 @@ function DraggableCourse({ course, left, top, width, height, ink, compact, onMov
     return { transform: [{ translateX: snappedX }, { translateY: snappedY }] };
   });
 
-  const icon = courseIconSpec(course.icon, course.type);
   return (
     <>
       {dragging ? <Animated.View pointerEvents="none" style={[styles.dropTarget, { left, top, width, height, borderColor: `${course.color}B8`, backgroundColor: `${course.color}16` }, previewStyle]}><Text style={[styles.dropHint, { color: course.color }]}>释放调整</Text></Animated.View> : null}
@@ -104,14 +137,7 @@ function DraggableCourse({ course, left, top, width, height, ink, compact, onMov
         accessibilityLabel={`${course.name}，按住拖动调整课程时间`}
         style={[styles.courseBlock, { left, top, width, height, zIndex: dragging ? 10 : 1, shadowOpacity: dragging ? 0.2 : 0.1, backgroundColor: 'transparent' }, dragStyle]}
       >
-        <GlassBackdrop radius={15} effectStyle="regular" tintColor={course.color} />
-        {course.backgroundUri ? <Image source={{ uri: course.backgroundUri }} resizeMode="cover" style={[StyleSheet.absoluteFill, { borderRadius: 15, opacity: 0.29 }]} /> : null}
-        <MotionPressable onPress={() => onEdit(course.id)} style={styles.courseContents}>
-          <View style={styles.courseGlyph}><AppIcon ios={icon.ios} android={icon.android} color={ink} size={compact ? 13 : 15} fallback="·" /></View>
-          <Text numberOfLines={3} style={[styles.courseName, compact && styles.courseNameCompact, { color: ink, textShadowColor: ink === '#FFFFFF' ? 'rgba(20,22,45,0.32)' : 'rgba(255,255,255,0.45)' }]}>{course.name}</Text>
-          <Text numberOfLines={2} style={[styles.courseMeta, compact && styles.courseMetaCompact, { color: ink, textShadowColor: ink === '#FFFFFF' ? 'rgba(20,22,45,0.28)' : 'rgba(255,255,255,0.45)' }]}>{course.location}</Text>
-          {height > rowHeight * 1.7 ? <Text numberOfLines={1} style={[styles.courseTeacher, { color: ink }]}>{course.teacher}</Text> : null}
-        </MotionPressable>
+        <CourseFace course={course} height={height} ink={ink} compact={compact} onEdit={() => onEdit(course.id)} />
       </Animated.View>
     </>
   );
@@ -125,7 +151,12 @@ export default function ScheduleScreen() {
   const [syncing, setSyncing] = useState(false);
   const [draggingCourseId, setDraggingCourseId] = useState<string | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
-  const [weekDirection, setWeekDirection] = useState(1);
+  const [previewDelta, setPreviewDelta] = useState(0);
+  const previewDeltaRef = useRef(0);
+  const [now, setNow] = useState(() => new Date());
+  const weekDragX = useSharedValue(0);
+  const weekTransitioning = useRef(false);
+  const thresholdFired = useRef(false);
   const baseWeek = currentWeek(data.settings.termStart);
   const week = Math.max(1, Math.min(30, baseWeek + weekOffset));
   const weekStart = dateForWeekday(1);
@@ -134,23 +165,75 @@ export default function ScheduleScreen() {
   weekEnd.setDate(weekEnd.getDate() + 6);
   const days = Array.from({ length: 7 }, (_, index) => index + 1);
   const gridWidth = Math.max(0, width - 48);
+  const pageWidth = gridWidth + 12;
   const columnWidth = (gridWidth - timeColumnWidth) / 7;
   const compact = width < 400;
   const glass = data.settings.visualMode === 'glass';
   const dark = theme.background === '#000000';
-  const changeWeek = useCallback((delta: number) => {
-    setWeekDirection(delta);
+  const timeLineY = currentTimeY(now);
+  const showPreview = useCallback((delta: number) => {
+    if (previewDeltaRef.current === delta) return;
+    previewDeltaRef.current = delta;
+    setPreviewDelta(delta);
+  }, []);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
+  const completeWeek = useCallback((delta: number) => {
     setWeekOffset((current) => Math.max(1 - baseWeek, Math.min(30 - baseWeek, current + delta)));
+    showPreview(0);
+    weekTransitioning.current = false;
+  }, [baseWeek, showPreview]);
+  useLayoutEffect(() => { weekDragX.value = 0; }, [week, weekDragX]);
+  const weekDragStyle = useAnimatedStyle(() => ({ transform: [{ translateX: weekDragX.value }] }));
+  const cancelWeek = useCallback(() => { showPreview(0); weekTransitioning.current = false; }, [showPreview]);
+  const changeWeek = useCallback((delta: -1 | 1) => {
+    if (weekTransitioning.current || !canChangeWeek(week, delta)) return;
+    weekTransitioning.current = true;
+    showPreview(delta);
     Haptics.selectionAsync().catch(() => undefined);
-  }, [baseWeek]);
+    requestAnimationFrame(() => {
+      weekDragX.value = withTiming(-delta * pageWidth, { duration: 205, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System }, (finished) => {
+        if (finished) runOnJS(completeWeek)(delta);
+      });
+    });
+  }, [completeWeek, pageWidth, showPreview, week, weekDragX]);
   const weekSwipe = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => false,
-    onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > 32 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.4,
-    onPanResponderRelease: (_, gesture) => {
-      if (Math.abs(gesture.dx) < 55) return;
-      changeWeek(gesture.dx < 0 ? 1 : -1);
+    onMoveShouldSetPanResponder: (_, gesture) => !weekTransitioning.current && Math.abs(gesture.dx) > 18 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.35,
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderGrant: () => { thresholdFired.current = false; weekDragX.value = 0; },
+    onPanResponderMove: (_, gesture) => {
+      const delta = gesture.dx < 0 ? 1 : -1;
+      const allowed = canChangeWeek(week, delta);
+      weekDragX.value = allowed ? Math.max(-pageWidth, Math.min(pageWidth, gesture.dx)) : Math.max(-24, Math.min(24, gesture.dx * 0.16));
+      showPreview(allowed ? delta : 0);
+      if (allowed && Math.abs(gesture.dx) >= Math.max(55, pageWidth * 0.18) && !thresholdFired.current) {
+        thresholdFired.current = true;
+        Haptics.selectionAsync().catch(() => undefined);
+      }
     },
-  }), [changeWeek]);
+    onPanResponderRelease: (_, gesture) => {
+      const delta = resolveWeekSwipe(gesture.dx, gesture.vx, pageWidth, week);
+      if (delta !== 0) {
+        if (!thresholdFired.current) Haptics.selectionAsync().catch(() => undefined);
+        weekTransitioning.current = true;
+        weekDragX.value = withTiming(-delta * pageWidth, { duration: 175, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System }, (finished) => {
+          if (finished) runOnJS(completeWeek)(delta);
+        });
+      } else {
+        weekDragX.value = withSpring(0, motion.springSoft, (finished) => {
+          if (finished) runOnJS(cancelWeek)();
+        });
+      }
+    },
+    onPanResponderTerminate: () => {
+      weekDragX.value = withSpring(0, motion.springSoft, (finished) => {
+        if (finished) runOnJS(cancelWeek)();
+      });
+    },
+  }), [cancelWeek, completeWeek, pageWidth, showPreview, week, weekDragX]);
 
   const handleDragState = useCallback((courseId: string, active: boolean) => setDraggingCourseId(active ? courseId : null), []);
   const handleCourseMove = useCallback((source: Course, dayDelta: number, periodDelta: number) => {
@@ -172,6 +255,61 @@ export default function ScheduleScreen() {
     } finally { setSyncing(false); }
   };
 
+  const renderWeekGrid = (delta: number) => {
+    const pageWeek = week + delta;
+    const pageOffset = weekOffset + delta;
+    const pageStart = new Date(weekStart);
+    pageStart.setDate(pageStart.getDate() + delta * 7);
+    const interactive = delta === 0;
+    return (
+      <Card style={[styles.gridCard, glass && { backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.72)' }]}>
+        <View style={{ width: gridWidth }}>
+          <View style={styles.dayHeader}>
+            <View style={{ width: timeColumnWidth }} />
+            {days.map((day) => {
+              const date = new Date(pageStart);
+              date.setDate(date.getDate() + day - 1);
+              const isToday = pageOffset === 0 && (now.getDay() || 7) === day;
+              return <View key={day} style={[styles.dayCell, { width: columnWidth }]}><Text style={[styles.dayName, { color: isToday ? theme.primary : theme.secondary }]}>{weekdays[day - 1].replace('周', '')}</Text><View style={[styles.dateDot, isToday && { backgroundColor: theme.primary }]}><Text style={[styles.dayDate, { color: isToday ? '#FFFFFF' : theme.text }]}>{date.getDate()}</Text></View></View>;
+            })}
+          </View>
+          <View style={[styles.grid, { height: 12 * rowHeight }]}>
+            {Array.from({ length: 12 }, (_, index) => (
+              <View key={index} style={[styles.gridLine, { top: index * rowHeight, borderTopColor: theme.line }]}>
+                <View style={styles.periodMarker}>
+                  <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[styles.periodTime, { color: theme.secondary }]}>{periodStarts[index]}</Text>
+                  <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[styles.periodNumber, { color: theme.secondary }]}>{index + 1}</Text>
+                  <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[styles.periodTime, { color: theme.secondary }]}>{periodEnds[index]}</Text>
+                </View>
+              </View>
+            ))}
+            {days.map((_, index) => <View key={index} style={[styles.verticalLine, { left: timeColumnWidth + index * columnWidth, borderLeftColor: theme.line }]} />)}
+            {data.courses.filter((course) => course.weekday >= 1 && course.weekday <= 7 && course.weeks.includes(pageWeek)).map((course) => {
+              const ink = courseInk(course.color, glass, dark);
+              const position = {
+                left: timeColumnWidth + (course.weekday - 1) * columnWidth + 2,
+                top: (course.startPeriod - 1) * rowHeight + 3,
+                width: columnWidth - 4,
+                height: (course.endPeriod - course.startPeriod + 1) * rowHeight - 6,
+              };
+              return interactive ? <DraggableCourse
+                key={course.id}
+                course={course}
+                {...position}
+                ink={ink}
+                compact={compact}
+                onDragState={handleDragState}
+                onMove={handleCourseMove}
+                onEdit={(courseId) => router.push({ pathname: '/course-editor', params: { id: courseId } })}
+              /> : <View key={course.id} style={[styles.courseBlock, position, { backgroundColor: 'transparent' }]}><CourseFace course={course} height={position.height} ink={ink} compact={compact} /></View>;
+            })}
+            {pageOffset === 0 && timeLineY !== null ? <View pointerEvents="none" style={[styles.nowLine, { top: timeLineY, left: timeColumnWidth + ((now.getDay() || 7) - 1) * columnWidth + 2, width: columnWidth - 4, backgroundColor: theme.red }]}><View style={[styles.nowDot, { backgroundColor: theme.red }]} /></View> : null}
+          </View>
+        </View>
+      </Card>
+    );
+  };
+
   return (
     <Screen scrollEnabled={!draggingCourseId}>
       <View style={styles.topRow}>
@@ -184,50 +322,9 @@ export default function ScheduleScreen() {
         <MotionPressable accessibilityLabel="下一周" onPress={() => changeWeek(1)} style={[styles.weekButton, { backgroundColor: theme.surfaceAlt }]}><AppIcon ios="chevron.right" android="chevron_right" color={theme.primary} size={18} /></MotionPressable>
         <MotionPressable accessibilityLabel="添加课程" onPress={() => router.push('/course-editor')} style={[styles.addButton, { backgroundColor: theme.primarySoft }]}><Text style={[styles.addText, { color: theme.primary }]}>＋ 课程</Text></MotionPressable>
       </View>
-      <View {...weekSwipe.panHandlers}>
-      <Animated.View key={week} entering={weekSlideIn(weekDirection)}>
-      <Card style={[styles.gridCard, glass && { backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.72)' }]}>
-          <View style={{ width: gridWidth }}>
-            <View style={styles.dayHeader}>
-              <View style={{ width: timeColumnWidth }} />
-              {days.map((day) => {
-                const date = new Date(weekStart);
-                date.setDate(date.getDate() + day - 1);
-                const isToday = weekOffset === 0 && (new Date().getDay() || 7) === day;
-                return <View key={day} style={[styles.dayCell, { width: columnWidth }]}><Text style={[styles.dayName, { color: isToday ? theme.primary : theme.secondary }]}>{weekdays[day - 1].replace('周', '')}</Text><View style={[styles.dateDot, isToday && { backgroundColor: theme.primary }]}><Text style={[styles.dayDate, { color: isToday ? '#FFFFFF' : theme.text }]}>{date.getDate()}</Text></View></View>;
-              })}
-            </View>
-            <View style={[styles.grid, { height: 12 * rowHeight }]}>
-              {Array.from({ length: 12 }, (_, index) => (
-                <View key={index} style={[styles.gridLine, { top: index * rowHeight, borderTopColor: theme.line }]}>
-                  <View style={styles.periodMarker}>
-                    <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[styles.periodTime, { color: theme.secondary }]}>{periodStarts[index]}</Text>
-                    <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[styles.periodNumber, { color: theme.secondary }]}>{index + 1}</Text>
-                    <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={[styles.periodTime, { color: theme.secondary }]}>{periodEnds[index]}</Text>
-                  </View>
-                </View>
-              ))}
-              {days.map((_, index) => <View key={index} style={[styles.verticalLine, { left: timeColumnWidth + index * columnWidth, borderLeftColor: theme.line }]} />)}
-              {data.courses.filter((course) => course.weekday >= 1 && course.weekday <= 7 && course.weeks.includes(week)).map((course) => {
-                const ink = courseInk(course.color, glass, dark);
-                return <DraggableCourse
-                  key={course.id}
-                  course={course}
-                  left={timeColumnWidth + (course.weekday - 1) * columnWidth + 2}
-                  top={(course.startPeriod - 1) * rowHeight + 3}
-                  width={columnWidth - 4}
-                  height={(course.endPeriod - course.startPeriod + 1) * rowHeight - 6}
-                  ink={ink}
-                  compact={compact}
-                  onDragState={handleDragState}
-                  onMove={handleCourseMove}
-                  onEdit={(courseId) => router.push({ pathname: '/course-editor', params: { id: courseId } })}
-                />
-              })}
-            </View>
-          </View>
-      </Card>
-      </Animated.View>
+      <View {...weekSwipe.panHandlers} style={styles.weekViewport}>
+        {previewDelta !== 0 ? <View pointerEvents="none" style={styles.weekPreview}>{renderWeekGrid(previewDelta)}</View> : null}
+        <Animated.View style={[styles.movingWeek, { backgroundColor: previewDelta ? theme.background : 'transparent' }, weekDragStyle]}>{renderWeekGrid(0)}</Animated.View>
       </View>
       <View style={styles.buttonRow}><View style={{ flex: 1 }}><PrimaryButton label={syncing ? '同步中…' : '同步 iPhone 日历'} disabled={syncing} onPress={sync} /></View></View>
       <Text style={[styles.tip, { color: theme.secondary }]}>点课程编辑详情，按住拖动调整节次；在课表空白处左右滑动切换周数。</Text>
@@ -240,6 +337,7 @@ const styles = StyleSheet.create({
   kicker: { fontSize: 12, fontWeight: '600', marginBottom: 2 }, title: { fontSize: 29, fontWeight: '800', letterSpacing: -0.9 },
   importButton: { borderRadius: 17, paddingHorizontal: 15, paddingVertical: 10 }, importText: { fontWeight: '700', fontSize: 14 },
   weekTools: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 9 }, weekButton: { width: 34, height: 34, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, weekHint: { flex: 1, fontSize: 10, textAlign: 'center' }, addButton: { minHeight: 34, paddingHorizontal: 10, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, addText: { fontSize: 11, fontWeight: '800' },
+  weekViewport: { overflow: 'hidden', borderRadius: 28 }, weekPreview: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }, movingWeek: { borderRadius: 28 },
   gridCard: { padding: 6, borderRadius: 28, overflow: 'hidden' }, dayHeader: { flexDirection: 'row', height: 47, alignItems: 'center' }, dayCell: { alignItems: 'center', gap: 3 }, dayName: { fontSize: 11, fontWeight: '700' },
   dateDot: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, dayDate: { fontSize: 12, fontWeight: '700' }, grid: { position: 'relative' },
   gridLine: { position: 'absolute', left: 0, right: 0, borderTopWidth: StyleSheet.hairlineWidth, height: rowHeight },
@@ -247,6 +345,7 @@ const styles = StyleSheet.create({
   periodNumber: { width: timeColumnWidth, textAlign: 'center', fontSize: 11, lineHeight: 14, fontWeight: '800' },
   periodTime: { width: timeColumnWidth, textAlign: 'center', fontSize: 8, lineHeight: 10, fontVariant: ['tabular-nums'] },
   verticalLine: { position: 'absolute', top: 0, bottom: 0, borderLeftWidth: StyleSheet.hairlineWidth }, courseBlock: { position: 'absolute', borderRadius: 15, padding: 8, shadowColor: '#203060', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.1, shadowRadius: 9, elevation: 3 }, courseContents: { flex: 1 }, dropTarget: { position: 'absolute', borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 15, justifyContent: 'center', alignItems: 'center', zIndex: 0 }, dropHint: { fontSize: 8, fontWeight: '800', opacity: 0.8 }, courseGlyph: { width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.42)', alignItems: 'center', justifyContent: 'center', marginBottom: 5 },
+  nowLine: { position: 'absolute', height: 2, borderRadius: 1, zIndex: 8 }, nowDot: { position: 'absolute', left: -3, top: -2, width: 6, height: 6, borderRadius: 3 },
   courseName: { color: '#FFFFFF', fontSize: 11, lineHeight: 14, fontWeight: '800', textShadowColor: 'rgba(20,22,45,0.28)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }, courseNameCompact: { fontSize: 10, lineHeight: 13 }, courseMeta: { color: 'rgba(255,255,255,0.96)', fontSize: 8.5, lineHeight: 10, marginTop: 4, fontWeight: '700', textShadowColor: 'rgba(20,22,45,0.24)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }, courseMetaCompact: { fontSize: 8, lineHeight: 9 }, courseTeacher: { fontSize: 8, lineHeight: 10, marginTop: 5, fontWeight: '700', opacity: 0.72 },
   buttonRow: { flexDirection: 'row', marginTop: 16 }, tip: { fontSize: 12, lineHeight: 18, marginTop: 10, paddingHorizontal: 4 },
 });

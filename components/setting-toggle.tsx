@@ -1,6 +1,7 @@
+import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
-import Animated, { interpolateColor, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import { motion, MotionPressable } from '@/components/motion';
 import { useAppTheme } from '@/src/theme';
@@ -14,7 +15,7 @@ export function SettingToggle({ value, onValueChange, label }: {
   const progress = useSharedValue(value ? 1 : 0);
 
   useEffect(() => {
-    progress.value = withTiming(value ? 1 : 0, { duration: motion.standard, reduceMotion: ReduceMotion.System });
+    progress.value = withSpring(value ? 1 : 0, motion.springSoft);
   }, [progress, value]);
 
   const trackStyle = useAnimatedStyle(() => ({
@@ -27,7 +28,10 @@ export function SettingToggle({ value, onValueChange, label }: {
       accessibilityRole="switch"
       accessibilityLabel={label}
       accessibilityState={{ checked: value }}
-      onPress={() => onValueChange(!value)}
+      onPress={() => {
+        Haptics.selectionAsync().catch(() => undefined);
+        onValueChange(!value);
+      }}
       style={styles.touchTarget}
     >
       <Animated.View style={[styles.track, trackStyle]}>

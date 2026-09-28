@@ -7,7 +7,7 @@ import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon } from '@/components/app-icon';
-import { gentleLayout, motion, MotionPressable } from '@/components/motion';
+import { motion, MotionPressable } from '@/components/motion';
 import { GlassBackdrop, Pill, Screen } from '@/components/ui';
 import { hasAIKey } from '@/src/ai-config';
 import { parseAssistantInput, parseLocally } from '@/src/assistant';
@@ -122,7 +122,6 @@ export default function AssistantScreen() {
       setMessages((current) => [...current, { id: `e-${Date.now()}`, role: 'assistant', text: '这次没有识别成功', detail: error instanceof Error ? error.message : '请换种说法再试一次。' }]);
     } finally {
       setLoading(false);
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
     }
   };
 
@@ -150,7 +149,6 @@ export default function AssistantScreen() {
             <Animated.View
               key={message.id}
               entering={FadeIn.duration(motion.standard).reduceMotion(ReduceMotion.System)}
-              layout={gentleLayout}
               style={[styles.messageWrap, message.role === 'user' && styles.userWrap]}
             >
               {message.role === 'assistant' ? <View style={[styles.botAvatar, { backgroundColor: theme.primary }]}><AppIcon ios="sparkles" android="auto_awesome" color="#FFFFFF" size={15} fallback="✦" /></View> : null}

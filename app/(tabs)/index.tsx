@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
-import { gentleEnter, MotionPressable } from '@/components/motion';
+import { gentleEnter, gentleTextEnter, MotionPressable } from '@/components/motion';
 import { Card, GlassBackdrop, Pill, Screen, SectionTitle } from '@/components/ui';
 import { currentWeek, formatDateTime, nextCourse, relativeDue, weekdays } from '@/src/date';
 import { useApp } from '@/src/store';
@@ -33,7 +33,7 @@ export default function HomeScreen() {
         </MotionPressable>
       </View>
 
-      <Animated.View entering={gentleEnter(70)}>
+      <Animated.View entering={gentleTextEnter(20)}>
         <LinearGradient colors={['#6269EB', '#8782F4']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
           <View style={styles.heroTop}>
             <Text style={styles.heroKicker}>下一节课</Text>
@@ -54,22 +54,22 @@ export default function HomeScreen() {
       </Animated.View>
 
       <View style={styles.quickGrid}>
-        <QuickAction icon="✦" label="AI 快记" color="#ECECFF" delay={120} onPress={() => router.push('/assistant')} />
-        <QuickAction icon="▦" label="导入课表" color="#E3F4EE" delay={170} onPress={() => router.push('/import')} />
-        <QuickAction icon="◎" label="专注 25 分" color="#FFF0E8" delay={220} onPress={() => router.push('/focus')} />
-        <QuickAction icon="↗" label="成绩分析" color="#F2E9FA" delay={270} onPress={() => router.push('/insights')} />
+        <QuickAction icon="✦" label="AI 快记" color="#ECECFF" delay={60} onPress={() => router.push('/assistant')} />
+        <QuickAction icon="▦" label="导入课表" color="#E3F4EE" delay={85} onPress={() => router.push('/import')} />
+        <QuickAction icon="◎" label="专注 25 分" color="#FFF0E8" delay={110} onPress={() => router.push('/focus')} />
+        <QuickAction icon="↗" label="成绩分析" color="#F2E9FA" delay={135} onPress={() => router.push('/insights')} />
       </View>
 
       <SectionTitle title="今日概览" />
       <View style={styles.metricRow}>
         <Card style={styles.metricCard}>
           <Text style={[styles.metricLabel, { color: theme.secondary }]}>今日消费</Text>
-          <Text style={[styles.metricValue, { color: theme.text }]}>¥{spentToday.toFixed(1)}</Text>
+          <Animated.View key={spentToday.toFixed(1)} entering={gentleTextEnter()}><Text style={[styles.metricValue, { color: theme.text }]}>¥{spentToday.toFixed(1)}</Text></Animated.View>
           <Pill tone="green">记录 {data.expenses.filter((e) => new Date(e.occurredAt).toDateString() === today.toDateString()).length} 笔</Pill>
         </Card>
         <Card style={styles.metricCard}>
           <Text style={[styles.metricLabel, { color: theme.secondary }]}>本周专注</Text>
-          <Text style={[styles.metricValue, { color: theme.text }]}>{Math.floor(data.focusMinutesThisWeek / 60)}h {data.focusMinutesThisWeek % 60}m</Text>
+          <Animated.View key={data.focusMinutesThisWeek} entering={gentleTextEnter()}><Text style={[styles.metricValue, { color: theme.text }]}>{Math.floor(data.focusMinutesThisWeek / 60)}h {data.focusMinutesThisWeek % 60}m</Text></Animated.View>
           <Pill tone="orange">继续保持</Pill>
         </Card>
       </View>

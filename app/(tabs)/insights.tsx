@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Linking, StyleSheet, Text, View } from 'react
 import { router } from 'expo-router';
 import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 
-import { gentleEnter, gentleLayout, MotionPressable } from '@/components/motion';
+import { gentleEnter, gentleLayout, gentleTextEnter, MotionPressable } from '@/components/motion';
 import { SegmentedControl } from '@/components/segmented-control';
 import { SettingToggle } from '@/components/setting-toggle';
 import { Card, Pill, PrimaryButton, Screen, SectionTitle } from '@/components/ui';
@@ -76,7 +76,7 @@ export default function InsightsScreen() {
       ) : (
         <Animated.View key="grades" entering={gentleEnter()} layout={gentleLayout}>
           <Card glassSurface={false} style={[styles.gpaHero, { backgroundColor: theme.primary }]}>
-            <Text style={styles.gpaLabel}>必修课 GPA</Text><Text style={styles.gpaValue}>{gradeSummary.gpa?.toFixed(2) ?? '--'}</Text><Text style={styles.gpaMeta}>{gradeSummary.requiredCredits} 必修学分 · 4.0 满绩</Text>
+            <Text style={styles.gpaLabel}>必修课 GPA</Text><Animated.View key={gradeSummary.gpa?.toFixed(2) ?? '--'} entering={gentleTextEnter()}><Text style={styles.gpaValue}>{gradeSummary.gpa?.toFixed(2) ?? '--'}</Text></Animated.View><Text style={styles.gpaMeta}>{gradeSummary.requiredCredits} 必修学分 · 4.0 满绩</Text>
           </Card>
           <Card style={styles.creditCard}>
             <View style={styles.creditRow}><Text style={[styles.creditLabel, { color: theme.secondary }]}>已获选修学分</Text><Text style={[styles.creditValue, { color: theme.text }]}>{gradeSummary.electiveCredits}</Text></View>

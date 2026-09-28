@@ -44,6 +44,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "test:web-search": "node --test scripts/test-web-search.mjs",
+    "test:week-swipe": "node --test scripts/test-week-swipe.mjs",
     "server": "node --env-file=.env server/index.mjs"
   },
   "private": true
