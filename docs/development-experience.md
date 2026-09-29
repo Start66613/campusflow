@@ -246,6 +246,8 @@ npx.cmd expo export --platform android --output-dir dist-android-check
 
 ## 24. 动效审查：优先消除同屏手势落差
 
+> 历史方案记录：以下 PanResponder 与不透明底板方案已被第 27 节替代，不应在新代码中复用。
+
 课表原本只有 `onMoveShouldSetPanResponder` 和 `onPanResponderRelease`，中间没有 `onPanResponderMove`：用户滑动时整页不动、松手才换周。这是可验证的手感断点。保留现有 PanResponder（避免为单一手势增添依赖），用共享位移让课表跟手移动；只在开始滑动时渲染相邻周预览，达到阈值才反馈触感，放手后过渡到目标周，否则回弹。预览放在当前页下层，当前页滑动期间加不透明底板，避免两层半透明玻璃课程文字透叠。预览方向由 ref 管理，不能把 `previewDelta` 放进 PanResponder 的重建依赖里，否则拖动中途替换 responder。
 
 这次审查还确认了 AI 消息气泡的入场、布局弹簧和自动滚动并行；去掉布局弹簧和重复的延迟滚动，只保留消息淡入与内容高度变化时的一次滚动。首页入场间隔缩短，开关与分段控件共用无过冲弹簧语义。数值变化采用子层轻淡入，原生 `GlassView` 的祖先仍只做 transform；给整张玻璃卡或整页统一加 opacity 不是安全的通用解法。数据页内容无 `exiting` 不等于必然出现空帧，不能仅凭静态代码就套用退场透明度动画。
@@ -263,3 +265,15 @@ npx.cmd expo export --platform android --output-dir dist-android-check
 湘大新教务的「信息查询 → 成绩总表打印（主修）」（`N558020`）入口页是学生记录选择表，只有学院、年级、专业等身份字段和「打印」按钮；详细成绩在点击后生成的独立 PDF 中。检查入口页 DOM 时不能因为看见表格就误以为拿到了成绩行。浏览器内置 PDF 查看器未向页面 DOM 暴露文字，缩小的一页预览也不足以可靠辨认字段。不得把学生姓名、学号、成绩或包含这些内容的 PDF URL 写入仓库和调试日志。
 
 后续接入前先用脱敏样本确认 PDF 的真实列名、课程性质、学分、单课绩点与汇总口径，再决定是否实现本机 PDF 解析；解析失败要保留现有成绩查询接口的结果，不能静默覆盖。若使用视觉模型读取成绩单，应让用户在 App 内明确选择并同意将该 PDF 发送到指定模型服务，不能把已登录的教务 PDF 在后台自动上传。教务课程性质仍优先于 AI 推断。
+
+## 27. 课表换周与拖课的手势不能混在 JS 线程
+
+**现象**：PanResponder 在 JS 线程逐帧给 `weekDragX` 赋值；滑动中首次改变方向还会 `setPreviewDelta`、挂载整周课表。动画因此跟手慢一拍。为了遮住两个透明玻璃层叠的文字，旧实现又给移动页加了 `theme.background` 不透明底板，换周时看起来突然变白。课程块只移动约 10 px 就抢走横向手势，也妨碍换周和纵向滚动。
+
+**修复**：按 Expo SDK 57 兼容版本安装 `react-native-gesture-handler`，在应用根节点放 `GestureHandlerRootView`。周切换和课程拖动改用 Gesture API + Reanimated worklet；横向位移在 UI 线程一比一更新，松手只做一次短时补齐或无过冲回弹。前、当前、后三周预先排列在裁剪区内，滑动中不做 React 状态更新或临时挂载。**最外层原生玻璃卡固定不动**，只移动内部网格轨道；不要为了掩盖玻璃叠层而引入白色不透明底板。课表卡关闭通用布局动画，避免状态交换时与轨道位移叠加。
+
+课程手势使用 `activateAfterLongPress(200)`；200 ms 内的横向滑动交给换周，纵向滑动交给滚动。子手势用 `blocksExternalGesture` 让父层在拖课已启动时等待；拖动落点仍只提交一次位置，取消时短暂归位。换周阈值与边界继续复用 `src/week-swipe.ts` 的纯函数，并在手势速度单位从 px/s 转换为 px/ms 后调用，避免 UI 与测试口径漂移。
+
+参考 [expo-glass-tabs](https://github.com/davidmokos/expo-glass-tabs) 的 UI 线程跟手与只在松手时导航的交互思路，以及 [RNGH Pan 手势文档](https://docs.swmansion.com/react-native-gesture-handler/docs/gestures/pan-gesture/)。`react-native-sortables` 适合自由列表重排，不直接适用于固定七列十二节网格；Skia shader 和 SwiftUI Mesh Gradient 会改变 Expo Go 测试条件，本轮不引入。以后先查是否有手势中 `setState`、是否在移动原生玻璃祖先、是否对同一节点同时做 transform 与 layout 动画，再调弹簧参数。
+
+**待真机验收**：iPhone Expo Go 上分别试空白处慢滑、课程上快速横滑、按住课程 200 ms 后拖动、课表纵向滚动、快速反向滑动、第 1/30 周边界、深色/自定义背景与系统减少动态效果；Android 也要试手势优先级。静态打包通过不代表 60 fps 已被证明。

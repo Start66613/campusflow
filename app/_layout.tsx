@@ -4,6 +4,7 @@ import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { AppProvider, useApp } from '@/src/store';
@@ -51,7 +52,7 @@ export default function RootLayout() {
     return null;
   }
 
-  return <AppProvider><RootLayoutNav /></AppProvider>;
+  return <GestureHandlerRootView style={{ flex: 1 }}><AppProvider><RootLayoutNav /></AppProvider></GestureHandlerRootView>;
 }
 
 function RootLayoutNav() {

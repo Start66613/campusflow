@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Image, PanResponder, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { Alert, Image, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Easing, ReduceMotion, runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 import { AppIcon } from '@/components/app-icon';
@@ -21,6 +22,7 @@ import { canChangeWeek, resolveWeekSwipe } from '@/src/week-swipe';
 // vertically only when the device is short.
 const rowHeight = 66;
 const timeColumnWidth = 36;
+const dragHaptic = () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined); };
 
 function currentTimeY(now: Date) {
   const minute = now.getHours() * 60 + now.getMinutes();
@@ -66,7 +68,7 @@ function CourseFace({ course, height, ink, compact, onEdit }: {
   </>;
 }
 
-function DraggableCourse({ course, left, top, width, height, ink, compact, onMove, onDragState, onEdit }: {
+function DraggableCourse({ course, left, top, width, height, ink, compact, weekSwipe, onMove, onDragState, onEdit }: {
   course: Course;
   left: number;
   top: number;
@@ -74,6 +76,7 @@ function DraggableCourse({ course, left, top, width, height, ink, compact, onMov
   height: number;
   ink: string;
   compact: boolean;
+  weekSwipe: ReturnType<typeof Gesture.Pan>;
   onMove: (course: Course, dx: number, dy: number) => void;
   onDragState: (courseId: string, active: boolean) => void;
   onEdit: (id: string) => void;
@@ -82,43 +85,36 @@ function DraggableCourse({ course, left, top, width, height, ink, compact, onMov
   const dragY = useSharedValue(0);
   const dragScale = useSharedValue(1);
   const [dragging, setDragging] = useState(false);
-  const responder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => false,
-    onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) + Math.abs(gesture.dy) > 10,
-    onMoveShouldSetPanResponderCapture: (_, gesture) => Math.abs(gesture.dx) + Math.abs(gesture.dy) > 10,
-    onPanResponderTerminationRequest: () => false,
-    onPanResponderGrant: () => {
-      setDragging(true);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+  const dragGesture = useMemo(() => Gesture.Pan()
+    .activateAfterLongPress(200)
+    .blocksExternalGesture(weekSwipe)
+    .onStart(() => {
       dragX.value = 0;
       dragY.value = 0;
-      dragScale.value = withSpring(1.012, { damping: 18, stiffness: 240, mass: 0.42, reduceMotion: ReduceMotion.System });
-      onDragState(course.id, true);
-    },
-    onPanResponderMove: (_, gesture) => {
-      dragX.value = gesture.dx;
-      dragY.value = gesture.dy;
-    },
-    onPanResponderRelease: (_, gesture) => {
-      const dx = Math.min(7 - course.weekday, Math.max(1 - course.weekday, Math.round(gesture.dx / width)));
-      const dy = Math.min(12 - course.endPeriod, Math.max(1 - course.startPeriod, Math.round(gesture.dy / rowHeight)));
-      // Commit a single grid snap. The visual offset must not be replayed on
-      // top of the new left/top position (that was the "flying" release).
-      onMove(course, dx, dy);
+      dragScale.value = withTiming(1.012, { duration: 100, reduceMotion: ReduceMotion.System });
+      runOnJS(setDragging)(true);
+      runOnJS(onDragState)(course.id, true);
+      runOnJS(dragHaptic)();
+    })
+    .onUpdate((event) => {
+      dragX.value = event.translationX;
+      dragY.value = event.translationY;
+    })
+    .onEnd((event) => {
+      const dx = Math.min(7 - course.weekday, Math.max(1 - course.weekday, Math.round(event.translationX / width)));
+      const dy = Math.min(12 - course.endPeriod, Math.max(1 - course.startPeriod, Math.round(event.translationY / rowHeight)));
+      // Snap once; never spring the old offset on top of the new grid position.
       dragX.value = 0;
       dragY.value = 0;
-      dragScale.value = withTiming(1, { duration: 120, reduceMotion: ReduceMotion.System });
-      setDragging(false);
-      onDragState(course.id, false);
-    },
-    onPanResponderTerminate: () => {
-      dragX.value = withTiming(0, { duration: 145, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System });
-      dragY.value = withTiming(0, { duration: 145, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System });
-      dragScale.value = withTiming(1, { duration: 120, reduceMotion: ReduceMotion.System });
-      setDragging(false);
-      onDragState(course.id, false);
-    },
-  }), [course, onDragState, onMove, width, dragX, dragY, dragScale]);
+      runOnJS(onMove)(course, dx, dy);
+    })
+    .onFinalize(() => {
+      dragX.value = withTiming(0, { duration: 110, reduceMotion: ReduceMotion.System });
+      dragY.value = withTiming(0, { duration: 110, reduceMotion: ReduceMotion.System });
+      dragScale.value = withTiming(1, { duration: 110, reduceMotion: ReduceMotion.System });
+      runOnJS(setDragging)(false);
+      runOnJS(onDragState)(course.id, false);
+    }), [course, onDragState, onMove, weekSwipe, width, dragX, dragY, dragScale]);
   const dragStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: dragX.value }, { translateY: dragY.value }, { scale: dragScale.value }],
   }));
@@ -131,14 +127,13 @@ function DraggableCourse({ course, left, top, width, height, ink, compact, onMov
   return (
     <>
       {dragging ? <Animated.View pointerEvents="none" style={[styles.dropTarget, { left, top, width, height, borderColor: `${course.color}B8`, backgroundColor: `${course.color}16` }, previewStyle]}><Text style={[styles.dropHint, { color: course.color }]}>释放调整</Text></Animated.View> : null}
-      <Animated.View
-        {...responder.panHandlers}
+      <GestureDetector gesture={dragGesture}><Animated.View
         accessibilityRole="adjustable"
         accessibilityLabel={`${course.name}，按住拖动调整课程时间`}
         style={[styles.courseBlock, { left, top, width, height, zIndex: dragging ? 10 : 1, shadowOpacity: dragging ? 0.2 : 0.1, backgroundColor: 'transparent' }, dragStyle]}
       >
         <CourseFace course={course} height={height} ink={ink} compact={compact} onEdit={() => onEdit(course.id)} />
-      </Animated.View>
+      </Animated.View></GestureDetector>
     </>
   );
 }
@@ -151,12 +146,9 @@ export default function ScheduleScreen() {
   const [syncing, setSyncing] = useState(false);
   const [draggingCourseId, setDraggingCourseId] = useState<string | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
-  const [previewDelta, setPreviewDelta] = useState(0);
-  const previewDeltaRef = useRef(0);
   const [now, setNow] = useState(() => new Date());
   const weekDragX = useSharedValue(0);
-  const weekTransitioning = useRef(false);
-  const thresholdFired = useRef(false);
+  const weekLocked = useSharedValue(false);
   const baseWeek = currentWeek(data.settings.termStart);
   const week = Math.max(1, Math.min(30, baseWeek + weekOffset));
   const weekStart = dateForWeekday(1);
@@ -165,75 +157,71 @@ export default function ScheduleScreen() {
   weekEnd.setDate(weekEnd.getDate() + 6);
   const days = Array.from({ length: 7 }, (_, index) => index + 1);
   const gridWidth = Math.max(0, width - 48);
-  const pageWidth = gridWidth + 12;
+  const pageWidth = gridWidth;
   const columnWidth = (gridWidth - timeColumnWidth) / 7;
   const compact = width < 400;
   const glass = data.settings.visualMode === 'glass';
   const dark = theme.background === '#000000';
   const timeLineY = currentTimeY(now);
-  const showPreview = useCallback((delta: number) => {
-    if (previewDeltaRef.current === delta) return;
-    previewDeltaRef.current = delta;
-    setPreviewDelta(delta);
-  }, []);
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(timer);
   }, []);
   const completeWeek = useCallback((delta: number) => {
     setWeekOffset((current) => Math.max(1 - baseWeek, Math.min(30 - baseWeek, current + delta)));
-    showPreview(0);
-    weekTransitioning.current = false;
-  }, [baseWeek, showPreview]);
-  useLayoutEffect(() => { weekDragX.value = 0; }, [week, weekDragX]);
+  }, [baseWeek]);
+  useLayoutEffect(() => {
+    weekDragX.value = 0;
+    weekLocked.value = false;
+  }, [week, weekDragX, weekLocked]);
   const weekDragStyle = useAnimatedStyle(() => ({ transform: [{ translateX: weekDragX.value }] }));
-  const cancelWeek = useCallback(() => { showPreview(0); weekTransitioning.current = false; }, [showPreview]);
+  const tickWeek = useCallback(() => { Haptics.selectionAsync().catch(() => undefined); }, []);
   const changeWeek = useCallback((delta: -1 | 1) => {
-    if (weekTransitioning.current || !canChangeWeek(week, delta)) return;
-    weekTransitioning.current = true;
-    showPreview(delta);
-    Haptics.selectionAsync().catch(() => undefined);
-    requestAnimationFrame(() => {
-      weekDragX.value = withTiming(-delta * pageWidth, { duration: 205, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System }, (finished) => {
-        if (finished) runOnJS(completeWeek)(delta);
-      });
-    });
-  }, [completeWeek, pageWidth, showPreview, week, weekDragX]);
-  const weekSwipe = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => false,
-    onMoveShouldSetPanResponder: (_, gesture) => !weekTransitioning.current && Math.abs(gesture.dx) > 18 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.35,
-    onPanResponderTerminationRequest: () => false,
-    onPanResponderGrant: () => { thresholdFired.current = false; weekDragX.value = 0; },
-    onPanResponderMove: (_, gesture) => {
-      const delta = gesture.dx < 0 ? 1 : -1;
-      const allowed = canChangeWeek(week, delta);
-      weekDragX.value = allowed ? Math.max(-pageWidth, Math.min(pageWidth, gesture.dx)) : Math.max(-24, Math.min(24, gesture.dx * 0.16));
-      showPreview(allowed ? delta : 0);
-      if (allowed && Math.abs(gesture.dx) >= Math.max(55, pageWidth * 0.18) && !thresholdFired.current) {
-        thresholdFired.current = true;
-        Haptics.selectionAsync().catch(() => undefined);
+    if (weekLocked.value || !canChangeWeek(week, delta)) return;
+    weekLocked.value = true;
+    tickWeek();
+    weekDragX.value = withTiming(-delta * pageWidth, { duration: 220, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System }, (finished) => {
+      if (finished) {
+        runOnJS(completeWeek)(delta);
+      } else {
+        weekLocked.value = false;
+        weekDragX.value = withSpring(0, motion.springSoft);
       }
-    },
-    onPanResponderRelease: (_, gesture) => {
-      const delta = resolveWeekSwipe(gesture.dx, gesture.vx, pageWidth, week);
+    });
+  }, [completeWeek, pageWidth, tickWeek, week, weekDragX, weekLocked]);
+  const weekSwipe = useMemo(() => Gesture.Pan()
+    .activeOffsetX([-14, 14])
+    .failOffsetY([-11, 11])
+    .onUpdate((event) => {
+      if (weekLocked.value) return;
+      const delta = event.translationX < 0 ? 1 : -1;
+      const allowed = canChangeWeek(week, delta);
+      weekDragX.value = allowed
+        ? Math.max(-pageWidth, Math.min(pageWidth, event.translationX))
+        : Math.max(-24, Math.min(24, event.translationX * 0.16));
+    })
+    .onEnd((event) => {
+      if (weekLocked.value) return;
+      // RNGH reports px/s; the shared resolver and its tests use px/ms.
+      const delta = resolveWeekSwipe(event.translationX, event.velocityX / 1000, pageWidth, week);
       if (delta !== 0) {
-        if (!thresholdFired.current) Haptics.selectionAsync().catch(() => undefined);
-        weekTransitioning.current = true;
-        weekDragX.value = withTiming(-delta * pageWidth, { duration: 175, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System }, (finished) => {
-          if (finished) runOnJS(completeWeek)(delta);
+        weekLocked.value = true;
+        runOnJS(tickWeek)();
+        weekDragX.value = withTiming(-delta * pageWidth, { duration: 190, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System }, (finished) => {
+          if (finished) {
+            runOnJS(completeWeek)(delta);
+          } else {
+            weekLocked.value = false;
+            weekDragX.value = withSpring(0, motion.springSoft);
+          }
         });
       } else {
-        weekDragX.value = withSpring(0, motion.springSoft, (finished) => {
-          if (finished) runOnJS(cancelWeek)();
-        });
+        weekDragX.value = withSpring(0, motion.springSoft);
       }
-    },
-    onPanResponderTerminate: () => {
-      weekDragX.value = withSpring(0, motion.springSoft, (finished) => {
-        if (finished) runOnJS(cancelWeek)();
-      });
-    },
-  }), [cancelWeek, completeWeek, pageWidth, showPreview, week, weekDragX]);
+    })
+    .onFinalize((_event, success) => {
+      if (!success && !weekLocked.value) weekDragX.value = withSpring(0, motion.springSoft);
+    }), [completeWeek, pageWidth, tickWeek, week, weekDragX, weekLocked]);
 
   const handleDragState = useCallback((courseId: string, active: boolean) => setDraggingCourseId(active ? courseId : null), []);
   const handleCourseMove = useCallback((source: Course, dayDelta: number, periodDelta: number) => {
@@ -262,8 +250,7 @@ export default function ScheduleScreen() {
     pageStart.setDate(pageStart.getDate() + delta * 7);
     const interactive = delta === 0;
     return (
-      <Card style={[styles.gridCard, glass && { backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.72)' }]}>
-        <View style={{ width: gridWidth }}>
+      <View style={{ width: gridWidth }} pointerEvents={interactive ? 'auto' : 'none'}>
           <View style={styles.dayHeader}>
             <View style={{ width: timeColumnWidth }} />
             {days.map((day) => {
@@ -298,6 +285,7 @@ export default function ScheduleScreen() {
                 {...position}
                 ink={ink}
                 compact={compact}
+                weekSwipe={weekSwipe}
                 onDragState={handleDragState}
                 onMove={handleCourseMove}
                 onEdit={(courseId) => router.push({ pathname: '/course-editor', params: { id: courseId } })}
@@ -305,8 +293,7 @@ export default function ScheduleScreen() {
             })}
             {pageOffset === 0 && timeLineY !== null ? <View pointerEvents="none" style={[styles.nowLine, { top: timeLineY, left: timeColumnWidth + ((now.getDay() || 7) - 1) * columnWidth + 2, width: columnWidth - 4, backgroundColor: theme.red }]}><View style={[styles.nowDot, { backgroundColor: theme.red }]} /></View> : null}
           </View>
-        </View>
-      </Card>
+      </View>
     );
   };
 
@@ -318,16 +305,23 @@ export default function ScheduleScreen() {
       </View>
       <View style={styles.weekTools}>
         <MotionPressable accessibilityLabel="上一周" onPress={() => changeWeek(-1)} style={[styles.weekButton, { backgroundColor: theme.surfaceAlt }]}><AppIcon ios="chevron.left" android="chevron_left" color={theme.primary} size={18} /></MotionPressable>
-        <Text style={[styles.weekHint, { color: theme.secondary }]}>左右滑动空白处切换周次</Text>
+        <Text style={[styles.weekHint, { color: theme.secondary }]}>左右滑动切换周次</Text>
         <MotionPressable accessibilityLabel="下一周" onPress={() => changeWeek(1)} style={[styles.weekButton, { backgroundColor: theme.surfaceAlt }]}><AppIcon ios="chevron.right" android="chevron_right" color={theme.primary} size={18} /></MotionPressable>
         <MotionPressable accessibilityLabel="添加课程" onPress={() => router.push('/course-editor')} style={[styles.addButton, { backgroundColor: theme.primarySoft }]}><Text style={[styles.addText, { color: theme.primary }]}>＋ 课程</Text></MotionPressable>
       </View>
-      <View {...weekSwipe.panHandlers} style={styles.weekViewport}>
-        {previewDelta !== 0 ? <View pointerEvents="none" style={styles.weekPreview}>{renderWeekGrid(previewDelta)}</View> : null}
-        <Animated.View style={[styles.movingWeek, { backgroundColor: previewDelta ? theme.background : 'transparent' }, weekDragStyle]}>{renderWeekGrid(0)}</Animated.View>
-      </View>
+      <GestureDetector gesture={weekSwipe}><View style={styles.weekViewport}>
+        <Card animateLayout={false} style={[styles.gridCard, glass && { backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.72)' }]}>
+          <View style={{ width: gridWidth, height: 47 + 12 * rowHeight, overflow: 'hidden' }}>
+            <Animated.View style={[styles.weekTrack, { width: gridWidth * 3, marginLeft: -gridWidth }, weekDragStyle]}>
+              {renderWeekGrid(-1)}
+              {renderWeekGrid(0)}
+              {renderWeekGrid(1)}
+            </Animated.View>
+          </View>
+        </Card>
+      </View></GestureDetector>
       <View style={styles.buttonRow}><View style={{ flex: 1 }}><PrimaryButton label={syncing ? '同步中…' : '同步 iPhone 日历'} disabled={syncing} onPress={sync} /></View></View>
-      <Text style={[styles.tip, { color: theme.secondary }]}>点课程编辑详情，按住拖动调整节次；在课表空白处左右滑动切换周数。</Text>
+      <Text style={[styles.tip, { color: theme.secondary }]}>点课程编辑详情；按住课程约 0.2 秒后拖动调整，直接横滑课表切换周数。</Text>
     </Screen>
   );
 }
@@ -337,7 +331,7 @@ const styles = StyleSheet.create({
   kicker: { fontSize: 12, fontWeight: '600', marginBottom: 2 }, title: { fontSize: 29, fontWeight: '800', letterSpacing: -0.9 },
   importButton: { borderRadius: 17, paddingHorizontal: 15, paddingVertical: 10 }, importText: { fontWeight: '700', fontSize: 14 },
   weekTools: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 9 }, weekButton: { width: 34, height: 34, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, weekHint: { flex: 1, fontSize: 10, textAlign: 'center' }, addButton: { minHeight: 34, paddingHorizontal: 10, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, addText: { fontSize: 11, fontWeight: '800' },
-  weekViewport: { overflow: 'hidden', borderRadius: 28 }, weekPreview: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }, movingWeek: { borderRadius: 28 },
+  weekViewport: { overflow: 'hidden', borderRadius: 28 }, weekTrack: { flexDirection: 'row' },
   gridCard: { padding: 6, borderRadius: 28, overflow: 'hidden' }, dayHeader: { flexDirection: 'row', height: 47, alignItems: 'center' }, dayCell: { alignItems: 'center', gap: 3 }, dayName: { fontSize: 11, fontWeight: '700' },
   dateDot: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, dayDate: { fontSize: 12, fontWeight: '700' }, grid: { position: 'relative' },
   gridLine: { position: 'absolute', left: 0, right: 0, borderTopWidth: StyleSheet.hairlineWidth, height: rowHeight },

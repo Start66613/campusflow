@@ -64,7 +64,7 @@ export function Screen({ children, scroll = true, scrollEnabled = true, style }:
   );
 }
 
-export function Card({ children, style, onPress, glassSurface = true }: PropsWithChildren<{ style?: StyleProp<ViewStyle>; onPress?: () => void; glassSurface?: boolean }>) {
+export function Card({ children, style, onPress, glassSurface = true, animateLayout = true }: PropsWithChildren<{ style?: StyleProp<ViewStyle>; onPress?: () => void; glassSurface?: boolean; animateLayout?: boolean }>) {
   const theme = useAppTheme();
   const { data } = useApp();
   const glass = data.settings.visualMode === 'glass';
@@ -78,7 +78,7 @@ export function Card({ children, style, onPress, glassSurface = true }: PropsWit
       </MotionPressable>
     );
   }
-  return <Animated.View layout={gentleLayout} style={cardStyle}>{showGlass ? <GlassBackdrop radius={28} effectStyle="regular" readable /> : null}{children}</Animated.View>;
+  return <Animated.View layout={animateLayout ? gentleLayout : undefined} style={cardStyle}>{showGlass ? <GlassBackdrop radius={28} effectStyle="regular" readable /> : null}{children}</Animated.View>;
 }
 
 export function GlassBackdrop({
