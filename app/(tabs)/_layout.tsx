@@ -2,15 +2,17 @@ import { Tabs } from 'expo-router';
 import { GlassContainer, GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useRef, useState, type ComponentProps } from 'react';
-import { Keyboard, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { ReduceMotion, useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
+import { Keyboard, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { interpolateColor, runOnJS, useAnimatedStyle, useSharedValue, withSpring, type SharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon, type AppIconProps } from '@/components/app-icon';
 import { motion } from '@/components/motion';
 import { GlassBackdrop } from '@/components/ui';
 import { FLOATING_TAB_BAR_HEIGHT, FLOATING_TAB_BAR_SIDE } from '@/src/layout';
+import { selectionIndex, selectionPosition } from '@/src/selection-geometry';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
 import { useReduceTransparency } from '@/src/accessibility';
@@ -56,9 +58,10 @@ function LiquidTabBar({ state, navigation }: TabBarProps) {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const previousIndex = useRef(state.index);
   const measured = useRef(false);
-  const reducedMotion = useReducedMotion();
+  const lastSelection = useRef({ index: -1, time: 0 });
   const travel = useSharedValue(0);
-  const stretch = useSharedValue(1);
+  const scrubbing = useSharedValue(false);
+  const lastTicked = useSharedValue(state.index);
   const count = state.routes.length;
   const innerWidth = Math.max(0, width - 10);
   const itemWidth = count ? innerWidth / count : 0;
@@ -82,20 +85,74 @@ function LiquidTabBar({ state, navigation }: TabBarProps) {
       return;
     }
     previousIndex.current = state.index;
-    travel.value = withSpring(state.index * itemWidth, motion.spring);
-    stretch.value = reducedMotion ? 1 : withSequence(
-      withTiming(1.075, { duration: 100, reduceMotion: ReduceMotion.System }),
-      withSpring(1, motion.spring),
-    );
-  }, [glass, itemWidth, reducedMotion, state.index, stretch, travel]);
+    if (!scrubbing.value) travel.value = withSpring(state.index * itemWidth, motion.selectionSpring);
+  }, [itemWidth, scrubbing, state.index, travel]);
 
   const lensStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: travel.value }, { scaleX: stretch.value }, { scaleY: 1 - (stretch.value - 1) * 0.2 }],
+    transform: [{ translateX: travel.value }],
   }));
+  const tick = useCallback(() => { Haptics.selectionAsync().catch(() => undefined); }, []);
+  const selectTab = useCallback((index: number, withHaptic: boolean) => {
+    const route = state.routes[index];
+    if (!route) return;
+    const timestamp = Date.now();
+    if (lastSelection.current.index === index && timestamp - lastSelection.current.time < 280) return;
+    lastSelection.current = { index, time: timestamp };
+    if (state.index === index) return;
+    const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+    if (event.defaultPrevented) {
+      travel.value = withSpring(state.index * itemWidth, motion.selectionSpring);
+      return;
+    }
+    if (withHaptic) tick();
+    navigation.navigate(route.name, route.params);
+  }, [itemWidth, navigation, state.index, state.routes, tick, travel]);
+  const barGesture = useMemo(() => {
+    const pan = Gesture.Pan()
+      .enabled(itemWidth > 0)
+      .activeOffsetX([-7, 7])
+      .failOffsetY([-14, 14])
+      .onStart(() => {
+        scrubbing.value = true;
+        lastTicked.value = state.index;
+      })
+      .onUpdate((event) => {
+        const position = selectionPosition(event.x, 5, itemWidth, count);
+        travel.value = position * itemWidth;
+        const index = Math.round(position);
+        if (index !== lastTicked.value) {
+          lastTicked.value = index;
+          runOnJS(tick)();
+        }
+      })
+      .onEnd(() => {
+        const index = Math.round(travel.value / itemWidth);
+        scrubbing.value = false;
+        travel.value = withSpring(index * itemWidth, motion.selectionSpring);
+        runOnJS(selectTab)(index, false);
+      })
+      .onFinalize((_event, success) => {
+        if (!success && scrubbing.value) {
+          scrubbing.value = false;
+          travel.value = withSpring(state.index * itemWidth, motion.selectionSpring);
+        }
+      });
+    const tap = Gesture.Tap()
+      .enabled(itemWidth > 0)
+      .maxDistance(16)
+      .maxDuration(400)
+      .onEnd((event, success) => {
+        if (!success) return;
+        const index = selectionIndex(event.x, 5, itemWidth, count);
+        travel.value = withSpring(index * itemWidth, motion.selectionSpring);
+        runOnJS(selectTab)(index, true);
+      });
+    return Gesture.Race(pan, tap);
+  }, [count, itemWidth, lastTicked, scrubbing, selectTab, state.index, tick, travel]);
   if (keyboardVisible) return null;
 
   return (
-    <View
+    <GestureDetector gesture={barGesture}><View
       onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
       style={[
         styles.bar,
@@ -139,30 +196,47 @@ function LiquidTabBar({ state, navigation }: TabBarProps) {
       {state.routes.map((route, index) => {
         const item = tabs[route.name] ?? tabs.index;
         const focused = state.index === index;
-        const color = focused ? theme.primary : theme.secondary;
         return (
           <Pressable
             key={route.key}
             accessibilityRole="tab"
             accessibilityState={focused ? { selected: true } : {}}
             accessibilityLabel={item.title}
-            onPress={() => {
-              const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-              if (!focused && !event.defaultPrevented) {
-                Haptics.selectionAsync().catch(() => undefined);
-                navigation.navigate(route.name, route.params);
-              }
-            }}
+            onPress={() => selectTab(index, true)}
             onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
             style={styles.item}
           >
-            <AppIcon {...item.icon} color={color} size={focused ? 23 : 22} active={focused} />
-            <Text style={[styles.label, { color, fontWeight: focused ? '700' : '600' }]}>{item.title}</Text>
+            <TabItemVisual item={item} index={index} focused={focused} itemWidth={itemWidth} travel={travel} activeColor={theme.primary} inactiveColor={theme.secondary} />
           </Pressable>
         );
       })}
-    </View>
+    </View></GestureDetector>
   );
+}
+
+function TabItemVisual({ item, index, focused, itemWidth, travel, activeColor, inactiveColor }: {
+  item: { title: string; icon: IconName };
+  index: number;
+  focused: boolean;
+  itemWidth: number;
+  travel: SharedValue<number>;
+  activeColor: string;
+  inactiveColor: string;
+}) {
+  const activeStyle = useAnimatedStyle(() => ({
+    opacity: itemWidth > 0 ? Math.max(0, 1 - Math.abs(travel.value / itemWidth - index)) : focused ? 1 : 0,
+  }));
+  const labelStyle = useAnimatedStyle(() => {
+    const progress = itemWidth > 0 ? Math.max(0, 1 - Math.abs(travel.value / itemWidth - index)) : focused ? 1 : 0;
+    return { color: interpolateColor(progress, [0, 1], [inactiveColor, activeColor]) };
+  });
+  return <>
+    <View style={styles.iconSlot}>
+      <AppIcon {...item.icon} color={inactiveColor} size={22} />
+      <Animated.View pointerEvents="none" style={[styles.activeIcon, activeStyle]}><AppIcon {...item.icon} color={activeColor} size={22} active /></Animated.View>
+    </View>
+    <Animated.Text style={[styles.label, labelStyle]}>{item.title}</Animated.Text>
+  </>;
 }
 
 const styles = StyleSheet.create({
@@ -201,5 +275,7 @@ const styles = StyleSheet.create({
   },
   specular: { position: 'absolute', left: 12, top: 2, width: 46, height: 13, borderRadius: 999, transform: [{ rotate: '-7deg' }] },
   item: { flex: 1, height: 58, alignItems: 'center', justifyContent: 'center', gap: 1 },
-  label: { fontSize: 10, letterSpacing: -0.1 },
+  iconSlot: { width: 28, height: 25, alignItems: 'center', justifyContent: 'center' },
+  activeIcon: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
+  label: { fontSize: 10, fontWeight: '700', letterSpacing: -0.1 },
 });

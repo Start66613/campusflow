@@ -16,12 +16,14 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 // One motion language for navigation, controls, and content. Keep frequent
 // interactions short; the spring only settles the last few pixels.
 export const motion = {
-  quick: 150,
-  page: 180,
-  standard: 220,
-  reveal: 300,
-  spring: { damping: 22, stiffness: 270, mass: 0.72, reduceMotion: ReduceMotion.System },
-  springSoft: { damping: 24, stiffness: 220, mass: 0.76, overshootClamping: true, reduceMotion: ReduceMotion.System },
+  quick: 105,
+  page: 190,
+  standard: 225,
+  reveal: 290,
+  spring: { damping: 24, stiffness: 300, mass: 0.78, reduceMotion: ReduceMotion.System },
+  springSoft: { damping: 25, stiffness: 225, mass: 0.8, overshootClamping: true, reduceMotion: ReduceMotion.System },
+  selectionSpring: { damping: 25, stiffness: 330, mass: 0.82, reduceMotion: ReduceMotion.System },
+  pressSpring: { damping: 22, stiffness: 380, mass: 0.62, reduceMotion: ReduceMotion.System },
 } as const;
 
 export const gentleEnter = (delay = 0) => new Keyframe({
@@ -34,6 +36,11 @@ export const gentleTextEnter = (delay = 0) => new Keyframe({
   0: { opacity: 0.65, transform: [{ translateY: 10 }] },
   100: { opacity: 1, transform: [{ translateY: 0 }], easing: Easing.out(Easing.cubic) },
 }).delay(delay).duration(motion.standard).reduceMotion(ReduceMotion.System);
+
+export const gentleTextExit = () => new Keyframe({
+  0: { opacity: 1, transform: [{ translateY: 0 }] },
+  100: { opacity: 0, transform: [{ translateY: -5 }], easing: Easing.in(Easing.cubic) },
+}).duration(160).reduceMotion(ReduceMotion.System);
 
 export const gentleLayout = LinearTransition
   .springify()
@@ -66,11 +73,11 @@ export function MotionPressable({
       disabled={disabled}
       onPressIn={(event) => {
         // A large shrink reads as a bounce, especially on small toolbar icons.
-        scale.value = withTiming(Math.max(0.965, pressedScale), { duration: motion.quick, reduceMotion: ReduceMotion.System });
+        scale.value = withTiming(Math.max(0.965, pressedScale), { duration: motion.quick, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System });
         onPressIn?.(event);
       }}
       onPressOut={(event) => {
-        scale.value = withSpring(1, motion.spring);
+        scale.value = withSpring(1, motion.pressSpring);
         onPressOut?.(event);
       }}
       style={[style, animatedStyle]}

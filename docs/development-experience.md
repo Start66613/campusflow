@@ -277,3 +277,13 @@ npx.cmd expo export --platform android --output-dir dist-android-check
 参考 [expo-glass-tabs](https://github.com/davidmokos/expo-glass-tabs) 的 UI 线程跟手与只在松手时导航的交互思路，以及 [RNGH Pan 手势文档](https://docs.swmansion.com/react-native-gesture-handler/docs/gestures/pan-gesture/)。`react-native-sortables` 适合自由列表重排，不直接适用于固定七列十二节网格；Skia shader 和 SwiftUI Mesh Gradient 会改变 Expo Go 测试条件，本轮不引入。以后先查是否有手势中 `setState`、是否在移动原生玻璃祖先、是否对同一节点同时做 transform 与 layout 动画，再调弹簧参数。
 
 **待真机验收**：iPhone Expo Go 上分别试空白处慢滑、课程上快速横滑、按住课程 200 ms 后拖动、课表纵向滚动、快速反向滑动、第 1/30 周边界、深色/自定义背景与系统减少动态效果；Android 也要试手势优先级。静态打包通过不代表 60 fps 已被证明。
+
+## 28. 全局动效升级：触点跟手，内容延后切换
+
+底栏原先只在导航状态变化后才开始弹簧移动，手指横向拖过时选中胶囊不动；图标和文字颜色则瞬间跳色。分段选择器有同样的落差。参考 [expo-glass-tabs](https://github.com/davidmokos/expo-glass-tabs) 的交互原则，在现有导航结构上自行实现 `Gesture.Race(Pan, Tap)`：Pan 在 UI 线程把胶囊位置直接映射到触点，跨过选项中心给一次触感，**松手后才切页面或内容**，取消时回到原选项；Tap 保持正常点击，子 Pressable 保留无障碍激活。重复 Tap/Pan 事件在 JS 导航入口短时去重。选中图标双层淡变、文字颜色随胶囊位置插值，避免胶囊在移动而内容已经跳色。触点中心与边界算法收口到 `src/selection-geometry.ts` 并用窄屏、宽屏和未测量宽度测试覆盖。
+
+参考 [pressto](https://github.com/enzomanuelmangano/pressto) 的按压即反馈思路，把全局 `MotionPressable` 的按下收缩缩短到约 100 ms、抬起用统一弹簧收尾；不要给每个组件随意加大幅缩放。首页待办完成时只淡出文字层，专注计时的呼吸幅度降到 1.012，避免一个页面平静、另一个页面不停弹跳。所有新动效继续遵守系统“减少动态效果”。原生玻璃的祖先只做 transform；图标、文字子层才做 opacity。
+
+没有直接安装 [liquid-glass-screens](https://github.com/Appllama/liquid-glass-screens) 的 Skia 着色器或 [expo-ios-mesh-gradient](https://github.com/rit3zh/expo-ios-mesh-gradient) 的 SwiftUI 原生组件：前者明确不支持 Expo Go，后者要求原生构建，本阶段保留用户现有的 iPhone Expo Go 测试链路。`react-native-sortables` 适合自由列表重排，不能无校验地移植到固定课表；`native-springs` 的弹簧参数可参考，但不应为了更多动画引入持续运行的 Skia 图层。开源设计用作研究参考，避免复制非兼容许可的视觉/资产。
+
+**真机验收**：快速点五个底栏、横向划过底栏后松手、划到边缘取消、VoiceOver 点标签、键盘打开时 AI 输入栏仍无遮挡；分段控件快速连续切换、纵向滚动时不误触、深色和降低透明度、Android 胶囊回退。`expo export` 和 TypeScript 通过只能证明构建正确，不能代替手感测试。

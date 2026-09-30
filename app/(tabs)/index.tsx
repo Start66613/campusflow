@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
-import { gentleEnter, gentleTextEnter, MotionPressable } from '@/components/motion';
+import { gentleEnter, gentleTextEnter, gentleTextExit, MotionPressable } from '@/components/motion';
 import { Card, GlassBackdrop, Pill, Screen, SectionTitle } from '@/components/ui';
 import { currentWeek, formatDateTime, nextCourse, relativeDue, weekdays } from '@/src/date';
 import { useApp } from '@/src/store';
@@ -77,14 +77,14 @@ export default function HomeScreen() {
       <SectionTitle title="待办事项" action="AI 添加" onAction={() => router.push('/assistant')} />
       <Card style={styles.taskCard}>
         {pendingTasks.map((task, index) => (
-          <MotionPressable key={task.id} onPress={() => toggleTask(task.id)} style={[styles.taskRow, index > 0 && { borderTopColor: theme.line, borderTopWidth: StyleSheet.hairlineWidth }]}>
+          <Animated.View key={task.id} exiting={gentleTextExit()}><MotionPressable onPress={() => toggleTask(task.id)} style={[styles.taskRow, index > 0 && { borderTopColor: theme.line, borderTopWidth: StyleSheet.hairlineWidth }]}>
             <View style={[styles.checkbox, { borderColor: theme.primary }]} />
             <View style={styles.taskText}>
               <Text numberOfLines={1} style={[styles.taskTitle, { color: theme.text }]}>{task.title}</Text>
               <Text style={[styles.taskDue, { color: relativeDue(task.dueAt) === '已逾期' ? theme.red : theme.secondary }]}>{relativeDue(task.dueAt)}</Text>
             </View>
             <Text style={[styles.chevron, { color: theme.secondary }]}>›</Text>
-          </MotionPressable>
+          </MotionPressable></Animated.View>
         ))}
       </Card>
 

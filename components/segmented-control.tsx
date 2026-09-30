@@ -1,12 +1,14 @@
 import * as Haptics from 'expo-haptics';
-import { useEffect, useState, type ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { interpolateColor, runOnJS, useAnimatedStyle, useSharedValue, withSpring, type SharedValue } from 'react-native-reanimated';
 
 import { motion, MotionPressable } from '@/components/motion';
 import { GlassBackdrop } from '@/components/ui';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
+import { selectionIndex, selectionPosition } from '@/src/selection-geometry';
 
 type Segment = { value: string; label: string; icon?: ReactNode };
 
@@ -22,16 +24,69 @@ export function SegmentedControl({ items, value, onChange }: {
   const selected = Math.max(0, items.findIndex((item) => item.value === value));
   const segmentWidth = width > 0 ? (width - 8) / items.length : 0;
   const position = useSharedValue(0);
+  const scrubbing = useSharedValue(false);
+  const lastTicked = useSharedValue(selected);
+  const lastSelection = useRef({ index: -1, time: 0 });
 
   useEffect(() => {
     if (!segmentWidth) return;
-    position.value = withSpring(selected * segmentWidth, motion.spring);
-  }, [position, selected, segmentWidth]);
+    if (!scrubbing.value) position.value = withSpring(selected * segmentWidth, motion.selectionSpring);
+  }, [position, scrubbing, selected, segmentWidth]);
 
   const lensStyle = useAnimatedStyle(() => ({ transform: [{ translateX: position.value }] }));
+  const tick = useCallback(() => { Haptics.selectionAsync().catch(() => undefined); }, []);
+  const select = useCallback((index: number, withHaptic: boolean) => {
+    const item = items[index];
+    if (!item || item.value === value) return;
+    const timestamp = Date.now();
+    if (lastSelection.current.index === index && timestamp - lastSelection.current.time < 280) return;
+    lastSelection.current = { index, time: timestamp };
+    if (withHaptic) tick();
+    onChange(item.value);
+  }, [items, onChange, tick, value]);
+  const selectionGesture = useMemo(() => {
+    const pan = Gesture.Pan()
+      .enabled(segmentWidth > 0)
+      .activeOffsetX([-7, 7])
+      .failOffsetY([-12, 12])
+      .onStart(() => {
+        scrubbing.value = true;
+        lastTicked.value = selected;
+      })
+      .onUpdate((event) => {
+        position.value = selectionPosition(event.x, 4, segmentWidth, items.length) * segmentWidth;
+        const index = Math.round(position.value / segmentWidth);
+        if (index !== lastTicked.value) {
+          lastTicked.value = index;
+          runOnJS(tick)();
+        }
+      })
+      .onEnd(() => {
+        const index = Math.round(position.value / segmentWidth);
+        scrubbing.value = false;
+        position.value = withSpring(index * segmentWidth, motion.selectionSpring);
+        runOnJS(select)(index, false);
+      })
+      .onFinalize((_event, success) => {
+        if (!success && scrubbing.value) {
+          scrubbing.value = false;
+          position.value = withSpring(selected * segmentWidth, motion.selectionSpring);
+        }
+      });
+    const tap = Gesture.Tap()
+      .enabled(segmentWidth > 0)
+      .maxDistance(16)
+      .onEnd((event, success) => {
+        if (!success) return;
+        const index = selectionIndex(event.x, 4, segmentWidth, items.length);
+        position.value = withSpring(index * segmentWidth, motion.selectionSpring);
+        runOnJS(select)(index, true);
+      });
+    return Gesture.Race(pan, tap);
+  }, [items.length, lastTicked, position, scrubbing, segmentWidth, select, selected, tick]);
 
   return (
-    <View onLayout={(event) => setWidth(event.nativeEvent.layout.width)} style={[styles.track, { backgroundColor: glass ? 'transparent' : theme.surfaceAlt }]}>
+    <GestureDetector gesture={selectionGesture}><View onLayout={(event) => setWidth(event.nativeEvent.layout.width)} style={[styles.track, { backgroundColor: glass ? 'transparent' : theme.surfaceAlt }]}>
       {glass ? <GlassBackdrop radius={18} effectStyle="regular" /> : null}
       {segmentWidth > 0 ? (
         <Animated.View pointerEvents="none" style={[styles.lens, { width: segmentWidth, backgroundColor: glass ? 'transparent' : theme.surface, shadowColor: theme.shadow }, lensStyle]}>
@@ -45,20 +100,32 @@ export function SegmentedControl({ items, value, onChange }: {
             key={item.value}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
-            onPress={() => {
-              if (active) return;
-              Haptics.selectionAsync().catch(() => undefined);
-              onChange(item.value);
-            }}
+            onPress={() => select(index, true)}
             style={styles.item}
           >
             {item.icon}
-            <Text numberOfLines={1} style={[styles.label, { color: active ? theme.primary : theme.secondary }]}>{item.label}</Text>
+            <SegmentLabel label={item.label} index={index} active={active} width={segmentWidth} position={position} activeColor={theme.primary} inactiveColor={theme.secondary} />
           </MotionPressable>
         );
       })}
-    </View>
+    </View></GestureDetector>
   );
+}
+
+function SegmentLabel({ label, index, active, width, position, activeColor, inactiveColor }: {
+  label: string;
+  index: number;
+  active: boolean;
+  width: number;
+  position: SharedValue<number>;
+  activeColor: string;
+  inactiveColor: string;
+}) {
+  const style = useAnimatedStyle(() => {
+    const progress = width > 0 ? Math.max(0, 1 - Math.abs(position.value / width - index)) : active ? 1 : 0;
+    return { color: interpolateColor(progress, [0, 1], [inactiveColor, activeColor]) };
+  });
+  return <Animated.Text numberOfLines={1} style={[styles.label, style]}>{label}</Animated.Text>;
 }
 
 const styles = StyleSheet.create({

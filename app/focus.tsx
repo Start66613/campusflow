@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withRepeat, withSpring, withTiming } from 'react-native-reanimated';
 
-import { MotionPressable } from '@/components/motion';
+import { motion, MotionPressable } from '@/components/motion';
 import { Card, Screen } from '@/components/ui';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
@@ -35,8 +35,8 @@ export default function FocusScreen() {
   }, [animatedProgress, progress]);
   useEffect(() => {
     pulse.value = running
-      ? withRepeat(withTiming(1.025, { duration: 1250, reduceMotion: ReduceMotion.System }), -1, true)
-      : withSpring(1, { damping: 18, stiffness: 180, reduceMotion: ReduceMotion.System });
+      ? withRepeat(withTiming(1.012, { duration: 1800, reduceMotion: ReduceMotion.System }), -1, true)
+      : withSpring(1, motion.springSoft);
   }, [pulse, running]);
   const pulseStyle = useAnimatedStyle(() => ({ transform: [{ scale: pulse.value }] }));
   const progressStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${animatedProgress.value * 270 - 45}deg` }] }));
