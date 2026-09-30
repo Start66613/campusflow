@@ -22,7 +22,10 @@ export function SegmentedControl({ items, value, onChange }: {
   const glass = data.settings.visualMode === 'glass';
   const [width, setWidth] = useState(0);
   const selected = Math.max(0, items.findIndex((item) => item.value === value));
-  const segmentWidth = width > 0 ? (width - 8) / items.length : 0;
+  // Never capture `items` in a worklet: icons are React elements (FiberNode).
+  const values = items.map((item) => item.value);
+  const count = values.length;
+  const segmentWidth = width > 0 && count > 0 ? (width - 8) / count : 0;
   const position = useSharedValue(0);
   const scrubbing = useSharedValue(false);
   const lastTicked = useSharedValue(selected);
@@ -36,14 +39,14 @@ export function SegmentedControl({ items, value, onChange }: {
   const lensStyle = useAnimatedStyle(() => ({ transform: [{ translateX: position.value }] }));
   const tick = useCallback(() => { Haptics.selectionAsync().catch(() => undefined); }, []);
   const select = useCallback((index: number, withHaptic: boolean) => {
-    const item = items[index];
-    if (!item || item.value === value) return;
+    const nextValue = values[index];
+    if (!nextValue || nextValue === value) return;
     const timestamp = Date.now();
     if (lastSelection.current.index === index && timestamp - lastSelection.current.time < 280) return;
     lastSelection.current = { index, time: timestamp };
     if (withHaptic) tick();
-    onChange(item.value);
-  }, [items, onChange, tick, value]);
+    onChange(nextValue);
+  }, [values, onChange, tick, value]);
   const selectionGesture = useMemo(() => {
     const pan = Gesture.Pan()
       .enabled(segmentWidth > 0)
@@ -54,7 +57,7 @@ export function SegmentedControl({ items, value, onChange }: {
         lastTicked.value = selected;
       })
       .onUpdate((event) => {
-        position.value = selectionPosition(event.x, 4, segmentWidth, items.length) * segmentWidth;
+        position.value = selectionPosition(event.x, 4, segmentWidth, count) * segmentWidth;
         const index = Math.round(position.value / segmentWidth);
         if (index !== lastTicked.value) {
           lastTicked.value = index;
@@ -78,12 +81,12 @@ export function SegmentedControl({ items, value, onChange }: {
       .maxDistance(16)
       .onEnd((event, success) => {
         if (!success) return;
-        const index = selectionIndex(event.x, 4, segmentWidth, items.length);
+        const index = selectionIndex(event.x, 4, segmentWidth, count);
         position.value = withSpring(index * segmentWidth, motion.selectionSpring);
         runOnJS(select)(index, true);
       });
     return Gesture.Race(pan, tap);
-  }, [items.length, lastTicked, position, scrubbing, segmentWidth, select, selected, tick]);
+  }, [count, lastTicked, position, scrubbing, segmentWidth, select, selected, tick]);
 
   return (
     <GestureDetector gesture={selectionGesture}><View onLayout={(event) => setWidth(event.nativeEvent.layout.width)} style={[styles.track, { backgroundColor: glass ? 'transparent' : theme.surfaceAlt }]}>

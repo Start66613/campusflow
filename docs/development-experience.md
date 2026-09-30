@@ -287,3 +287,9 @@ npx.cmd expo export --platform android --output-dir dist-android-check
 没有直接安装 [liquid-glass-screens](https://github.com/Appllama/liquid-glass-screens) 的 Skia 着色器或 [expo-ios-mesh-gradient](https://github.com/rit3zh/expo-ios-mesh-gradient) 的 SwiftUI 原生组件：前者明确不支持 Expo Go，后者要求原生构建，本阶段保留用户现有的 iPhone Expo Go 测试链路。`react-native-sortables` 适合自由列表重排，不能无校验地移植到固定课表；`native-springs` 的弹簧参数可参考，但不应为了更多动画引入持续运行的 Skia 图层。开源设计用作研究参考，避免复制非兼容许可的视觉/资产。
 
 **真机验收**：快速点五个底栏、横向划过底栏后松手、划到边缘取消、VoiceOver 点标签、键盘打开时 AI 输入栏仍无遮挡；分段控件快速连续切换、纵向滚动时不误触、深色和降低透明度、Android 胶囊回退。`expo export` 和 TypeScript 通过只能证明构建正确，不能代替手感测试。
+
+## 29. Expo Go 红屏：Worklets 不能复制 `FiberNode`
+
+全局动画上线后，分段控件在 iPhone Expo Go 中报 `[Worklets] Cannot copy value of type FiberNode`。`items` 数组带有 React 图标节点，而手势的 UI 线程回调写了 `items.length`；Babel 会捕获整个 `items`，不只捕获长度，运行时序列化才失败。改为在 JS 渲染阶段先提取 `count` 数字与纯字符串 `values`，worklet 只使用 `count`。底栏手势同理，不直接引用包含导航对象的 `state.index`，先提取 `selectedIndex`。
+
+**教训**：TypeScript 和 `expo export` 都可能通过，但这类对象复制在真机运行时才炸。新增 `npm run test:worklet-closures`，检查 Babel 实际生成的 `__closure`，禁止捕获 `items`、`state`、`navigation`、图标等对象。以后改手势先跑这个测试，再用 Expo Go 点开每个含手势的页面。

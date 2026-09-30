@@ -62,6 +62,8 @@ function LiquidTabBar({ state, navigation }: TabBarProps) {
   const travel = useSharedValue(0);
   const scrubbing = useSharedValue(false);
   const lastTicked = useSharedValue(state.index);
+  // Gesture worklets must capture this primitive, not the navigation state.
+  const selectedIndex = state.index;
   const count = state.routes.length;
   const innerWidth = Math.max(0, width - 10);
   const itemWidth = count ? innerWidth / count : 0;
@@ -114,7 +116,7 @@ function LiquidTabBar({ state, navigation }: TabBarProps) {
       .failOffsetY([-14, 14])
       .onStart(() => {
         scrubbing.value = true;
-        lastTicked.value = state.index;
+        lastTicked.value = selectedIndex;
       })
       .onUpdate((event) => {
         const position = selectionPosition(event.x, 5, itemWidth, count);
@@ -134,7 +136,7 @@ function LiquidTabBar({ state, navigation }: TabBarProps) {
       .onFinalize((_event, success) => {
         if (!success && scrubbing.value) {
           scrubbing.value = false;
-          travel.value = withSpring(state.index * itemWidth, motion.selectionSpring);
+          travel.value = withSpring(selectedIndex * itemWidth, motion.selectionSpring);
         }
       });
     const tap = Gesture.Tap()
@@ -148,7 +150,7 @@ function LiquidTabBar({ state, navigation }: TabBarProps) {
         runOnJS(selectTab)(index, true);
       });
     return Gesture.Race(pan, tap);
-  }, [count, itemWidth, lastTicked, scrubbing, selectTab, state.index, tick, travel]);
+  }, [count, itemWidth, lastTicked, scrubbing, selectTab, selectedIndex, tick, travel]);
   if (keyboardVisible) return null;
 
   return (
