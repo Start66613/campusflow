@@ -306,10 +306,10 @@ npx.cmd expo export --platform android --output-dir dist-android-check
 
 以后统一用 `npm run start:iphone`：它禁止离线模式、核对 CLI 账号、启动 LAN 服务并验证 iOS 项目清单；任一环节失败就停止并提示，不给用户一个看似可扫但无法运行的二维码。不要把沙箱网络失败误判为账号退出，也不要为了绕过 Expo API 错误而开启离线模式。参见 [Expo Go 登录排障](https://docs.expo.dev/troubleshooting/expo-go-sign-in-required/) 与 [Expo CLI 认证说明](https://docs.expo.dev/more/expo-cli/)。
 
-## 32. 背景只挂一次；先区分开发模式与真机掉帧
+## 32. 背景必须挂在可见页面层；先区分开发模式与真机掉帧
 
 **现象**：首页与其他标签页切换时，壁纸像是断开或重新出现；用户也感觉整体帧率偏低。旧 `Screen` 每页单独挂载同一张图片、渐变和光晕，标签页视图又有不透明场景底色，并在每次重新聚焦时平移整个页面 12 px。课表的时间线每 30 秒通过父页面 `setNow` 重绘三周课表和大量原生玻璃课程块。这些是可由代码直接确认的成本，不能把所有卡顿归因于 Expo 热点传输。
 
-**修复**：把壁纸、渐变、光晕收口到导航根层的 `AppBackdrop`，根 Stack 和 Tab scene 使用透明背景，各 `Screen` 只承载内容；首页主卡改为跟随用户主色。删除切换标签时整页平移的重复动画，保留底栏选中胶囊自己的动效。把课程当前时间线拆成局部组件，仅在课表聚焦时每分钟更新，避免定时刷新整个三周网格。自定义背景仍在“保存我的设计”后全局生效。
+**踩坑与修复**：第一次把壁纸、渐变、光晕放到导航根层的 `AppBackdrop`，并把 Stack 与 Tab 场景设置为透明。静态导出通过，但 iPhone 真机报告所有页面背景消失、重新设置也无效：原生导航场景仍盖住了根层壁纸。不要再把原生 Stack 后方当作可见背景。现在 `AppBackdrop` 是唯一的背景实现，但由每个可见 `Screen` 渲染，读取同一份全局设置；Stack/Tab 场景恢复不透明底色作为兜底。首页主卡仍跟随用户主色。删除切换标签时整页平移的重复动画，保留底栏选中胶囊动效；课程当前时间线拆成局部组件，仅在课表聚焦时每分钟更新，避免定时刷新三周网格。自定义背景仍在“保存我的设计”后全局生效。
 
-**验证**：类型检查、Worklets 闭包测试和 iOS/Android/Web 静态导出只说明代码可以打包。用 `npm run start:iphone` 测开发版，再用 `npm run start:iphone:perf` 在另一端口启动 `--no-dev --minify` 对照；后者仍是 Expo Go 测试，不等于正式原生 Release。真机在 Dev Menu 打开性能监视器，分别记录首页滚动、五个标签切换、课表拖动和滑周时的 JS/UI FPS，才能判断剩余瓶颈在 JS 线程还是 UI/原生玻璃渲染。详见 [Expo 开发与生产模式](https://docs.expo.dev/workflow/development-mode/) 和 [React Native 性能概览](https://reactnative.dev/docs/performance.html)。
+**验证**：`npm run test:background-placement` 防止再次把壁纸移到导航层后方；但静态测试、类型检查和 iOS/Android 打包都**不能证明壁纸在原生导航上可见**。用 `npm run start:iphone` 测开发版，再用 `npm run start:iphone:perf` 在另一端口启动 `--no-dev --minify` 对照；后者仍是 Expo Go 测试，不等于正式原生 Release。真机需先确认默认壁纸与自定义图片在首页、课表、AI、数据、我的五页都能显示，再查首页滚动、切页、拖课和滑周的 JS/UI FPS。详见 [Expo 开发与生产模式](https://docs.expo.dev/workflow/development-mode/) 和 [React Native 性能概览](https://reactnative.dev/docs/performance.html)。

@@ -4,8 +4,8 @@ import { Image, StyleSheet, View } from 'react-native';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
 
-// Keep one wallpaper behind the whole navigator. Individual screens remain
-// transparent so tab changes never decode or fade between separate copies.
+// Render this inside the visible screen, not behind the native navigator:
+// native-stack can paint an opaque scene over a root-level wallpaper on iOS.
 export function AppBackdrop() {
   const theme = useAppTheme();
   const { data } = useApp();

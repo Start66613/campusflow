@@ -6,12 +6,14 @@ import { Platform, ScrollView, StyleSheet, Text, View, type StyleProp, type View
 import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AppBackdrop } from '@/components/app-backdrop';
 import { gentleLayout, gentleTextEnter, MotionPressable } from '@/components/motion';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
 import { useReduceTransparency } from '@/src/accessibility';
 
 export function Screen({ children, scroll = true, scrollEnabled = true, style }: PropsWithChildren<{ scroll?: boolean; scrollEnabled?: boolean; style?: StyleProp<ViewStyle> }>) {
+  const theme = useAppTheme();
   const content = scroll ? (
     <ScrollView scrollEnabled={scrollEnabled} bounces contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       <View style={style}>{children}</View>
@@ -20,7 +22,8 @@ export function Screen({ children, scroll = true, scrollEnabled = true, style }:
     <View style={[styles.fill, style]}>{children}</View>
   );
   return (
-    <SafeAreaView edges={['top']} style={styles.safe}>
+    <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: theme.background }]}>
+      <AppBackdrop />
       {content}
     </SafeAreaView>
   );

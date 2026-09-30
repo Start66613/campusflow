@@ -30,6 +30,7 @@ const tabs: Record<string, { title: string; icon: IconName }> = {
 };
 
 export default function TabLayout() {
+  const theme = useAppTheme();
   return (
     <Tabs
       tabBar={(props) => <LiquidTabBar {...props} />}
@@ -37,7 +38,7 @@ export default function TabLayout() {
         headerShown: false,
         animation: 'none',
         tabBarHideOnKeyboard: true,
-        sceneStyle: { backgroundColor: 'transparent' },
+        sceneStyle: { backgroundColor: theme.background },
       }}
     >
       <Tabs.Screen name="index" options={{ title: '首页' }} />

@@ -50,6 +50,7 @@
     "test:week-swipe": "node --test scripts/test-week-swipe.mjs",
     "test:selection-geometry": "node --test scripts/test-selection-geometry.mjs",
     "test:worklet-closures": "node --test scripts/test-worklet-closures.mjs",
+    "test:background-placement": "node --test scripts/test-background-placement.mjs",
     "test:grade-classification": "node --test scripts/test-grade-classification.mjs",
     "server": "node --env-file=.env server/index.mjs"
   },
