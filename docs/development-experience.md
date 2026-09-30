@@ -305,3 +305,11 @@ npx.cmd expo export --platform android --output-dir dist-android-check
 2026-09-30 再次出现手机提示「Expo Go 已登录 start66613，但 Expo CLI 未登录」。当时受限网络中的 `npx expo whoami` 请求 Expo 官方服务返回 `UnexpectedServerError`，于是误用 `EXPO_OFFLINE=1` 启动；电脑上清单 HTTP 200，却仍无法通过 iPhone Expo Go 的账号检查。二维码和 HTTP 200 都不是充分验证。使用可连接 Expo 官方服务的环境运行 `npx expo whoami`，确认 `start66613`，并检查 iOS manifest 的 `extra.expoClient.owner` 也是该账号后，手机才能打开。官方排障说明还明确指出 CLI 不会在终端提示账号不匹配，错误只出现在手机上。
 
 以后统一用 `npm run start:iphone`：它禁止离线模式、核对 CLI 账号、启动 LAN 服务并验证 iOS 项目清单；任一环节失败就停止并提示，不给用户一个看似可扫但无法运行的二维码。不要把沙箱网络失败误判为账号退出，也不要为了绕过 Expo API 错误而开启离线模式。参见 [Expo Go 登录排障](https://docs.expo.dev/troubleshooting/expo-go-sign-in-required/) 与 [Expo CLI 认证说明](https://docs.expo.dev/more/expo-cli/)。
+
+## 32. 背景只挂一次；先区分开发模式与真机掉帧
+
+**现象**：首页与其他标签页切换时，壁纸像是断开或重新出现；用户也感觉整体帧率偏低。旧 `Screen` 每页单独挂载同一张图片、渐变和光晕，标签页视图又有不透明场景底色，并在每次重新聚焦时平移整个页面 12 px。课表的时间线每 30 秒通过父页面 `setNow` 重绘三周课表和大量原生玻璃课程块。这些是可由代码直接确认的成本，不能把所有卡顿归因于 Expo 热点传输。
+
+**修复**：把壁纸、渐变、光晕收口到导航根层的 `AppBackdrop`，根 Stack 和 Tab scene 使用透明背景，各 `Screen` 只承载内容；首页主卡改为跟随用户主色。删除切换标签时整页平移的重复动画，保留底栏选中胶囊自己的动效。把课程当前时间线拆成局部组件，仅在课表聚焦时每分钟更新，避免定时刷新整个三周网格。自定义背景仍在“保存我的设计”后全局生效。
+
+**验证**：类型检查、Worklets 闭包测试和 iOS/Android/Web 静态导出只说明代码可以打包。用 `npm run start:iphone` 测开发版，再用 `npm run start:iphone:perf` 在另一端口启动 `--no-dev --minify` 对照；后者仍是 Expo Go 测试，不等于正式原生 Release。真机在 Dev Menu 打开性能监视器，分别记录首页滚动、五个标签切换、课表拖动和滑周时的 JS/UI FPS，才能判断剩余瓶颈在 JS 线程还是 UI/原生玻璃渲染。详见 [Expo 开发与生产模式](https://docs.expo.dev/workflow/development-mode/) 和 [React Native 性能概览](https://reactnative.dev/docs/performance.html)。

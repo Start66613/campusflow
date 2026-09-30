@@ -34,7 +34,7 @@ export default function HomeScreen() {
       </View>
 
       <Animated.View entering={gentleTextEnter(20)}>
-        <LinearGradient colors={['#6269EB', '#8782F4']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+        <LinearGradient colors={[theme.primary, `${theme.primary}D8`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
           <View style={styles.heroTop}>
             <Text style={styles.heroKicker}>下一节课</Text>
             <View style={styles.weekBadge}><Text style={styles.weekBadgeText}>第 {week} 周</Text></View>

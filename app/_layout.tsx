@@ -3,10 +3,12 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
+import { AppBackdrop } from '@/components/app-backdrop';
 import { AppProvider, useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
 
@@ -75,24 +77,27 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={navigationTheme}>
       <StatusBar style={dark ? 'light' : 'dark'} animated />
-      <Stack screenOptions={{
-        animation: 'fade_from_bottom',
-        gestureEnabled: true,
-        contentStyle: { backgroundColor: theme.background },
-        headerStyle: { backgroundColor: theme.surface },
-        headerTintColor: theme.primary,
-        headerShadowVisible: false,
-        headerTitleStyle: { color: theme.text, fontWeight: '600' },
-      }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'fade' }} />
-        <Stack.Screen name="import" options={{ title: '导入课表', presentation: 'modal', animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="school" options={{ title: '湘潭大学教务', presentation: 'modal', animation: 'slide_from_right' }} />
-        <Stack.Screen name="ai-settings" options={{ title: '个人 AI', presentation: 'modal', animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="focus" options={{ title: '专注计时', presentation: 'modal', animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="personalize" options={{ title: '个性化', presentation: 'modal', animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="course-editor" options={{ title: '编辑课程', presentation: 'modal', animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="modal" options={{ title: '关于 CampusFlow', presentation: 'modal', animation: 'slide_from_bottom' }} />
-      </Stack>
+      <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <AppBackdrop />
+        <Stack screenOptions={{
+          animation: 'fade_from_bottom',
+          gestureEnabled: true,
+          contentStyle: { backgroundColor: 'transparent' },
+          headerStyle: { backgroundColor: theme.surface },
+          headerTintColor: theme.primary,
+          headerShadowVisible: false,
+          headerTitleStyle: { color: theme.text, fontWeight: '600' },
+        }}>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'fade' }} />
+          <Stack.Screen name="import" options={{ title: '导入课表', presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="school" options={{ title: '湘潭大学教务', presentation: 'modal', animation: 'slide_from_right' }} />
+          <Stack.Screen name="ai-settings" options={{ title: '个人 AI', presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="focus" options={{ title: '专注计时', presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="personalize" options={{ title: '个性化', presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="course-editor" options={{ title: '编辑课程', presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="modal" options={{ title: '关于 CampusFlow', presentation: 'modal', animation: 'slide_from_bottom' }} />
+        </Stack>
+      </View>
     </ThemeProvider>
   );
 }

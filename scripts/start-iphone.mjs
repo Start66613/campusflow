@@ -5,7 +5,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 const require = createRequire(import.meta.url);
 const expoCli = require.resolve('expo/bin/cli');
 const account = 'start66613';
-const port = Number(process.env.CAMPUSFLOW_EXPO_PORT ?? 8081);
+const performanceMode = process.argv.includes('--perf');
+const port = Number(process.env.CAMPUSFLOW_EXPO_PORT ?? (performanceMode ? 8082 : 8081));
 
 function fail(message) {
   console.error(`\n无法启动 iPhone 测试：${message}`);
@@ -40,9 +41,13 @@ async function inspectManifest() {
     });
     if (!response.ok) return { reachable: true, valid: false, status: response.status };
     const manifest = await response.json();
+    const bundleUrl = manifest.launchAsset?.url ? new URL(manifest.launchAsset.url) : null;
+    const matchesMode = performanceMode
+      ? bundleUrl?.searchParams.get('dev') === 'false' && bundleUrl.searchParams.get('minify') === 'true'
+      : bundleUrl !== null && bundleUrl.searchParams.get('dev') !== 'false';
     return {
       reachable: true,
-      valid: manifest.extra?.expoClient?.owner === account && manifest.extra?.expoClient?.slug === 'campusflow',
+      valid: manifest.extra?.expoClient?.owner === account && manifest.extra?.expoClient?.slug === 'campusflow' && matchesMode,
       status: response.status,
     };
   } catch {
@@ -57,7 +62,7 @@ if (existing.valid) {
 }
 if (existing.reachable) fail(`端口 ${port} 已有服务，但 iOS 项目清单未通过账号检查（HTTP ${existing.status}）。请先关闭旧的 Expo 终端。`);
 
-const server = spawn(process.execPath, [expoCli, 'start', '--go', '--lan', '--port', String(port)], {
+const server = spawn(process.execPath, [expoCli, 'start', '--go', '--lan', '--port', String(port), ...(performanceMode ? ['--no-dev', '--minify'] : [])], {
   stdio: 'inherit',
   windowsHide: true,
 });
@@ -70,7 +75,7 @@ for (let attempt = 0; attempt < 30 && server.exitCode === null; attempt += 1) {
   const manifest = await inspectManifest();
   if (manifest.valid) {
     verified = true;
-    console.log(`\n✓ iOS 项目清单已验证：CampusFlow / ${account}。现在可以在 iPhone Expo Go 扫码。\n`);
+    console.log(`\n✓ iOS 项目清单已验证：CampusFlow / ${account}${performanceMode ? ' / 性能对比模式' : ''}。现在可以在 iPhone Expo Go 扫码。\n`);
     break;
   }
 }

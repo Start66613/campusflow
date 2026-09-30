@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useIsFocused } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Alert, Image, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -34,6 +34,20 @@ function currentTimeY(now: Date) {
     if (minute >= start && minute <= end) return (index + (minute - start) / Math.max(1, end - start)) * rowHeight;
   }
   return null;
+}
+
+function CurrentTimeLine({ columnWidth, color }: { columnWidth: number; color: string }) {
+  const focused = useIsFocused();
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    if (!focused) return;
+    setNow(new Date());
+    const timer = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, [focused]);
+  const timeLineY = currentTimeY(now);
+  if (timeLineY === null) return null;
+  return <View pointerEvents="none" style={[styles.nowLine, { top: timeLineY, left: timeColumnWidth + ((now.getDay() || 7) - 1) * columnWidth + 2, width: columnWidth - 4, backgroundColor: color }]}><View style={[styles.nowDot, { backgroundColor: color }]} /></View>;
 }
 
 function courseInk(color: string, glass: boolean, dark: boolean) {
@@ -218,7 +232,6 @@ export default function ScheduleScreen() {
   const [syncing, setSyncing] = useState(false);
   const [draggingCourseId, setDraggingCourseId] = useState<string | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
-  const [now, setNow] = useState(() => new Date());
   const weekTrackRef = useRef<WeekTrackHandle>(null);
   const baseWeek = currentWeek(data.settings.termStart);
   const week = Math.max(1, Math.min(30, baseWeek + weekOffset));
@@ -233,11 +246,7 @@ export default function ScheduleScreen() {
   const compact = width < 400;
   const glass = data.settings.visualMode === 'glass';
   const dark = theme.background === '#000000';
-  const timeLineY = currentTimeY(now);
-  useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 30_000);
-    return () => clearInterval(timer);
-  }, []);
+  const todayWeekday = new Date().getDay() || 7;
   const completeWeek = useCallback((delta: number) => {
     setWeekOffset((current) => Math.max(1 - baseWeek, Math.min(30 - baseWeek, current + delta)));
   }, [baseWeek]);
@@ -275,7 +284,7 @@ export default function ScheduleScreen() {
             {days.map((day) => {
               const date = new Date(pageStart);
               date.setDate(date.getDate() + day - 1);
-              const isToday = pageOffset === 0 && (now.getDay() || 7) === day;
+              const isToday = pageOffset === 0 && todayWeekday === day;
               return <View key={day} style={[styles.dayCell, { width: columnWidth }]}><Text style={[styles.dayName, { color: isToday ? theme.primary : theme.secondary }]}>{weekdays[day - 1].replace('周', '')}</Text><View style={[styles.dateDot, isToday && { backgroundColor: theme.primary }]}><Text style={[styles.dayDate, { color: isToday ? '#FFFFFF' : theme.text }]}>{date.getDate()}</Text></View></View>;
             })}
           </View>
@@ -310,7 +319,7 @@ export default function ScheduleScreen() {
                 onEdit={(courseId) => router.push({ pathname: '/course-editor', params: { id: courseId } })}
               /> : <View key={course.id} style={[styles.courseBlock, position, { backgroundColor: 'transparent' }]}><CourseFace course={course} height={position.height} ink={ink} compact={compact} /></View>;
             })}
-            {pageOffset === 0 && timeLineY !== null ? <View pointerEvents="none" style={[styles.nowLine, { top: timeLineY, left: timeColumnWidth + ((now.getDay() || 7) - 1) * columnWidth + 2, width: columnWidth - 4, backgroundColor: theme.red }]}><View style={[styles.nowDot, { backgroundColor: theme.red }]} /></View> : null}
+            {pageOffset === 0 ? <CurrentTimeLine columnWidth={columnWidth} color={theme.red} /> : null}
           </View>
       </View>
     );

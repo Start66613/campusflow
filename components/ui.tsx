@@ -1,64 +1,26 @@
 import { BlurView } from 'expo-blur';
 import { GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
-import { useIsFocused } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useRef, type PropsWithChildren, type ReactNode } from 'react';
-import { Image, Platform, ScrollView, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, { ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { type PropsWithChildren, type ReactNode } from 'react';
+import { Platform, ScrollView, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { gentleLayout, gentleTextEnter, motion, MotionPressable } from '@/components/motion';
+import { gentleLayout, gentleTextEnter, MotionPressable } from '@/components/motion';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
 import { useReduceTransparency } from '@/src/accessibility';
 
 export function Screen({ children, scroll = true, scrollEnabled = true, style }: PropsWithChildren<{ scroll?: boolean; scrollEnabled?: boolean; style?: StyleProp<ViewStyle> }>) {
-  const theme = useAppTheme();
-  const { data } = useApp();
-  const glass = data.settings.visualMode === 'glass';
-  const focused = useIsFocused();
-  const firstFocus = useRef(true);
-  const focusProgress = useSharedValue(1);
-  useEffect(() => {
-    if (!focused) return;
-    if (firstFocus.current) { firstFocus.current = false; return; }
-    focusProgress.value = 0;
-    focusProgress.value = withTiming(1, { duration: motion.page, reduceMotion: ReduceMotion.System });
-  }, [focused, focusProgress]);
-  // Transform can repeat on focus; fading this ancestor can hide native GlassView.
-  const focusStyle = useAnimatedStyle(() => ({ transform: [{ translateY: (1 - focusProgress.value) * 12 }] }));
   const content = scroll ? (
     <ScrollView scrollEnabled={scrollEnabled} bounces contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-      <Animated.View style={[focusStyle, style]}>{children}</Animated.View>
+      <View style={style}>{children}</View>
     </ScrollView>
   ) : (
-    <Animated.View style={[styles.fill, focusStyle, style]}>{children}</Animated.View>
+    <View style={[styles.fill, style]}>{children}</View>
   );
-  const dark = theme.background === '#000000';
   return (
-    <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: theme.background }]}>
-      {data.settings.backgroundUri ? (
-        <Image
-          source={{ uri: data.settings.backgroundUri }}
-          resizeMode="cover"
-          style={[StyleSheet.absoluteFill, { opacity: Math.min(0.82, Math.max(0.12, data.settings.backgroundOpacity ?? 0.42)) }]}
-        />
-      ) : glass ? (
-        <Image
-          source={require('../assets/images/glass-wallpaper-v1.png')}
-          resizeMode="cover"
-          style={[StyleSheet.absoluteFill, { opacity: dark ? 0.14 : 0.82 }]}
-        />
-      ) : null}
-      <LinearGradient
-        pointerEvents="none"
-        colors={dark ? ['rgba(0,0,0,0.88)', 'rgba(10,10,18,0.82)', '#000000'] : glass ? ['rgba(242,242,247,0.10)', 'rgba(255,255,255,0.04)', 'rgba(242,242,247,0.20)'] : [theme.background, `${theme.primary}0B`, theme.background]}
-        locations={[0, 0.48, 1]}
-        style={StyleSheet.absoluteFill}
-      />
-      {data.settings.accentPreset === 'rainbow' ? <LinearGradient pointerEvents="none" colors={['rgba(170,108,247,0.12)', 'rgba(93,191,248,0.09)', 'rgba(75,207,159,0.10)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} /> : null}
-      <View pointerEvents="none" style={[styles.ambientOrb, styles.ambientOrbTop, { backgroundColor: `${theme.primary}0A` }]} />
-      <View pointerEvents="none" style={[styles.ambientOrb, styles.ambientOrbBottom, { backgroundColor: `${theme.green}08` }]} />
+    <SafeAreaView edges={['top']} style={styles.safe}>
       {content}
     </SafeAreaView>
   );
@@ -194,9 +156,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   fill: { flex: 1 },
   scroll: { paddingHorizontal: 18, paddingTop: 2, paddingBottom: 126 },
-  ambientOrb: { position: 'absolute', width: 260, height: 260, borderRadius: 130 },
-  ambientOrbTop: { top: -120, right: -105 },
-  ambientOrbBottom: { bottom: 90, left: -160 },
   card: {
     borderRadius: 28,
     padding: 18,
