@@ -293,3 +293,9 @@ npx.cmd expo export --platform android --output-dir dist-android-check
 全局动画上线后，分段控件在 iPhone Expo Go 中报 `[Worklets] Cannot copy value of type FiberNode`。`items` 数组带有 React 图标节点，而手势的 UI 线程回调写了 `items.length`；Babel 会捕获整个 `items`，不只捕获长度，运行时序列化才失败。改为在 JS 渲染阶段先提取 `count` 数字与纯字符串 `values`，worklet 只使用 `count`。底栏手势同理，不直接引用包含导航对象的 `state.index`，先提取 `selectedIndex`。
 
 **教训**：TypeScript 和 `expo export` 都可能通过，但这类对象复制在真机运行时才炸。新增 `npm run test:worklet-closures`，检查 Babel 实际生成的 `__closure`，禁止捕获 `items`、`state`、`navigation`、图标等对象。以后改手势先跑这个测试，再用 Expo Go 点开每个含手势的页面。
+
+## 30. 换周完成时不能先换内容、再归零位移
+
+三页课表轨道滑到相邻页时，旧实现先 `setWeekOffset` 更新三页内容，再由 `useLayoutEffect` 把共享位移重置为 0。React 提交和 UI 线程共享值归零不是同一个原子操作；中间一帧可能露出「再下一周」，看起来就是闪一下。修复后把轨道拆成按周数 keyed 的 `WeekTrack`：旧轨道停在目标周，新轨道一挂载就以该周为中页、位移初始为 0。外层 `Card` 和背景继续常驻，避免整块原生玻璃重建。课块在原生玻璃下面保留低透明度的同色底层，材质重绘时也不会突然变成透明洞。
+
+**真机验收**：连续快滑、按钮连续换周、第 1/30 周边界、半途取消、浅色/深色/自定义背景都要看；静态测试只能确认周边界逻辑与打包，无法证明 iPhone 上的帧连续性。
