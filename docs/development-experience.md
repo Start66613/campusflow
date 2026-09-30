@@ -313,3 +313,13 @@ npx.cmd expo export --platform android --output-dir dist-android-check
 **踩坑与修复**：第一次把壁纸、渐变、光晕放到导航根层的 `AppBackdrop`，并把 Stack 与 Tab 场景设置为透明。静态导出通过，但 iPhone 真机报告所有页面背景消失、重新设置也无效：原生导航场景仍盖住了根层壁纸。不要再把原生 Stack 后方当作可见背景。现在 `AppBackdrop` 是唯一的背景实现，但由每个可见 `Screen` 渲染，读取同一份全局设置；Stack/Tab 场景恢复不透明底色作为兜底。首页主卡仍跟随用户主色。删除切换标签时整页平移的重复动画，保留底栏选中胶囊动效；课程当前时间线拆成局部组件，仅在课表聚焦时每分钟更新，避免定时刷新三周网格。自定义背景仍在“保存我的设计”后全局生效。
 
 **验证**：`npm run test:background-placement` 防止再次把壁纸移到导航层后方；但静态测试、类型检查和 iOS/Android 打包都**不能证明壁纸在原生导航上可见**。用 `npm run start:iphone` 测开发版，再用 `npm run start:iphone:perf` 在另一端口启动 `--no-dev --minify` 对照；后者仍是 Expo Go 测试，不等于正式原生 Release。真机需先确认默认壁纸与自定义图片在首页、课表、AI、数据、我的五页都能显示，再查首页滚动、切页、拖课和滑周的 JS/UI FPS。详见 [Expo 开发与生产模式](https://docs.expo.dev/workflow/development-mode/) 和 [React Native 性能概览](https://reactnative.dev/docs/performance.html)。
+
+## 33. 设计审计要先验证，原生动画库不能直接代替 Expo Go
+
+2026-10-01 审计发现浅色主题的 `surfaceAlt` 与页面底色完全相同，经典原生模式中的分段轨道、输入框和未选中态缺少层次；改成可叠在白卡与灰页上的半透明填充色。这个 RGBA 是设计近似值，不是 UIKit 的动态 `tertiarySystemFill`。`Card` 的 28px 实际圆角和 26px token 分叉，现已统一；玻璃卡用细边，经典卡用轻阴影，不再两者叠加。滚动内容给悬浮底栏留出的空间改用栏高、安全区和间距共同计算，避免固定 126px。空状态改用统一单色图标。GPA、金额、倒计时等数字使用 `tabular-nums`；中文大标题清掉负字距和明显过粗字重，但不能机械地把所有数字、图标字重也压到 600。
+
+背景的「光晕」原先只是 4% 透明的实心圆，有硬边且叠层过多。现在保留图片与单层渐变；自定义图片单独使用低遮盖渐变，特别注意经典模式原来完全不透明的背景渐变会盖住用户图片。炫彩主题在各个 `Screen` 中使用三色背景渐变，首页主卡也使用三色；这是比全局只换一个紫色 token 更一致的呈现，但复杂组件的主色仍是单色，避免牺牲可读性。新增 `test:ui-tokens` 和背景回归断言。
+
+依照 [react-native-ease](https://github.com/AppAndFlow/react-native-ease) 自己的说明，Ease 适合状态驱动的静态属性变化，**不适合课表拖动、周切换或布局动画**，这些继续使用 RNGH + Reanimated。设置开关在含 Ease 的原生构建中使用它；Expo Go 保留现有实现。[Tickle](https://github.com/Renegades-Studio/react-native-tickle) 是 iOS-only Nitro 模块，原生构建可用于选择触感，Expo Go 和 Android 回退到 `expo-haptics`；连续触感尚需真机原生构建验证，不能把装了依赖说成已经有连续触感。[expo-glass-tabs](https://github.com/davidmokos/expo-glass-tabs) 已作为源码参考和依赖加入，但其现成 `ProgressiveBlur` 使用多层 BlurView，现成底栏也不直接支持本应用的经典模式与键盘隐藏规则；不在已报告掉帧的版本里盲目整体替换。
+
+**兼容边界**：第三方原生模块不会出现在苹果 App Store 下载的 Expo Go 里。用 `Constants.executionEnvironment` 隔离运行路径，不能在应用入口静态导入 Tickle（其模块加载时就创建 Nitro hybrid object）。旧开发包缺少新模块时仍应回退，但安装依赖、TypeScript 通过与 Metro 导出成功都不能证明自定义原生包的链接和运行正确；要另做开发构建并在 iOS/Android 真机测试。当前 iOS/Android `expo export`、类型检查和回归脚本可作为基础门槛。

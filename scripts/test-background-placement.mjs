@@ -14,3 +14,10 @@ test('shared wallpaper is rendered by each visible Screen, not behind native nav
   assert.match(backdrop, /data\.settings\.backgroundUri/);
   assert.match(backdrop, /glass-wallpaper-v1\.png/);
 });
+
+test('custom wallpaper is not covered by an opaque classic-mode gradient', () => {
+  const backdrop = read('components/app-backdrop.tsx');
+  assert.match(backdrop, /const customBackground = Boolean\(data\.settings\.backgroundUri\)/);
+  assert.match(backdrop, /colors=\{customBackground\s*\?/);
+  assert.doesNotMatch(backdrop, /ambientOrb/);
+});

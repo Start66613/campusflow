@@ -8,7 +8,8 @@ export const courseColors = ['#5B67F1', '#23A89A', '#F28A5B', '#A35BD8', '#E2557
 export const lightTheme = {
   background: '#F2F2F7',
   surface: '#FFFFFF',
-  surfaceAlt: '#F2F2F7',
+  // An overlay fill stays visible both on the gray page and inside white cards.
+  surfaceAlt: 'rgba(118,118,128,0.12)',
   text: '#1C1C1E',
   secondary: '#8E8E93',
   line: '#E5E5EA',
@@ -45,15 +46,21 @@ export const eyeTheme = {
   line: '#DEDAC8',
   primary: '#4F725E',
   primarySoft: '#DFEBDD',
+  secondary: '#6B7168',
+  green: '#39805E',
+  orange: '#A96C18',
+  red: '#BB5250',
   tab: 'rgba(255,253,242,0.82)',
 };
 
 export const radii = {
-  card: 26,
+  card: 28,
   control: 17,
   compact: 13,
   round: 999,
 } as const;
+
+export const rainbowGradient = ['#7059D8', '#3EAFE0', '#39B891'] as const;
 
 export type AppTheme = typeof lightTheme;
 

@@ -60,10 +60,10 @@ export default function FocusScreen() {
 }
 
 const styles = StyleSheet.create({
-  kicker: { fontSize: 11, letterSpacing: 1.6, fontWeight: '700', marginTop: 10, marginBottom: 5 }, title: { fontSize: 34, fontWeight: '800', letterSpacing: -1.1 }, timerWrap: { alignItems: 'center', marginVertical: 42 },
+  kicker: { fontSize: 11, letterSpacing: 1.6, fontWeight: '700', marginTop: 10, marginBottom: 5 }, title: { fontSize: 34, fontWeight: '600' }, timerWrap: { alignItems: 'center', marginVertical: 42 },
   ringOuter: { width: 252, height: 252, borderRadius: 126, borderWidth: 17, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, progressAccent: { position: 'absolute', width: 22, height: 118, top: 1, borderRadius: 11, transformOrigin: 'center bottom' }, ringInner: { width: 202, height: 202, borderRadius: 101, alignItems: 'center', justifyContent: 'center' },
-  time: { fontSize: 53, fontWeight: '800', letterSpacing: -1.7 }, mode: { fontSize: 13, marginTop: 6, fontWeight: '600' }, controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 18 },
+  time: { fontSize: 53, fontWeight: '700', letterSpacing: -1.7, fontVariant: ['tabular-nums'] }, mode: { fontSize: 13, marginTop: 6, fontWeight: '600' }, controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 18 },
   smallButton: { width: 64, height: 48, borderRadius: 17, borderWidth: StyleSheet.hairlineWidth, alignItems: 'center', justifyContent: 'center' }, smallButtonText: { fontSize: 12, fontWeight: '600' }, mainButton: { width: 92, height: 58, borderRadius: 21, alignItems: 'center', justifyContent: 'center', shadowColor: '#5E5CE6', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.22, shadowRadius: 15, elevation: 4 }, mainButtonText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700' },
-  suggestion: { marginTop: 36, flexDirection: 'row', alignItems: 'center', gap: 14 }, suggestionEmoji: { fontSize: 28 }, suggestionTitle: { fontSize: 15, fontWeight: '900', marginBottom: 5 }, suggestionBody: { fontSize: 12, lineHeight: 18 },
-  stats: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 45, marginTop: 30 }, statValue: { fontSize: 25, fontWeight: '900', textAlign: 'center' }, statLabel: { fontSize: 11, marginTop: 5, textAlign: 'center' }, statDivider: { width: 1, height: 42 },
+  suggestion: { marginTop: 36, flexDirection: 'row', alignItems: 'center', gap: 14 }, suggestionEmoji: { fontSize: 28 }, suggestionTitle: { fontSize: 15, fontWeight: '600', marginBottom: 5 }, suggestionBody: { fontSize: 12, lineHeight: 18 },
+  stats: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 45, marginTop: 30 }, statValue: { fontSize: 25, fontWeight: '700', fontVariant: ['tabular-nums'], textAlign: 'center' }, statLabel: { fontSize: 11, marginTop: 5, textAlign: 'center' }, statDivider: { width: 1, height: 42 },
 });

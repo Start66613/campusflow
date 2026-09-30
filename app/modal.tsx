@@ -25,6 +25,6 @@ export default function AboutScreen() {
 
 const styles = StyleSheet.create({
   logo: { width: 74, height: 74, borderRadius: 24, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginTop: 24 }, logoText: { color: '#FFFFFF', fontSize: 25, fontWeight: '800' },
-  title: { fontSize: 30, fontWeight: '800', letterSpacing: -0.9, textAlign: 'center', marginTop: 16 }, subtitle: { fontSize: 14, lineHeight: 21, textAlign: 'center', marginTop: 7, marginBottom: 25, paddingHorizontal: 22 },
+  title: { fontSize: 30, fontWeight: '600', textAlign: 'center', marginTop: 16 }, subtitle: { fontSize: 14, lineHeight: 21, textAlign: 'center', marginTop: 7, marginBottom: 25, paddingHorizontal: 22 },
   card: { marginBottom: 13 }, cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: 8 }, body: { fontSize: 13, lineHeight: 21 }, footer: { fontSize: 11, textAlign: 'center', marginTop: 18 },
 });

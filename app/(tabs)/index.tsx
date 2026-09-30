@@ -8,7 +8,7 @@ import { gentleEnter, gentleTextEnter, gentleTextExit, MotionPressable } from '@
 import { Card, GlassBackdrop, Pill, Screen, SectionTitle } from '@/components/ui';
 import { currentWeek, formatDateTime, nextCourse, relativeDue, weekdays } from '@/src/date';
 import { useApp } from '@/src/store';
-import { useAppTheme } from '@/src/theme';
+import { rainbowGradient, useAppTheme } from '@/src/theme';
 
 export default function HomeScreen() {
   const theme = useAppTheme();
@@ -34,7 +34,7 @@ export default function HomeScreen() {
       </View>
 
       <Animated.View entering={gentleTextEnter(20)}>
-        <LinearGradient colors={[theme.primary, `${theme.primary}D8`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
+        <LinearGradient colors={data.settings.accentPreset === 'rainbow' ? rainbowGradient : [theme.primary, `${theme.primary}D8`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
           <View style={styles.heroTop}>
             <Text style={styles.heroKicker}>下一节课</Text>
             <View style={styles.weekBadge}><Text style={styles.weekBadgeText}>第 {week} 周</Text></View>
@@ -120,7 +120,7 @@ function QuickAction({ icon, label, color, delay, onPress }: { icon: string; lab
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, marginBottom: 20 },
   eyebrow: { fontSize: 13, fontWeight: '600', marginBottom: 5 },
-  greeting: { fontSize: 30, fontWeight: '800', letterSpacing: -1 },
+  greeting: { fontSize: 30, fontWeight: '600' },
   avatar: { width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontSize: 23 },
   hero: { borderRadius: 30, padding: 22, minHeight: 190, overflow: 'hidden', shadowColor: '#4541A8', shadowOffset: { width: 0, height: 9 }, shadowOpacity: 0.18, shadowRadius: 22, elevation: 4 },
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   heroKicker: { color: '#E9E9FF', fontSize: 14, fontWeight: '700' },
   weekBadge: { backgroundColor: 'rgba(255,255,255,0.18)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 99 },
   weekBadgeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
-  heroTitle: { color: '#FFFFFF', fontSize: 29, fontWeight: '800', marginTop: 28, letterSpacing: -0.7 },
+  heroTitle: { color: '#FFFFFF', fontSize: 29, fontWeight: '600', marginTop: 28 },
   heroMeta: { color: '#EEEFFF', fontSize: 14, marginTop: 8, fontWeight: '600' },
   teacherRow: { marginTop: 19, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   teacher: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   metricRow: { flexDirection: 'row', gap: 12 },
   metricCard: { flex: 1, padding: 16 },
   metricLabel: { fontSize: 12, fontWeight: '600' },
-  metricValue: { fontSize: 23, fontWeight: '800', marginVertical: 9, letterSpacing: -0.6 },
+  metricValue: { fontSize: 23, fontWeight: '700', marginVertical: 9, letterSpacing: -0.6, fontVariant: ['tabular-nums'] },
   taskCard: { paddingVertical: 3, paddingHorizontal: 16 },
   taskRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 12 },
   checkbox: { width: 21, height: 21, borderRadius: 7, borderWidth: 2 },

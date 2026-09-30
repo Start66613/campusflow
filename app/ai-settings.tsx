@@ -73,12 +73,12 @@ function Field({ label, ...props }: { label: string } & React.ComponentProps<typ
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 32, fontWeight: '800', letterSpacing: -1, marginTop: 8 },
+  title: { fontSize: 32, fontWeight: '600', marginTop: 8 },
   subtitle: { fontSize: 13, lineHeight: 20, marginTop: 8, marginBottom: 20 },
   card: { gap: 14 }, statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dot: { width: 8, height: 8, borderRadius: 4 }, status: { fontSize: 14, fontWeight: '700' },
   field: { gap: 7 }, label: { fontSize: 12, fontWeight: '700', marginLeft: 3 },
   input: { height: 50, borderRadius: 16, paddingHorizontal: 14, fontSize: 15 },
-  note: { marginTop: 16 }, noteTitle: { fontSize: 15, fontWeight: '800', marginBottom: 8 }, noteBody: { fontSize: 12.5, lineHeight: 21 },
+  note: { marginTop: 16 }, noteTitle: { fontSize: 15, fontWeight: '600', marginBottom: 8 }, noteBody: { fontSize: 12.5, lineHeight: 21 },
   security: { fontSize: 11, lineHeight: 17, marginTop: 14, paddingHorizontal: 4 },
 });

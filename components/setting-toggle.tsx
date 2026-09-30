@@ -1,9 +1,9 @@
-import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import { motion, MotionPressable } from '@/components/motion';
+import { hasCustomNativeRuntime, selectionTick } from '@/src/native-motion';
 import { useAppTheme } from '@/src/theme';
 
 export function SettingToggle({ value, onValueChange, label }: {
@@ -23,20 +23,40 @@ export function SettingToggle({ value, onValueChange, label }: {
   }));
   const thumbStyle = useAnimatedStyle(() => ({ transform: [{ translateX: progress.value * 20 }] }));
 
+  let track = <Animated.View style={[styles.track, trackStyle]}>
+    <Animated.View style={[styles.thumb, { shadowColor: theme.shadow }, thumbStyle]} />
+  </Animated.View>;
+  if (hasCustomNativeRuntime) {
+    try {
+      const { EaseView } = require('react-native-ease') as typeof import('react-native-ease');
+      track = <EaseView
+        style={styles.track}
+        animate={{ backgroundColor: value ? theme.primary : theme.background === '#000000' ? '#55565F' : '#D9D9E0' }}
+        transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+      >
+        <EaseView
+          style={[styles.thumb, { shadowColor: theme.shadow }]}
+          animate={{ translateX: value ? 20 : 0 }}
+          transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+        />
+      </EaseView>;
+    } catch {
+      // Existing development builds and Expo Go retain the Reanimated version.
+    }
+  }
+
   return (
     <MotionPressable
       accessibilityRole="switch"
       accessibilityLabel={label}
       accessibilityState={{ checked: value }}
       onPress={() => {
-        Haptics.selectionAsync().catch(() => undefined);
+        selectionTick();
         onValueChange(!value);
       }}
       style={styles.touchTarget}
     >
-      <Animated.View style={[styles.track, trackStyle]}>
-        <Animated.View style={[styles.thumb, { shadowColor: theme.shadow }, thumbStyle]} />
-      </Animated.View>
+      {track}
     </MotionPressable>
   );
 }

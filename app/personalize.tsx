@@ -101,7 +101,7 @@ function Field({ label, ...props }: { label: string } & React.ComponentProps<typ
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 30, fontWeight: '800', marginTop: 8 }, subtitle: { fontSize: 12, lineHeight: 19, marginTop: 8 },
+  title: { fontSize: 30, fontWeight: '600', marginTop: 8 }, subtitle: { fontSize: 12, lineHeight: 19, marginTop: 8 },
   card: { gap: 13 }, avatarRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 3 }, avatar: { width: 62, height: 62, borderRadius: 21, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }, avatarImage: { width: '100%', height: '100%' }, avatarTitle: { fontSize: 16, fontWeight: '700' }, hint: { fontSize: 11, lineHeight: 17 },
   field: { gap: 6 }, fieldLabel: { fontSize: 12, fontWeight: '700' }, input: { minHeight: 48, borderRadius: 15, paddingHorizontal: 14, fontSize: 15 },
   swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, swatchItem: { minWidth: 76, paddingVertical: 9, paddingHorizontal: 8, borderRadius: 17, borderWidth: 1, borderColor: 'transparent', alignItems: 'center', gap: 5 }, swatch: { width: 35, height: 35, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }, check: { color: '#FFFFFF', fontSize: 18, fontWeight: '800' }, swatchLabel: { fontSize: 11, fontWeight: '700' },

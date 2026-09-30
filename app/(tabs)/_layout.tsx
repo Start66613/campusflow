@@ -1,6 +1,5 @@
 import { Tabs } from 'expo-router';
 import { GlassContainer, GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
-import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
 import { Keyboard, Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -12,6 +11,7 @@ import { AppIcon, type AppIconProps } from '@/components/app-icon';
 import { motion } from '@/components/motion';
 import { GlassBackdrop } from '@/components/ui';
 import { FLOATING_TAB_BAR_HEIGHT, FLOATING_TAB_BAR_SIDE } from '@/src/layout';
+import { selectionTick } from '@/src/native-motion';
 import { selectionIndex, selectionPosition } from '@/src/selection-geometry';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
@@ -93,7 +93,7 @@ function LiquidTabBar({ state, navigation }: TabBarProps) {
   const lensStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: travel.value }],
   }));
-  const tick = useCallback(() => { Haptics.selectionAsync().catch(() => undefined); }, []);
+  const tick = useCallback(selectionTick, []);
   const selectTab = useCallback((index: number, withHaptic: boolean) => {
     const route = state.routes[index];
     if (!route) return;

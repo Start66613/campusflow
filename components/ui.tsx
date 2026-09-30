@@ -4,18 +4,21 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { type PropsWithChildren, type ReactNode } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBackdrop } from '@/components/app-backdrop';
+import { AppIcon } from '@/components/app-icon';
 import { gentleLayout, gentleTextEnter, MotionPressable } from '@/components/motion';
+import { FLOATING_TAB_BAR_HEIGHT, FLOATING_TAB_CONTENT_GAP } from '@/src/layout';
 import { useApp } from '@/src/store';
-import { useAppTheme } from '@/src/theme';
+import { radii, useAppTheme } from '@/src/theme';
 import { useReduceTransparency } from '@/src/accessibility';
 
 export function Screen({ children, scroll = true, scrollEnabled = true, style }: PropsWithChildren<{ scroll?: boolean; scrollEnabled?: boolean; style?: StyleProp<ViewStyle> }>) {
   const theme = useAppTheme();
+  const insets = useSafeAreaInsets();
   const content = scroll ? (
-    <ScrollView scrollEnabled={scrollEnabled} bounces contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView scrollEnabled={scrollEnabled} bounces contentInsetAdjustmentBehavior="automatic" contentContainerStyle={[styles.scroll, { paddingBottom: FLOATING_TAB_BAR_HEIGHT + Math.max(insets.bottom, 8) + FLOATING_TAB_CONTENT_GAP }]} showsVerticalScrollIndicator={false}>
       <View style={style}>{children}</View>
     </ScrollView>
   ) : (
@@ -34,16 +37,16 @@ export function Card({ children, style, onPress, glassSurface = true, animateLay
   const { data } = useApp();
   const glass = data.settings.visualMode === 'glass';
   const showGlass = glass && glassSurface;
-  const cardStyle = [styles.card, { backgroundColor: showGlass ? 'transparent' : theme.surface, borderColor: `${theme.line}B8`, shadowColor: theme.shadow }, style];
+  const cardStyle = [styles.card, { backgroundColor: showGlass ? 'transparent' : theme.surface, borderWidth: 0, shadowColor: theme.shadow, shadowOpacity: showGlass ? 0 : 0.045, elevation: showGlass ? 0 : 2 }, style];
   if (onPress) {
     return (
       <MotionPressable onPress={onPress} style={cardStyle}>
-        {showGlass ? <GlassBackdrop radius={28} effectStyle="regular" readable /> : null}
+        {showGlass ? <GlassBackdrop radius={radii.card} effectStyle="regular" readable /> : null}
         {children}
       </MotionPressable>
     );
   }
-  return <Animated.View layout={animateLayout ? gentleLayout : undefined} style={cardStyle}>{showGlass ? <GlassBackdrop radius={28} effectStyle="regular" readable /> : null}{children}</Animated.View>;
+  return <Animated.View layout={animateLayout ? gentleLayout : undefined} style={cardStyle}>{showGlass ? <GlassBackdrop radius={radii.card} effectStyle="regular" readable /> : null}{children}</Animated.View>;
 }
 
 export function GlassBackdrop({
@@ -93,6 +96,7 @@ export function GlassBackdrop({
         {tintColor ? <View style={[StyleSheet.absoluteFill, { borderRadius: radius, backgroundColor: tintWithAlpha(tintStrength === 'soft' ? '12' : '38') }]} /> : null}
         {readable ? <View style={[StyleSheet.absoluteFill, { borderRadius: radius, backgroundColor: dark ? 'rgba(15,15,24,0.32)' : 'rgba(255,255,255,0.36)' }]} /> : null}
         <View style={[styles.glassEdge, { borderRadius: radius, borderColor: edgeColor }]} />
+        <View style={[styles.glassTopEdge, { backgroundColor: edgeColor }]} />
       </View>
     );
   }
@@ -106,6 +110,7 @@ export function GlassBackdrop({
         start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill}
       />
       <View style={[styles.glassEdge, { borderRadius: radius, borderColor: edgeColor }]} />
+      <View style={[styles.glassTopEdge, { backgroundColor: edgeColor }]} />
     </View>
   );
 }
@@ -144,11 +149,11 @@ export function PrimaryButton({ label, onPress, icon, disabled = false, secondar
   );
 }
 
-export function EmptyState({ emoji, title, body }: { emoji: string; title: string; body: string }) {
+export function EmptyState({ title, body }: { emoji?: string; title: string; body: string }) {
   const theme = useAppTheme();
   return (
     <Animated.View entering={gentleTextEnter()} style={styles.empty}>
-      <Text style={styles.emptyEmoji}>{emoji}</Text>
+      <View style={[styles.emptyIcon, { backgroundColor: theme.primarySoft }]}><AppIcon ios="tray" android="inbox" color={theme.primary} size={27} /></View>
       <Text style={[styles.emptyTitle, { color: theme.text }]}>{title}</Text>
       <Text style={[styles.emptyBody, { color: theme.secondary }]}>{body}</Text>
     </Animated.View>
@@ -158,27 +163,25 @@ export function EmptyState({ emoji, title, body }: { emoji: string; title: strin
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   fill: { flex: 1 },
-  scroll: { paddingHorizontal: 18, paddingTop: 2, paddingBottom: 126 },
+  scroll: { paddingHorizontal: 18, paddingTop: 2 },
   card: {
-    borderRadius: 28,
+    borderRadius: radii.card,
     padding: 18,
-    borderWidth: StyleSheet.hairlineWidth,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.055,
     shadowRadius: 22,
-    elevation: 2,
   },
   glassClip: { overflow: 'hidden' },
   glassEdge: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderWidth: StyleSheet.hairlineWidth },
+  glassTopEdge: { position: 'absolute', top: 1, left: 16, right: 16, height: StyleSheet.hairlineWidth, opacity: 0.42 },
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 26, marginBottom: 12 },
-  sectionTitle: { fontSize: 20, fontWeight: '700', letterSpacing: -0.45 },
+  sectionTitle: { fontSize: 20, fontWeight: '600' },
   sectionAction: { fontSize: 14, fontWeight: '600' },
   pill: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
   pillText: { fontSize: 12, fontWeight: '600' },
   button: { minHeight: 52, paddingHorizontal: 18, borderRadius: 17, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
-  buttonText: { fontSize: 16, fontWeight: '700', letterSpacing: -0.2 },
+  buttonText: { fontSize: 16, fontWeight: '600' },
   empty: { alignItems: 'center', paddingVertical: 34, paddingHorizontal: 28 },
-  emptyEmoji: { fontSize: 32, marginBottom: 10 },
-  emptyTitle: { fontSize: 17, fontWeight: '800', marginBottom: 6 },
+  emptyIcon: { width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  emptyTitle: { fontSize: 17, fontWeight: '600', marginBottom: 6 },
   emptyBody: { fontSize: 14, textAlign: 'center', lineHeight: 21 },
 });

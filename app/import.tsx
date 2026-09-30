@@ -76,8 +76,8 @@ function MethodCard({ emoji, title, body, onPress, accent }: { emoji: string; ti
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 30, fontWeight: '800', letterSpacing: -0.9, marginTop: 8 }, subtitle: { fontSize: 13, lineHeight: 20, marginTop: 8, marginBottom: 20 },
+  title: { fontSize: 30, fontWeight: '600', marginTop: 8 }, subtitle: { fontSize: 13, lineHeight: 20, marginTop: 8, marginBottom: 20 },
   methodRow: { flexDirection: 'row', gap: 12 }, method: { flex: 1, borderRadius: 23, padding: 16, borderWidth: StyleSheet.hairlineWidth, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.04, shadowRadius: 14, elevation: 1 }, methodIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 14 }, methodEmoji: { fontSize: 20 }, methodTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4 }, methodBody: { fontSize: 12 },
-  section: { fontSize: 20, fontWeight: '700', letterSpacing: -0.4, marginTop: 28, marginBottom: 12 }, formCard: { gap: 14 }, schoolTitle: { fontSize: 16, fontWeight: '800' }, privacy: { fontSize: 11, lineHeight: 17 },
-  template: { marginTop: 16 }, templateTitle: { fontSize: 14, fontWeight: '800', marginBottom: 8 }, templateCode: { fontSize: 11, lineHeight: 17 },
+  section: { fontSize: 20, fontWeight: '600', marginTop: 28, marginBottom: 12 }, formCard: { gap: 14 }, schoolTitle: { fontSize: 16, fontWeight: '600' }, privacy: { fontSize: 11, lineHeight: 17 },
+  template: { marginTop: 16 }, templateTitle: { fontSize: 14, fontWeight: '600', marginBottom: 8 }, templateCode: { fontSize: 11, lineHeight: 17 },
 });

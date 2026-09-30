@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { AppProvider, useApp } from '@/src/store';
+import { OptionalHapticProvider } from '@/src/native-motion';
 import { useAppTheme } from '@/src/theme';
 
 export {
@@ -52,7 +53,7 @@ export default function RootLayout() {
     return null;
   }
 
-  return <GestureHandlerRootView style={{ flex: 1 }}><AppProvider><RootLayoutNav /></AppProvider></GestureHandlerRootView>;
+  return <GestureHandlerRootView style={{ flex: 1 }}><OptionalHapticProvider><AppProvider><RootLayoutNav /></AppProvider></OptionalHapticProvider></GestureHandlerRootView>;
 }
 
 function RootLayoutNav() {

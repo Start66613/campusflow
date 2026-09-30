@@ -11,6 +11,7 @@ export function AppBackdrop() {
   const { data } = useApp();
   const glass = data.settings.visualMode === 'glass';
   const dark = theme.background === '#000000';
+  const customBackground = Boolean(data.settings.backgroundUri);
 
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: theme.background }]}>
@@ -28,19 +29,16 @@ export function AppBackdrop() {
         />
       ) : null}
       <LinearGradient
-        colors={dark ? ['rgba(0,0,0,0.88)', 'rgba(10,10,18,0.82)', '#000000'] : glass ? ['rgba(242,242,247,0.10)', 'rgba(255,255,255,0.04)', 'rgba(242,242,247,0.20)'] : [theme.background, `${theme.primary}0B`, theme.background]}
+        colors={customBackground
+          ? dark ? ['rgba(0,0,0,0.28)', 'rgba(0,0,0,0.20)', 'rgba(0,0,0,0.34)'] : ['rgba(255,255,255,0.03)', 'rgba(255,255,255,0.01)', 'rgba(255,255,255,0.06)']
+          : data.settings.accentPreset === 'rainbow'
+          ? dark ? ['rgba(83,42,140,0.42)', 'rgba(30,98,131,0.25)', 'rgba(22,101,78,0.32)'] : ['rgba(170,108,247,0.15)', 'rgba(93,191,248,0.12)', 'rgba(75,207,159,0.14)']
+          : dark ? ['rgba(0,0,0,0.88)', 'rgba(10,10,18,0.82)', '#000000']
+            : glass ? ['rgba(242,242,247,0.10)', 'rgba(255,255,255,0.04)', 'rgba(242,242,247,0.20)']
+              : [theme.background, `${theme.primary}0B`, theme.background]}
         locations={[0, 0.48, 1]}
         style={StyleSheet.absoluteFill}
       />
-      {data.settings.accentPreset === 'rainbow' ? <LinearGradient colors={['rgba(170,108,247,0.12)', 'rgba(93,191,248,0.09)', 'rgba(75,207,159,0.10)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} /> : null}
-      <View style={[styles.ambientOrb, styles.ambientOrbTop, { backgroundColor: `${theme.primary}0A` }]} />
-      <View style={[styles.ambientOrb, styles.ambientOrbBottom, { backgroundColor: `${theme.green}08` }]} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  ambientOrb: { position: 'absolute', width: 260, height: 260, borderRadius: 130 },
-  ambientOrbTop: { top: -120, right: -105 },
-  ambientOrbBottom: { bottom: 90, left: -160 },
-});

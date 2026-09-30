@@ -212,8 +212,8 @@ export default function AssistantScreen() {
 
 const styles = StyleSheet.create({
   keyboardFrame: { flex: 1 }, fill: { flex: 1, paddingHorizontal: 18 }, header: { paddingTop: 8, paddingBottom: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  kicker: { fontSize: 11, letterSpacing: 1.5, fontWeight: '700', marginBottom: 5 }, title: { fontSize: 32, fontWeight: '800', letterSpacing: -1.05 },
-  online: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 99 }, onlineDot: { width: 7, height: 7, borderRadius: 4 }, onlineText: { fontSize: 11, fontWeight: '800' },
+  kicker: { fontSize: 11, letterSpacing: 1.5, fontWeight: '700', marginBottom: 5 }, title: { fontSize: 32, fontWeight: '600' },
+  online: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 99 }, onlineDot: { width: 7, height: 7, borderRadius: 4 }, onlineText: { fontSize: 11, fontWeight: '600' },
   messageList: { flex: 1 }, messages: { flexGrow: 1, paddingTop: 12, paddingBottom: 20, gap: 16 }, messageWrap: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, maxWidth: '92%' }, userWrap: { alignSelf: 'flex-end', justifyContent: 'flex-end' },
   botAvatar: { width: 31, height: 31, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   bubble: { borderRadius: 22, borderTopLeftRadius: 8, paddingHorizontal: 16, paddingVertical: 13, maxWidth: '88%' }, userBubble: { borderTopLeftRadius: 22, borderTopRightRadius: 8 },

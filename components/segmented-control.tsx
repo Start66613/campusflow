@@ -1,4 +1,3 @@
-import * as Haptics from 'expo-haptics';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -6,6 +5,7 @@ import Animated, { interpolateColor, runOnJS, useAnimatedStyle, useSharedValue, 
 
 import { motion, MotionPressable } from '@/components/motion';
 import { GlassBackdrop } from '@/components/ui';
+import { selectionTick } from '@/src/native-motion';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
 import { selectionIndex, selectionPosition } from '@/src/selection-geometry';
@@ -37,7 +37,7 @@ export function SegmentedControl({ items, value, onChange }: {
   }, [position, scrubbing, selected, segmentWidth]);
 
   const lensStyle = useAnimatedStyle(() => ({ transform: [{ translateX: position.value }] }));
-  const tick = useCallback(() => { Haptics.selectionAsync().catch(() => undefined); }, []);
+  const tick = useCallback(selectionTick, []);
   const select = useCallback((index: number, withHaptic: boolean) => {
     const nextValue = values[index];
     if (!nextValue || nextValue === value) return;

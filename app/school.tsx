@@ -236,7 +236,7 @@ export default function SchoolScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: { minHeight: 64, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
-  heading: { flex: 1 }, title: { fontSize: 17, fontWeight: '800', letterSpacing: -0.25 }, subtitle: { fontSize: 11, marginTop: 2 },
+  heading: { flex: 1 }, title: { fontSize: 17, fontWeight: '600' }, subtitle: { fontSize: 11, marginTop: 2 },
   close: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' }, closeText: { fontSize: 28, lineHeight: 30, fontWeight: '300' },
   retry: { minHeight: 36, borderRadius: 18, paddingHorizontal: 12, justifyContent: 'center' }, retryText: { fontSize: 12, fontWeight: '700' }, headerSpacer: { width: 38 },
   status: { marginHorizontal: 14, marginBottom: 10, minHeight: 52, borderRadius: 20, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 14, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10 },

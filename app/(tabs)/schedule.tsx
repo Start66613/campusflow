@@ -10,6 +10,7 @@ import { motion, MotionPressable } from '@/components/motion';
 import { Card, GlassBackdrop, PrimaryButton, Screen } from '@/components/ui';
 import { syncCoursesToSystemCalendar } from '@/src/calendar';
 import { courseIconSpec } from '@/src/course-icons';
+import { selectionTick } from '@/src/native-motion';
 import { currentWeek, dateForWeekday, weekdays } from '@/src/date';
 import { periodEnds, periodStarts } from '@/src/periods';
 import { useApp } from '@/src/store';
@@ -169,7 +170,7 @@ const WeekTrack = forwardRef<WeekTrackHandle, {
   const dragX = useSharedValue(0);
   const locked = useSharedValue(false);
   const dragStyle = useAnimatedStyle(() => ({ transform: [{ translateX: dragX.value }] }));
-  const tick = useCallback(() => { Haptics.selectionAsync().catch(() => undefined); }, []);
+  const tick = useCallback(selectionTick, []);
   const changeWeek = useCallback((delta: -1 | 1) => {
     if (pageWidth <= 0 || locked.value || !canChangeWeek(week, delta)) return;
     locked.value = true;
@@ -350,9 +351,9 @@ export default function ScheduleScreen() {
 
 const styles = StyleSheet.create({
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4, marginBottom: 10 },
-  kicker: { fontSize: 12, fontWeight: '600', marginBottom: 2 }, title: { fontSize: 29, fontWeight: '800', letterSpacing: -0.9 },
+  kicker: { fontSize: 12, fontWeight: '600', marginBottom: 2 }, title: { fontSize: 29, fontWeight: '600' },
   importButton: { borderRadius: 17, paddingHorizontal: 15, paddingVertical: 10 }, importText: { fontWeight: '700', fontSize: 14 },
-  weekTools: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 9 }, weekButton: { width: 34, height: 34, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, weekHint: { flex: 1, fontSize: 10, textAlign: 'center' }, addButton: { minHeight: 34, paddingHorizontal: 10, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, addText: { fontSize: 11, fontWeight: '800' },
+  weekTools: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 9 }, weekButton: { width: 34, height: 34, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, weekHint: { flex: 1, fontSize: 10, textAlign: 'center' }, addButton: { minHeight: 34, paddingHorizontal: 10, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, addText: { fontSize: 11, fontWeight: '600' },
   weekViewport: { overflow: 'hidden', borderRadius: 28 }, trackViewport: { overflow: 'hidden' }, weekTrack: { flexDirection: 'row' },
   gridCard: { padding: 6, borderRadius: 28, overflow: 'hidden' }, dayHeader: { flexDirection: 'row', height: 47, alignItems: 'center' }, dayCell: { alignItems: 'center', gap: 3 }, dayName: { fontSize: 11, fontWeight: '700' },
   dateDot: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, dayDate: { fontSize: 12, fontWeight: '700' }, grid: { position: 'relative' },
@@ -360,8 +361,8 @@ const styles = StyleSheet.create({
   periodMarker: { width: timeColumnWidth, height: rowHeight, paddingVertical: 5, alignItems: 'center', justifyContent: 'space-between' },
   periodNumber: { width: timeColumnWidth, textAlign: 'center', fontSize: 11, lineHeight: 14, fontWeight: '800' },
   periodTime: { width: timeColumnWidth, textAlign: 'center', fontSize: 8, lineHeight: 10, fontVariant: ['tabular-nums'] },
-  verticalLine: { position: 'absolute', top: 0, bottom: 0, borderLeftWidth: StyleSheet.hairlineWidth }, courseBlock: { position: 'absolute', borderRadius: 15, padding: 8, shadowColor: '#203060', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.1, shadowRadius: 9, elevation: 3 }, courseContents: { flex: 1 }, dropTarget: { position: 'absolute', borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 15, justifyContent: 'center', alignItems: 'center', zIndex: 0 }, dropHint: { fontSize: 8, fontWeight: '800', opacity: 0.8 }, courseGlyph: { width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.42)', alignItems: 'center', justifyContent: 'center', marginBottom: 5 },
+  verticalLine: { position: 'absolute', top: 0, bottom: 0, borderLeftWidth: StyleSheet.hairlineWidth }, courseBlock: { position: 'absolute', borderRadius: 15, padding: 8, shadowColor: '#203060', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.1, shadowRadius: 9, elevation: 3 }, courseContents: { flex: 1 }, dropTarget: { position: 'absolute', borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 15, justifyContent: 'center', alignItems: 'center', zIndex: 0 }, dropHint: { fontSize: 8, fontWeight: '600', opacity: 0.8 }, courseGlyph: { width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.42)', alignItems: 'center', justifyContent: 'center', marginBottom: 5 },
   nowLine: { position: 'absolute', height: 2, borderRadius: 1, zIndex: 8 }, nowDot: { position: 'absolute', left: -3, top: -2, width: 6, height: 6, borderRadius: 3 },
-  courseName: { color: '#FFFFFF', fontSize: 11, lineHeight: 14, fontWeight: '800', textShadowColor: 'rgba(20,22,45,0.28)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }, courseNameCompact: { fontSize: 10, lineHeight: 13 }, courseMeta: { color: 'rgba(255,255,255,0.96)', fontSize: 8.5, lineHeight: 10, marginTop: 4, fontWeight: '700', textShadowColor: 'rgba(20,22,45,0.24)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }, courseMetaCompact: { fontSize: 8, lineHeight: 9 }, courseTeacher: { fontSize: 8, lineHeight: 10, marginTop: 5, fontWeight: '700', opacity: 0.72 },
+  courseName: { color: '#FFFFFF', fontSize: 11, lineHeight: 14, fontWeight: '600', textShadowColor: 'rgba(20,22,45,0.28)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }, courseNameCompact: { fontSize: 10, lineHeight: 13 }, courseMeta: { color: 'rgba(255,255,255,0.96)', fontSize: 8.5, lineHeight: 10, marginTop: 4, fontWeight: '500', textShadowColor: 'rgba(20,22,45,0.24)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }, courseMetaCompact: { fontSize: 8, lineHeight: 9 }, courseTeacher: { fontSize: 8, lineHeight: 10, marginTop: 5, fontWeight: '500', opacity: 0.72 },
   buttonRow: { flexDirection: 'row', marginTop: 16 }, tip: { fontSize: 12, lineHeight: 18, marginTop: 10, paddingHorizontal: 4 },
 });
