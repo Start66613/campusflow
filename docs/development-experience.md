@@ -299,3 +299,9 @@ npx.cmd expo export --platform android --output-dir dist-android-check
 三页课表轨道滑到相邻页时，旧实现先 `setWeekOffset` 更新三页内容，再由 `useLayoutEffect` 把共享位移重置为 0。React 提交和 UI 线程共享值归零不是同一个原子操作；中间一帧可能露出「再下一周」，看起来就是闪一下。修复后把轨道拆成按周数 keyed 的 `WeekTrack`：旧轨道停在目标周，新轨道一挂载就以该周为中页、位移初始为 0。外层 `Card` 和背景继续常驻，避免整块原生玻璃重建。课块在原生玻璃下面保留低透明度的同色底层，材质重绘时也不会突然变成透明洞。
 
 **真机验收**：连续快滑、按钮连续换周、第 1/30 周边界、半途取消、浅色/深色/自定义背景都要看；静态测试只能确认周边界逻辑与打包，无法证明 iPhone 上的帧连续性。
+
+## 31. Expo 二维码出现，不代表 iPhone 账号验证通过
+
+2026-09-30 再次出现手机提示「Expo Go 已登录 start66613，但 Expo CLI 未登录」。当时受限网络中的 `npx expo whoami` 请求 Expo 官方服务返回 `UnexpectedServerError`，于是误用 `EXPO_OFFLINE=1` 启动；电脑上清单 HTTP 200，却仍无法通过 iPhone Expo Go 的账号检查。二维码和 HTTP 200 都不是充分验证。使用可连接 Expo 官方服务的环境运行 `npx expo whoami`，确认 `start66613`，并检查 iOS manifest 的 `extra.expoClient.owner` 也是该账号后，手机才能打开。官方排障说明还明确指出 CLI 不会在终端提示账号不匹配，错误只出现在手机上。
+
+以后统一用 `npm run start:iphone`：它禁止离线模式、核对 CLI 账号、启动 LAN 服务并验证 iOS 项目清单；任一环节失败就停止并提示，不给用户一个看似可扫但无法运行的二维码。不要把沙箱网络失败误判为账号退出，也不要为了绕过 Expo API 错误而开启离线模式。参见 [Expo Go 登录排障](https://docs.expo.dev/troubleshooting/expo-go-sign-in-required/) 与 [Expo CLI 认证说明](https://docs.expo.dev/more/expo-cli/)。

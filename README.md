@@ -4,6 +4,8 @@ CampusFlow 是一个面向 iPhone 和 Android 的个人校园助手。它把课�
 
 当前工程基于 Expo SDK 57、React Native 0.86 和 TypeScript，可在 Windows 上开发，通过 Expo Go 预览通用界面，并使用 EAS 构建带系统日历和 iOS 小组件的开发版/TestFlight 包。
 
+iPhone Expo Go 测试请在项目目录运行 `npm run start:iphone`。这个入口会先确认电脑端 Expo CLI 登录为 `start66613`，再启动局域网服务并检查 iOS 项目清单的账号；检查没通过时不要扫描二维码。首次登录可运行 `npx expo login --browser`。不要用 `EXPO_OFFLINE=1` 启动 iPhone 真机测试；电脑与手机需连接同一局域网。
+
 开发进展见 [CHANGELOG.md](CHANGELOG.md)，已解决问题与快速排障见 [docs/development-experience.md](docs/development-experience.md)。
 
 ## Android 测试包
