@@ -2,9 +2,9 @@ import { Tabs } from 'expo-router';
 import { GlassContainer, GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
-import { Keyboard, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Easing, Keyboard, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { interpolateColor, runOnJS, useAnimatedStyle, useSharedValue, withSpring, type SharedValue } from 'react-native-reanimated';
+import Animated, { interpolateColor, runOnJS, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, type SharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon, type AppIconProps } from '@/components/app-icon';
@@ -31,12 +31,30 @@ const tabs: Record<string, { title: string; icon: IconName }> = {
 
 export default function TabLayout() {
   const theme = useAppTheme();
+  const { width } = useWindowDimensions();
+  const reduceMotion = useReducedMotion();
   return (
     <Tabs
       tabBar={(props) => <LiquidTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        animation: 'none',
+        animation: reduceMotion ? 'none' : 'shift',
+        transitionSpec: {
+          animation: 'timing',
+          config: { duration: motion.tabPage, easing: Easing.out(Easing.cubic) },
+        },
+        // Move each complete scene, including its own wallpaper and native
+        // glass. Fading a GlassView ancestor makes the material disappear.
+        sceneStyleInterpolator: ({ current }) => ({
+          sceneStyle: {
+            transform: [{
+              translateX: current.progress.interpolate({
+                inputRange: [-1, 0, 1],
+                outputRange: [-width, 0, width],
+              }),
+            }],
+          },
+        }),
         tabBarHideOnKeyboard: true,
         sceneStyle: { backgroundColor: theme.background },
       }}

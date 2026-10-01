@@ -323,3 +323,9 @@ npx.cmd expo export --platform android --output-dir dist-android-check
 依照 [react-native-ease](https://github.com/AppAndFlow/react-native-ease) 自己的说明，Ease 适合状态驱动的静态属性变化，**不适合课表拖动、周切换或布局动画**，这些继续使用 RNGH + Reanimated。设置开关在含 Ease 的原生构建中使用它；Expo Go 保留现有实现。[Tickle](https://github.com/Renegades-Studio/react-native-tickle) 是 iOS-only Nitro 模块，原生构建可用于选择触感，Expo Go 和 Android 回退到 `expo-haptics`；连续触感尚需真机原生构建验证，不能把装了依赖说成已经有连续触感。[expo-glass-tabs](https://github.com/davidmokos/expo-glass-tabs) 已作为源码参考和依赖加入，但其现成 `ProgressiveBlur` 使用多层 BlurView，现成底栏也不直接支持本应用的经典模式与键盘隐藏规则；不在已报告掉帧的版本里盲目整体替换。
 
 **兼容边界**：第三方原生模块不会出现在苹果 App Store 下载的 Expo Go 里。用 `Constants.executionEnvironment` 隔离运行路径，不能在应用入口静态导入 Tickle（其模块加载时就创建 Nitro hybrid object）。旧开发包缺少新模块时仍应回退，但安装依赖、TypeScript 通过与 Metro 导出成功都不能证明自定义原生包的链接和运行正确；要另做开发构建并在 iOS/Android 真机测试。当前 iOS/Android `expo export`、类型检查和回归脚本可作为基础门槛。
+
+## 34. 底栏高亮动了，页面没动，不算切页动画
+
+底栏原本有跟手胶囊，但 `app/(tabs)/_layout.tsx` 的 Bottom Tabs 明确配置 `animation: 'none'`，导致首页切 AI 记等操作都是内容硬切。React Navigation 的 Bottom Tabs 支持 `fade`、`shift` 与自定义 `sceneStyleInterpolator`；内置 `shift` 同时对整个场景做 opacity，会碰到本项目原生 GlassView 祖先透明度导致材质消失的旧问题。改为自定义全宽水平场景位移，上一页和下一页在 260ms 内对接，底栏保持静止；转场只做 transform，不给玻璃场景做 opacity。按系统“减少动态效果”关闭转场，避免为了视觉效果牺牲无障碍体验。参见 [React Navigation Bottom Tabs 动画文档](https://reactnavigation.org/docs/bottom-tab-navigator/#animations)。
+
+真机验收要连续试首页↔AI 记、相邻与跨多个标签、快速反向点击、深色/自定义壁纸、键盘打开时切页，以及 Android；特别看两页边界是否闪白、原生玻璃是否消失、滑动课表时是否被误认为标签切换。导航转场用原生驱动的 transform，但两个玻璃页面短时同时显示，静态测试与打包通过仍不能证明帧率，必要时减短位移或时长，而不是叠加模糊/淡入。新增 `npm run test:tab-transition` 防止回到 `animation: 'none'` 或误加场景 opacity。

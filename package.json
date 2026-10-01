@@ -56,6 +56,7 @@
     "test:worklet-closures": "node --test scripts/test-worklet-closures.mjs",
     "test:background-placement": "node --test scripts/test-background-placement.mjs",
     "test:ui-tokens": "node --test scripts/test-ui-tokens.mjs",
+    "test:tab-transition": "node --test scripts/test-tab-transition.mjs",
     "test:grade-classification": "node --test scripts/test-grade-classification.mjs",
     "server": "node --env-file=.env server/index.mjs"
   },

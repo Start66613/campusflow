@@ -18,6 +18,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export const motion = {
   quick: 105,
   page: 190,
+  tabPage: 260,
   standard: 225,
   reveal: 290,
   spring: { damping: 24, stiffness: 300, mass: 0.78, reduceMotion: ReduceMotion.System },
