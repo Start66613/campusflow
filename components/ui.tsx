@@ -57,6 +57,7 @@ export function GlassBackdrop({
   tintStrength = 'strong',
   effectStyle = 'regular',
   readable = false,
+  lightweight = false,
 }: {
   interactive?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -65,6 +66,7 @@ export function GlassBackdrop({
   tintStrength?: 'soft' | 'strong';
   effectStyle?: 'clear' | 'regular';
   readable?: boolean;
+  lightweight?: boolean;
 }) {
   const theme = useAppTheme();
   const { data } = useApp();
@@ -102,7 +104,9 @@ export function GlassBackdrop({
   }
   return (
     <View pointerEvents="none" style={[styles.glassClip, StyleSheet.absoluteFill, { borderRadius: radius }, style]}>
-      <BlurView intensity={Platform.OS === 'android' ? 48 : 58} tint={dark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+      {lightweight
+        ? <View style={[StyleSheet.absoluteFill, { backgroundColor: dark ? 'rgba(25,26,33,0.82)' : 'rgba(255,255,255,0.70)' }]} />
+        : <BlurView intensity={Platform.OS === 'android' ? 48 : 58} tint={dark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />}
       <LinearGradient
         colors={tintColor
           ? [tintWithAlpha(tintStrength === 'soft' ? '52' : 'E8') ?? tintColor, tintWithAlpha(tintStrength === 'soft' ? '28' : 'C4') ?? tintColor]
@@ -127,9 +131,16 @@ export function SectionTitle({ title, action, onAction }: { title: string; actio
 
 export function Pill({ children, tone = 'primary' }: PropsWithChildren<{ tone?: 'primary' | 'green' | 'orange' | 'neutral' }>) {
   const theme = useAppTheme();
+  const { data } = useApp();
+  const glass = data.settings.visualMode === 'glass';
   const background = tone === 'green' ? `${theme.green}22` : tone === 'orange' ? `${theme.orange}22` : tone === 'neutral' ? theme.surfaceAlt : theme.primarySoft;
-  const color = tone === 'green' ? theme.green : tone === 'orange' ? theme.orange : tone === 'neutral' ? theme.secondary : theme.primary;
-  return <View style={[styles.pill, { backgroundColor: background }]}><Text style={[styles.pillText, { color }]}>{children}</Text></View>;
+  const accent = tone === 'green' ? theme.green : tone === 'orange' ? theme.orange : theme.primary;
+  const color = glass ? theme.text : tone === 'neutral' ? theme.secondary : accent;
+  return <View style={[styles.pill, { backgroundColor: glass ? 'transparent' : background }]}>
+    {glass ? <GlassBackdrop radius={999} tintColor={tone === 'neutral' ? undefined : accent} tintStrength="soft" readable lightweight /> : null}
+    {glass && tone !== 'neutral' ? <View style={[styles.pillDot, { backgroundColor: accent }]} /> : null}
+    <Text style={[styles.pillText, { color }]}>{children}</Text>
+  </View>;
 }
 
 export function PrimaryButton({ label, onPress, icon, disabled = false, secondary = false }: { label: string; onPress: () => void; icon?: ReactNode; disabled?: boolean; secondary?: boolean }) {
@@ -176,7 +187,8 @@ const styles = StyleSheet.create({
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 26, marginBottom: 12 },
   sectionTitle: { fontSize: 20, fontWeight: '600' },
   sectionAction: { fontSize: 14, fontWeight: '600' },
-  pill: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  pill: { alignSelf: 'flex-start', minHeight: 27, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  pillDot: { width: 6, height: 6, borderRadius: 3 },
   pillText: { fontSize: 12, fontWeight: '600' },
   button: { minHeight: 52, paddingHorizontal: 18, borderRadius: 17, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center' },
   buttonText: { fontSize: 16, fontWeight: '600' },

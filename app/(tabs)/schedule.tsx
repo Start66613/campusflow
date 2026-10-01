@@ -340,13 +340,25 @@ export default function ScheduleScreen() {
     <Screen scrollEnabled={!draggingCourseId}>
       <View style={styles.topRow}>
         <View><Text style={[styles.kicker, { color: theme.secondary }]}>2026 秋季学期 · {weekStart.getMonth() + 1}月{weekStart.getDate()}日—{weekEnd.getMonth() + 1}月{weekEnd.getDate()}日</Text><Text style={[styles.title, { color: theme.text }]}>第 {week} 周课表</Text></View>
-        <MotionPressable onPress={() => router.push('/import')} style={[styles.importButton, { backgroundColor: theme.primarySoft }]}><Text style={[styles.importText, { color: theme.primary }]}>＋ 导入</Text></MotionPressable>
+        <MotionPressable onPress={() => router.push('/import')} style={[styles.importButton, { backgroundColor: glass ? 'transparent' : theme.primarySoft }]}>
+          {glass ? <GlassBackdrop radius={17} tintColor={theme.primary} tintStrength="soft" readable lightweight /> : null}
+          <Text style={[styles.importText, { color: glass ? theme.text : theme.primary }]}>＋ 导入</Text>
+        </MotionPressable>
       </View>
       <View style={styles.weekTools}>
-        <MotionPressable accessibilityLabel="上一周" onPress={() => weekTrackRef.current?.changeWeek(-1)} style={[styles.weekButton, { backgroundColor: theme.surfaceAlt }]}><AppIcon ios="chevron.left" android="chevron_left" color={theme.primary} size={18} /></MotionPressable>
+        <MotionPressable accessibilityLabel="上一周" onPress={() => weekTrackRef.current?.changeWeek(-1)} style={[styles.weekButton, { backgroundColor: glass ? 'transparent' : theme.surfaceAlt }]}>
+          {glass ? <GlassBackdrop radius={13} readable lightweight /> : null}
+          <AppIcon ios="chevron.left" android="chevron_left" color={glass ? theme.text : theme.primary} size={18} />
+        </MotionPressable>
         <Text style={[styles.weekHint, { color: theme.secondary }]}>左右滑动切换周次</Text>
-        <MotionPressable accessibilityLabel="下一周" onPress={() => weekTrackRef.current?.changeWeek(1)} style={[styles.weekButton, { backgroundColor: theme.surfaceAlt }]}><AppIcon ios="chevron.right" android="chevron_right" color={theme.primary} size={18} /></MotionPressable>
-        <MotionPressable accessibilityLabel="添加课程" onPress={() => router.push('/course-editor')} style={[styles.addButton, { backgroundColor: theme.primarySoft }]}><Text style={[styles.addText, { color: theme.primary }]}>＋ 课程</Text></MotionPressable>
+        <MotionPressable accessibilityLabel="下一周" onPress={() => weekTrackRef.current?.changeWeek(1)} style={[styles.weekButton, { backgroundColor: glass ? 'transparent' : theme.surfaceAlt }]}>
+          {glass ? <GlassBackdrop radius={13} readable lightweight /> : null}
+          <AppIcon ios="chevron.right" android="chevron_right" color={glass ? theme.text : theme.primary} size={18} />
+        </MotionPressable>
+        <MotionPressable accessibilityLabel="添加课程" onPress={() => router.push('/course-editor')} style={[styles.addButton, { backgroundColor: glass ? 'transparent' : theme.primarySoft }]}>
+          {glass ? <GlassBackdrop radius={13} tintColor={theme.primary} tintStrength="soft" readable lightweight /> : null}
+          <Text style={[styles.addText, { color: glass ? theme.text : theme.primary }]}>＋ 课程</Text>
+        </MotionPressable>
       </View>
       <View style={styles.nowExplanation}><View style={[styles.nowLegendDot, { backgroundColor: theme.primary }]} /><Text style={[styles.nowExplanationText, { color: theme.secondary }]}>细线表示今天的当前时间，仅本周上课时段显示</Text></View>
       <View style={styles.weekViewport}>

@@ -23,3 +23,16 @@ test('optional native motion leaves Expo Go on supported APIs', () => {
   assert.match(native, /Haptics\.selectionAsync\(\)/);
   assert.doesNotMatch(native, /^import .*@renegades\/react-native-tickle/m);
 });
+
+test('small glass labels keep opaque text and cheap platform fallbacks', () => {
+  const ui = read('components/ui.tsx');
+  const assistant = read('app/(tabs)/assistant.tsx');
+  const schedule = read('app/(tabs)/schedule.tsx');
+  assert.match(ui, /const color = glass \? theme\.text/);
+  assert.match(ui, /<GlassBackdrop radius=\{999\}[^>]*readable lightweight/);
+  assert.match(ui, /lightweight\s*\? <View/);
+  assert.match(assistant, /GlassBackdrop radius=\{99\}[^>]*readable lightweight/);
+  assert.match(assistant, /GlassBackdrop radius=\{13\}[^>]*readable lightweight/);
+  assert.match(schedule, /GlassBackdrop radius=\{17\}[^>]*readable lightweight/);
+  assert.match(schedule, /GlassBackdrop radius=\{13\}[^>]*readable lightweight/);
+});

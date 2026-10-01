@@ -27,6 +27,7 @@ export default function AssistantScreen() {
   const theme = useAppTheme();
   const insets = useSafeAreaInsets();
   const app = useApp();
+  const glass = app.data.settings.visualMode === 'glass';
   const scrollRef = useRef<ScrollView>(null);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -142,7 +143,11 @@ export default function AssistantScreen() {
         <View style={[styles.fill, { paddingBottom: dockClearance }]}>
         <View style={styles.header}>
           <View><Text style={[styles.kicker, { color: theme.primary }]}>CAMPUS AI</Text><Text style={[styles.title, { color: theme.text }]}>一句话，记下来</Text></View>
-          <MotionPressable onPress={() => router.push('/ai-settings')} style={[styles.online, { backgroundColor: theme.primarySoft }]}><View style={[styles.onlineDot, { backgroundColor: aiReady ? theme.green : theme.orange }]} /><Text style={[styles.onlineText, { color: theme.primary }]}>{aiReady ? 'DeepSeek' : '配置 AI'}</Text></MotionPressable>
+          <MotionPressable onPress={() => router.push('/ai-settings')} style={[styles.online, { backgroundColor: glass ? 'transparent' : theme.primarySoft }]}>
+            {glass ? <GlassBackdrop radius={99} tintColor={theme.primary} tintStrength="soft" readable lightweight /> : null}
+            <View style={[styles.onlineDot, { backgroundColor: aiReady ? theme.green : theme.orange }]} />
+            <Text style={[styles.onlineText, { color: glass ? theme.text : theme.primary }]}>{aiReady ? 'DeepSeek' : '配置 AI'}</Text>
+          </MotionPressable>
         </View>
         <ScrollView ref={scrollRef} style={styles.messageList} contentContainerStyle={styles.messages} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}>
           {messages.map((message) => (
@@ -195,7 +200,11 @@ export default function AssistantScreen() {
             />
             <View style={styles.composerTools}>
               <MotionPressable accessibilityLabel="选择课程或作业照片" onPress={pickHomework} style={styles.photoButton}><AppIcon ios="plus" android="add" color={theme.text} size={27} /></MotionPressable>
-              <MotionPressable accessibilityRole="button" accessibilityState={{ selected: webMode }} accessibilityLabel="切换联网问答" onPress={() => setWebMode((value) => !value)} style={[styles.webButton, { backgroundColor: webMode ? theme.primarySoft : theme.surfaceAlt }]}><AppIcon ios="globe" android="public" color={webMode ? theme.primary : theme.secondary} size={16} /><Text style={[styles.webLabel, { color: webMode ? theme.primary : theme.secondary }]}>联网</Text></MotionPressable>
+              <MotionPressable accessibilityRole="button" accessibilityState={{ selected: webMode }} accessibilityLabel="切换联网问答" onPress={() => setWebMode((value) => !value)} style={[styles.webButton, { backgroundColor: glass ? 'transparent' : webMode ? theme.primarySoft : theme.surfaceAlt }]}>
+                {glass ? <GlassBackdrop radius={13} tintColor={webMode ? theme.primary : undefined} tintStrength="soft" readable lightweight /> : null}
+                <AppIcon ios="globe" android="public" color={webMode ? theme.primary : theme.secondary} size={16} />
+                <Text style={[styles.webLabel, { color: glass ? theme.text : webMode ? theme.primary : theme.secondary }]}>联网</Text>
+              </MotionPressable>
               <View style={styles.composerRight}>
                 <Text style={[styles.modelLabel, { color: theme.secondary }]}>{webMode ? '研究' : aiReady ? 'DeepSeek' : '离线快记'}{app.data.settings.aiThinking && aiReady && !webMode ? ' · 思考' : ''}</Text>
                 <MotionPressable accessibilityLabel="发送" disabled={loading || !text.trim()} onPress={() => submit()} pressedScale={0.9} style={[styles.send, { backgroundColor: text.trim() ? theme.primary : theme.secondary, opacity: text.trim() ? 1 : 0.7 }]}><AppIcon ios="arrow.up" android="arrow_upward" color="#FFFFFF" size={19} /></MotionPressable>
