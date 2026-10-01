@@ -12,6 +12,8 @@ import { generateGradeAnalysis, type GradeAnalysis } from '@/src/grade-analysis'
 import { gradeCategory, summarizeGrades } from '@/src/grades';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
+import { summarizeWeek } from '@/src/weekly-report';
+import { jiahaoCopy } from '@/src/jiahao';
 
 export default function InsightsScreen() {
   const theme = useAppTheme();
@@ -22,13 +24,15 @@ export default function InsightsScreen() {
   const [analysis, setAnalysis] = useState<GradeAnalysis | null>(null);
   useEffect(() => setAnalysis(null), [data.grades, data.settings.major, data.settings.studyGoal, online]);
   const gradeSummary = useMemo(() => summarizeGrades(data.grades), [data.grades]);
-  const weekExpense = data.expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const completed = data.tasks.filter((task) => task.completed).length;
-  const completion = data.tasks.length ? completed / data.tasks.length : 0;
-  const categories = useMemo(() => Object.entries(data.expenses.reduce<Record<string, number>>((result, expense) => {
-    result[expense.category] = (result[expense.category] || 0) + expense.amount;
-    return result;
-  }, {})).sort((a, b) => b[1] - a[1]), [data.expenses]);
+  const week = summarizeWeek(data);
+  const weekLastDay = new Date(week.end);
+  weekLastDay.setDate(weekLastDay.getDate() - 1);
+  const weekLabel = `${week.start.getMonth() + 1}/${week.start.getDate()}—${weekLastDay.getMonth() + 1}/${weekLastDay.getDate()}`;
+  const completion = week.dueTasks.length ? Math.round(week.completedTasks / week.dueTasks.length * 100) : null;
+  const reportTitle = week.hasRecords ? '这周的记录' : '这一周，还没有记录';
+  const reportBody = week.hasRecords
+    ? `专注 ${week.focusMinutes} 分钟 · 完成 ${week.completedTasks}/${week.dueTasks.length} 件本周到期待办 · 消费 ${formatCurrency(week.expenseTotal)}。只统计已记录的数据。`
+    : '开始专注、记录消费或添加待办后，这里会生成真实的每周回顾。';
 
   const analyze = async () => {
     setAnalyzing(true);
@@ -41,7 +45,7 @@ export default function InsightsScreen() {
 
   return (
     <Screen>
-      <Text style={[styles.kicker, { color: theme.secondary }]}>每周自动复盘</Text><Text style={[styles.title, { color: theme.text }]}>学习与生活数据</Text>
+      <Text style={[styles.kicker, { color: theme.secondary }]}>{data.settings.jiahaoMode ? '本周豪意复盘 · 仅按真实记录计算' : '每周自动复盘'}</Text><Text style={[styles.title, { color: theme.text }]}>{data.settings.jiahaoMode ? jiahaoCopy.data : '学习与生活数据'}</Text>
       <View style={styles.segment}>
         <SegmentedControl
           items={[{ value: 'overview', label: '本周报告' }, { value: 'grades', label: '成绩与 GPA' }]}
@@ -53,25 +57,25 @@ export default function InsightsScreen() {
       {mode === 'overview' ? (
         <Animated.View key="overview" entering={gentleEnter()} layout={gentleLayout}>
           <Card glassSurface={false} style={[styles.reportHero, { backgroundColor: '#243B36' }]}>
-            <Pill tone="green">第 3 周周报</Pill><Text style={styles.reportTitle}>这周，你的节奏更稳了</Text><Text style={styles.reportBody}>专注时间比上周多 45 分钟。晚间餐饮支出略高，下周可试试提前规划。</Text>
+            <Pill tone="green" glassSurface={false}>本周 · {weekLabel}</Pill><Text style={styles.reportTitle}>{reportTitle}</Text><Text style={styles.reportBody}>{reportBody}</Text>
           </Card>
           <View style={styles.metrics}>
-            <Metric value={`${Math.floor(data.focusMinutesThisWeek / 60)}h ${data.focusMinutesThisWeek % 60}m`} label="专注时长" color={theme.primary} delay={80} />
-            <Metric value={`${Math.round(completion * 100)}%`} label="任务完成" color={theme.green} delay={140} />
-            <Metric value={formatCurrency(weekExpense)} label="本周消费" color={theme.orange} delay={200} />
+            <Metric value={`${Math.floor(week.focusMinutes / 60)}h ${week.focusMinutes % 60}m`} label="本周专注" color={theme.primary} delay={80} />
+            <Metric value={completion === null ? '—' : `${completion}%`} label="本周到期待办" color={theme.green} delay={140} />
+            <Metric value={formatCurrency(week.expenseTotal)} label="本周消费" color={theme.orange} delay={200} />
           </View>
           <SectionTitle title="消费习惯" />
           <Card>
-            {categories.map(([category, amount]) => (
+            {week.categories.length ? week.categories.map(([category, amount]) => (
               <View key={category} style={styles.barRow}>
                 <Text style={[styles.barLabel, { color: theme.text }]}>{category}</Text>
-                <AnimatedBar fraction={Math.max(0.1, amount / Math.max(weekExpense, 1))} color={theme.orange} trackColor={theme.surfaceAlt} />
+                <AnimatedBar fraction={Math.max(0.1, amount / Math.max(week.expenseTotal, 1))} color={theme.orange} trackColor={theme.surfaceAlt} />
                 <Text style={[styles.barValue, { color: theme.secondary }]}>¥{amount.toFixed(0)}</Text>
               </View>
-            ))}
+            )) : <Text style={[styles.creditNote, { color: theme.secondary }]}>本周暂无消费记录。</Text>}
           </Card>
           <SectionTitle title="出勤概览" />
-          <Card style={styles.attendance}><View><Text style={[styles.attendanceValue, { color: theme.text }]}>100%</Text><Text style={[styles.attendanceLabel, { color: theme.secondary }]}>按时到课</Text></View><View style={[styles.ring, { borderColor: theme.green }]}><Text style={styles.ringEmoji}>✓</Text></View></Card>
+          <Card style={styles.attendance}><View><Text style={[styles.attendanceValue, { color: theme.text }]}>{week.attendance.length ? `${Math.round(week.attendedClasses / week.attendance.length * 100)}%` : '—'}</Text><Text style={[styles.attendanceLabel, { color: theme.secondary }]}>{week.attendance.length ? `${week.attendedClasses}/${week.attendance.length} 次已记录出勤` : '尚未记录出勤，无法计算出勤率'}</Text></View>{week.attendance.length ? <View style={[styles.ring, { borderColor: theme.green }]}><Text style={styles.ringEmoji}>✓</Text></View> : null}</Card>
         </Animated.View>
       ) : (
         <Animated.View key="grades" entering={gentleEnter()} layout={gentleLayout}>

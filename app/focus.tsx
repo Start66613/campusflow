@@ -7,10 +7,13 @@ import { motion, MotionPressable } from '@/components/motion';
 import { Card, Screen } from '@/components/ui';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
+import { summarizeWeek } from '@/src/weekly-report';
 
 export default function FocusScreen() {
   const theme = useAppTheme();
   const { data, addFocus } = useApp();
+  const week = summarizeWeek(data);
+  const nextTask = data.tasks.find((task) => !task.completed);
   const total = data.settings.focusMinutes * 60;
   const [seconds, setSeconds] = useState(total);
   const [running, setRunning] = useState(false);
@@ -44,17 +47,16 @@ export default function FocusScreen() {
   const reset = () => { setRunning(false); setSeconds(total); };
   return (
     <Screen>
-      <Text style={[styles.kicker, { color: theme.primary }]}>FOCUS MODE</Text><Text style={[styles.title, { color: theme.text }]}>专注当下</Text>
+      <Text style={[styles.kicker, { color: theme.primary }]}>{data.settings.jiahaoMode ? 'JIAHAO FOCUS' : 'FOCUS MODE'}</Text><Text style={[styles.title, { color: theme.text }]}>{data.settings.jiahaoMode ? '专注修炼' : '专注当下'}</Text>
       <Animated.View style={[styles.timerWrap, pulseStyle]}>
         <View style={[styles.ringOuter, { borderColor: theme.surfaceAlt }]}><Animated.View style={[styles.progressAccent, { backgroundColor: theme.primary }, progressStyle]} /><View style={[styles.ringInner, { backgroundColor: theme.background }]}><Text style={[styles.time, { color: theme.text }]}>{time}</Text><Text style={[styles.mode, { color: theme.secondary }]}>{running ? '正在专注' : '准备开始'}</Text></View></View>
       </Animated.View>
       <View style={styles.controls}>
         <MotionPressable onPress={reset} style={[styles.smallButton, { backgroundColor: theme.surface, borderColor: theme.line }]}><Text style={[styles.smallButtonText, { color: theme.secondary }]}>重置</Text></MotionPressable>
         <MotionPressable onPress={() => setRunning((value) => !value)} pressedScale={0.9} style={[styles.mainButton, { backgroundColor: theme.primary }]}><Text style={styles.mainButtonText}>{running ? '暂停' : seconds === total ? '开始' : '继续'}</Text></MotionPressable>
-        <MotionPressable onPress={() => setSeconds((value) => Math.max(0, value - 60))} style={[styles.smallButton, { backgroundColor: theme.surface, borderColor: theme.line }]}><Text style={[styles.smallButtonText, { color: theme.secondary }]}>-1 分</Text></MotionPressable>
       </View>
-      <Card style={styles.suggestion}><Text style={styles.suggestionEmoji}>📘</Text><View style={{ flex: 1 }}><Text style={[styles.suggestionTitle, { color: theme.text }]}>本次建议</Text><Text style={[styles.suggestionBody, { color: theme.secondary }]}>先完成“高数习题 2.3”，只做这一件事。</Text></View></Card>
-      <View style={styles.stats}><View><Text style={[styles.statValue, { color: theme.text }]}>{Math.floor(data.focusMinutesThisWeek / 25)}</Text><Text style={[styles.statLabel, { color: theme.secondary }]}>本周番茄</Text></View><View style={[styles.statDivider, { backgroundColor: theme.line }]} /><View><Text style={[styles.statValue, { color: theme.text }]}>{data.focusMinutesThisWeek}</Text><Text style={[styles.statLabel, { color: theme.secondary }]}>专注分钟</Text></View></View>
+      <Card style={styles.suggestion}><Text style={styles.suggestionEmoji}>📘</Text><View style={{ flex: 1 }}><Text style={[styles.suggestionTitle, { color: theme.text }]}>本次建议</Text><Text style={[styles.suggestionBody, { color: theme.secondary }]}>{nextTask ? `先推进“${nextTask.title}”，只做这一件事。` : '挑一件最重要的事，专心完成这个番茄钟。'}</Text></View></Card>
+      <View style={styles.stats}><View><Text style={[styles.statValue, { color: theme.text }]}>{week.focusSessions.length}</Text><Text style={[styles.statLabel, { color: theme.secondary }]}>本周番茄</Text></View><View style={[styles.statDivider, { backgroundColor: theme.line }]} /><View><Text style={[styles.statValue, { color: theme.text }]}>{week.focusMinutes}</Text><Text style={[styles.statLabel, { color: theme.secondary }]}>本周专注分钟</Text></View></View>
     </Screen>
   );
 }

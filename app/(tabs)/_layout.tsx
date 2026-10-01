@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { GlassContainer, GlassView, isGlassEffectAPIAvailable, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
-import { Easing, Keyboard, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Easing, Image, Keyboard, Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { interpolateColor, runOnJS, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, type SharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +16,7 @@ import { selectionIndex, selectionPosition, selectionTickIndex } from '@/src/sel
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
 import { useReduceTransparency } from '@/src/accessibility';
+import { jiahaoIcons } from '@/src/jiahao-icons';
 
 type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];
 type IconName = Pick<AppIconProps, 'ios' | 'android' | 'fallback'>;
@@ -233,7 +234,7 @@ function LiquidTabBar({ state, navigation }: TabBarProps) {
             onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
             style={styles.item}
           >
-            <TabItemVisual item={item} index={index} focused={focused} itemWidth={itemWidth} travel={travel} activeColor={theme.primary} inactiveColor={theme.secondary} />
+            <TabItemVisual item={item} iconKey={route.name} jiahao={Boolean(data.settings.jiahaoMode)} index={index} focused={focused} itemWidth={itemWidth} travel={travel} activeColor={theme.primary} inactiveColor={theme.secondary} />
           </Pressable>
         );
       })}
@@ -241,8 +242,10 @@ function LiquidTabBar({ state, navigation }: TabBarProps) {
   );
 }
 
-function TabItemVisual({ item, index, focused, itemWidth, travel, activeColor, inactiveColor }: {
+function TabItemVisual({ item, iconKey, jiahao, index, focused, itemWidth, travel, activeColor, inactiveColor }: {
   item: { title: string; icon: IconName };
+  iconKey: string;
+  jiahao: boolean;
   index: number;
   focused: boolean;
   itemWidth: number;
@@ -259,10 +262,9 @@ function TabItemVisual({ item, index, focused, itemWidth, travel, activeColor, i
   });
   return <>
     <View style={styles.iconSlot}>
-      <AppIcon {...item.icon} color={inactiveColor} size={22} />
-      <Animated.View pointerEvents="none" style={[styles.activeIcon, activeStyle]}><AppIcon {...item.icon} color={activeColor} size={22} active /></Animated.View>
+      {jiahao ? <Image source={jiahaoIcons[iconKey]} style={styles.jiahaoTabPortrait} /> : <><AppIcon {...item.icon} color={inactiveColor} size={22} /><Animated.View pointerEvents="none" style={[styles.activeIcon, activeStyle]}><AppIcon {...item.icon} color={activeColor} size={22} active /></Animated.View></>}
     </View>
-    <Animated.Text style={[styles.label, labelStyle]}>{item.title}</Animated.Text>
+    <Animated.Text style={[styles.label, labelStyle]}>{jiahao ? `豪${item.title}` : item.title}</Animated.Text>
   </>;
 }
 
@@ -302,7 +304,8 @@ const styles = StyleSheet.create({
   },
   specular: { position: 'absolute', left: 12, top: 2, width: 46, height: 13, borderRadius: 999, transform: [{ rotate: '-7deg' }] },
   item: { flex: 1, height: 58, alignItems: 'center', justifyContent: 'center', gap: 1 },
-  iconSlot: { width: 28, height: 25, alignItems: 'center', justifyContent: 'center' },
+  iconSlot: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
+  jiahaoTabPortrait: { width: 30, height: 30, borderRadius: 10 },
   activeIcon: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   label: { fontSize: 10, fontWeight: '700', letterSpacing: -0.1 },
 });

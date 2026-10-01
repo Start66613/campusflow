@@ -87,6 +87,12 @@ const accentColors: Record<AccentPreset, { primary: string; soft: string; darkPr
 export function useAppTheme(): AppTheme {
   const system = useColorScheme();
   const { data } = useApp();
+  if (data.settings.jiahaoMode) return {
+    ...darkTheme,
+    background: '#000000', surface: '#1C1830', surfaceAlt: '#312846',
+    line: '#50446B', primary: '#BFA3FF', primarySoft: '#362957',
+    secondary: '#B8ACCA', tab: 'rgba(25,19,43,0.88)',
+  };
   const base = data.settings.themeMode === 'eye' ? eyeTheme
     : data.settings.themeMode === 'dark' ? darkTheme
       : data.settings.themeMode === 'light' ? lightTheme

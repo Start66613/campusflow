@@ -37,13 +37,14 @@ function timeOnDate(date: Date, value: string) {
   return result;
 }
 
-export function nextCourse(courses: Course[], from = new Date()) {
+export function nextCourse(courses: Course[], from = new Date(), termStart?: string) {
   const candidates = courses.flatMap((course) => {
     const occurrences: { course: Course; start: Date; end: Date }[] = [];
     for (let offset = 0; offset < 14; offset += 1) {
       const day = new Date(from);
       day.setDate(day.getDate() + offset);
       if ((day.getDay() || 7) !== course.weekday) continue;
+      if (termStart && (day < new Date(`${termStart}T00:00:00`) || !course.weeks.includes(currentWeek(termStart, day)))) continue;
       const start = timeOnDate(day, course.startTime);
       const end = timeOnDate(day, course.endTime);
       if (end >= from) occurrences.push({ course, start, end });

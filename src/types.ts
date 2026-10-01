@@ -69,6 +69,12 @@ export type Attendance = {
   status: 'present' | 'late' | 'absent';
 };
 
+export type FocusSession = {
+  id: string;
+  minutes: number;
+  completedAt: string;
+};
+
 export type ThemeMode = 'system' | 'light' | 'dark' | 'eye';
 export type VisualMode = 'glass' | 'native';
 export type AccentPreset = 'purple' | 'blue' | 'mint' | 'sky' | 'black' | 'coral' | 'rainbow';
@@ -85,6 +91,7 @@ export type AppSettings = {
   termStart: string;
   themeMode: ThemeMode;
   visualMode: VisualMode;
+  jiahaoMode?: boolean;
   aiThinking: boolean;
   wakeHour: number;
   wakeMinute: number;
@@ -94,12 +101,14 @@ export type AppSettings = {
 };
 
 export type AppData = {
+  schemaVersion: 2;
   courses: Course[];
   tasks: Task[];
   expenses: Expense[];
   events: CalendarItem[];
   grades: Grade[];
   attendance: Attendance[];
+  focusSessions: FocusSession[];
   focusMinutesThisWeek: number;
   settings: AppSettings;
 };
@@ -109,3 +118,5 @@ export type AssistantCommand =
   | { type: 'task'; title: string; dueAt: string; courseName?: string }
   | { type: 'event'; title: string; startAt: string; endAt: string; note?: string }
   | { type: 'courses'; courses: Course[] };
+
+export type CreatedRecord = { kind: 'task' | 'expense' | 'event' | 'course'; id: string };

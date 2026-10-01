@@ -11,11 +11,14 @@ export function AppBackdrop() {
   const { data } = useApp();
   const glass = data.settings.visualMode === 'glass';
   const dark = theme.background === '#000000';
-  const customBackground = Boolean(data.settings.backgroundUri);
+  const jiahao = Boolean(data.settings.jiahaoMode);
+  const customBackground = Boolean(data.settings.backgroundUri) && !jiahao;
 
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: theme.background }]}>
-      {data.settings.backgroundUri ? (
+      {jiahao ? (
+        <Image source={require('../assets/images/jiahao-wallpaper.png')} resizeMode="cover" style={StyleSheet.absoluteFill} />
+      ) : data.settings.backgroundUri ? (
         <Image
           source={{ uri: data.settings.backgroundUri }}
           resizeMode="cover"
@@ -31,6 +34,7 @@ export function AppBackdrop() {
       <LinearGradient
         colors={customBackground
           ? dark ? ['rgba(0,0,0,0.28)', 'rgba(0,0,0,0.20)', 'rgba(0,0,0,0.34)'] : ['rgba(255,255,255,0.03)', 'rgba(255,255,255,0.01)', 'rgba(255,255,255,0.06)']
+          : jiahao ? ['rgba(6,4,19,0.32)', 'rgba(11,7,30,0.36)', 'rgba(5,3,16,0.62)']
           : data.settings.accentPreset === 'rainbow'
           ? dark ? ['rgba(83,42,140,0.42)', 'rgba(30,98,131,0.25)', 'rgba(22,101,78,0.32)'] : ['rgba(170,108,247,0.15)', 'rgba(93,191,248,0.12)', 'rgba(75,207,159,0.14)']
           : dark ? ['rgba(0,0,0,0.88)', 'rgba(10,10,18,0.82)', '#000000']

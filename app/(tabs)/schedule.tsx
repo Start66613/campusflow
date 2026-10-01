@@ -15,6 +15,8 @@ import { currentWeek, dateForWeekday, weekdays } from '@/src/date';
 import { periodEnds, periodStarts } from '@/src/periods';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
+import { jiahaoCopy } from '@/src/jiahao';
+import { jiahaoCourseIcon, jiahaoIcons } from '@/src/jiahao-icons';
 import type { Course } from '@/src/types';
 import { canChangeWeek, resolveWeekSwipe } from '@/src/week-swipe';
 
@@ -80,9 +82,11 @@ function CourseFace({ course, height, ink, compact, onEdit }: {
   onEdit?: () => void;
 }) {
   const icon = courseIconSpec(course.icon, course.type);
+  const { data } = useApp();
+  const jiahao = Boolean(data.settings.jiahaoMode);
   const stableTint = /^#[0-9a-fA-F]{6}$/.test(course.color) ? `${course.color}24` : 'rgba(120,140,190,0.14)';
   const content = <>
-    <View style={styles.courseGlyph}><AppIcon ios={icon.ios} android={icon.android} color={ink} size={compact ? 13 : 15} fallback="·" /></View>
+    <View style={styles.courseGlyph}>{jiahao ? <Image source={jiahaoCourseIcon(course)} style={styles.coursePortrait} /> : <AppIcon ios={icon.ios} android={icon.android} color={ink} size={compact ? 13 : 15} fallback="·" />}</View>
     <Text numberOfLines={3} style={[styles.courseName, compact && styles.courseNameCompact, { color: ink, textShadowColor: ink === '#FFFFFF' ? 'rgba(20,22,45,0.32)' : 'rgba(255,255,255,0.45)' }]}>{course.name}</Text>
     <Text numberOfLines={2} style={[styles.courseMeta, compact && styles.courseMetaCompact, { color: ink, textShadowColor: ink === '#FFFFFF' ? 'rgba(20,22,45,0.28)' : 'rgba(255,255,255,0.45)' }]}>{course.location}</Text>
     {height > rowHeight * 1.7 ? <Text numberOfLines={1} style={[styles.courseTeacher, { color: ink }]}>{course.teacher}</Text> : null}
@@ -339,24 +343,26 @@ export default function ScheduleScreen() {
   return (
     <Screen scrollEnabled={!draggingCourseId}>
       <View style={styles.topRow}>
-        <View><Text style={[styles.kicker, { color: theme.secondary }]}>2026 秋季学期 · {weekStart.getMonth() + 1}月{weekStart.getDate()}日—{weekEnd.getMonth() + 1}月{weekEnd.getDate()}日</Text><Text style={[styles.title, { color: theme.text }]}>第 {week} 周课表</Text></View>
+        <View><Text style={[styles.kicker, { color: theme.secondary }]}>2026 秋季学期 · {weekStart.getMonth() + 1}月{weekStart.getDate()}日—{weekEnd.getMonth() + 1}月{weekEnd.getDate()}日</Text><Text style={[styles.title, { color: theme.text }]}>{data.settings.jiahaoMode ? `第 ${week} 周${jiahaoCopy.week}` : `第 ${week} 周课表`}</Text></View>
         <MotionPressable onPress={() => router.push('/import')} style={[styles.importButton, { backgroundColor: glass ? 'transparent' : theme.primarySoft }]}>
           {glass ? <GlassBackdrop radius={17} tintColor={theme.primary} tintStrength="soft" readable lightweight /> : null}
+          {data.settings.jiahaoMode ? <Image source={jiahaoIcons.import} style={styles.buttonPortrait} /> : null}
           <Text style={[styles.importText, { color: glass ? theme.text : theme.primary }]}>＋ 导入</Text>
         </MotionPressable>
       </View>
       <View style={styles.weekTools}>
         <MotionPressable accessibilityLabel="上一周" onPress={() => weekTrackRef.current?.changeWeek(-1)} style={[styles.weekButton, { backgroundColor: glass ? 'transparent' : theme.surfaceAlt }]}>
           {glass ? <GlassBackdrop radius={13} readable lightweight /> : null}
-          <AppIcon ios="chevron.left" android="chevron_left" color={glass ? theme.text : theme.primary} size={18} />
+          {data.settings.jiahaoMode ? <Image source={jiahaoIcons.previous} style={styles.buttonPortrait} /> : <AppIcon ios="chevron.left" android="chevron_left" color={glass ? theme.text : theme.primary} size={18} />}
         </MotionPressable>
-        <Text style={[styles.weekHint, { color: theme.secondary }]}>左右滑动切换周次</Text>
+        <Text style={[styles.weekHint, { color: theme.secondary }]}>{data.settings.jiahaoMode ? jiahaoCopy.swipe : '左右滑动切换周次'}</Text>
         <MotionPressable accessibilityLabel="下一周" onPress={() => weekTrackRef.current?.changeWeek(1)} style={[styles.weekButton, { backgroundColor: glass ? 'transparent' : theme.surfaceAlt }]}>
           {glass ? <GlassBackdrop radius={13} readable lightweight /> : null}
-          <AppIcon ios="chevron.right" android="chevron_right" color={glass ? theme.text : theme.primary} size={18} />
+          {data.settings.jiahaoMode ? <Image source={jiahaoIcons.next} style={styles.buttonPortrait} /> : <AppIcon ios="chevron.right" android="chevron_right" color={glass ? theme.text : theme.primary} size={18} />}
         </MotionPressable>
         <MotionPressable accessibilityLabel="添加课程" onPress={() => router.push('/course-editor')} style={[styles.addButton, { backgroundColor: glass ? 'transparent' : theme.primarySoft }]}>
           {glass ? <GlassBackdrop radius={13} tintColor={theme.primary} tintStrength="soft" readable lightweight /> : null}
+          {data.settings.jiahaoMode ? <Image source={jiahaoIcons.add} style={styles.buttonPortrait} /> : null}
           <Text style={[styles.addText, { color: glass ? theme.text : theme.primary }]}>＋ 课程</Text>
         </MotionPressable>
       </View>
@@ -375,8 +381,9 @@ export default function ScheduleScreen() {
 const styles = StyleSheet.create({
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4, marginBottom: 10 },
   kicker: { fontSize: 12, fontWeight: '600', marginBottom: 2 }, title: { fontSize: 29, fontWeight: '600' },
-  importButton: { borderRadius: 17, paddingHorizontal: 15, paddingVertical: 10 }, importText: { fontWeight: '700', fontSize: 14 },
-  weekTools: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 9 }, weekButton: { width: 34, height: 34, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, weekHint: { flex: 1, fontSize: 10, textAlign: 'center' }, addButton: { minHeight: 34, paddingHorizontal: 10, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, addText: { fontSize: 11, fontWeight: '600' },
+  importButton: { borderRadius: 17, paddingHorizontal: 15, paddingVertical: 10, overflow: 'hidden' }, importText: { fontWeight: '700', fontSize: 14 },
+  weekTools: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 9 }, weekButton: { width: 34, height: 34, borderRadius: 13, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, weekHint: { flex: 1, fontSize: 10, textAlign: 'center' }, addButton: { minHeight: 34, paddingHorizontal: 10, borderRadius: 13, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, addText: { fontSize: 11, fontWeight: '600' },
+  buttonPortrait: { ...StyleSheet.absoluteFill, width: '100%', height: '100%', opacity: 0.52 },
   weekViewport: { overflow: 'hidden', borderRadius: 28 }, trackViewport: { overflow: 'hidden' }, weekTrack: { flexDirection: 'row' },
   gridCard: { padding: 6, borderRadius: 28, overflow: 'hidden' }, dayHeader: { flexDirection: 'row', height: 47, alignItems: 'center' }, dayCell: { alignItems: 'center', gap: 3 }, dayName: { fontSize: 11, fontWeight: '700' },
   dateDot: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, dayDate: { fontSize: 12, fontWeight: '700' }, grid: { position: 'relative' },
@@ -384,7 +391,7 @@ const styles = StyleSheet.create({
   periodMarker: { width: timeColumnWidth, height: rowHeight, paddingVertical: 5, alignItems: 'center', justifyContent: 'space-between' },
   periodNumber: { width: timeColumnWidth, textAlign: 'center', fontSize: 11, lineHeight: 14, fontWeight: '800' },
   periodTime: { width: timeColumnWidth, textAlign: 'center', fontSize: 8, lineHeight: 10, fontVariant: ['tabular-nums'] },
-  verticalLine: { position: 'absolute', top: 0, bottom: 0, borderLeftWidth: StyleSheet.hairlineWidth }, courseBlock: { position: 'absolute', borderRadius: 15, padding: 8, shadowColor: '#203060', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.1, shadowRadius: 9, elevation: 3 }, courseContents: { flex: 1 }, dropTarget: { position: 'absolute', borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 15, justifyContent: 'center', alignItems: 'center', zIndex: 0 }, dropHint: { fontSize: 8, fontWeight: '600', opacity: 0.8 }, courseGlyph: { width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.42)', alignItems: 'center', justifyContent: 'center', marginBottom: 5 },
+  verticalLine: { position: 'absolute', top: 0, bottom: 0, borderLeftWidth: StyleSheet.hairlineWidth }, courseBlock: { position: 'absolute', borderRadius: 15, padding: 8, shadowColor: '#203060', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.1, shadowRadius: 9, elevation: 3 }, courseContents: { flex: 1 }, dropTarget: { position: 'absolute', borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 15, justifyContent: 'center', alignItems: 'center', zIndex: 0 }, dropHint: { fontSize: 8, fontWeight: '600', opacity: 0.8 }, courseGlyph: { width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.42)', alignItems: 'center', justifyContent: 'center', marginBottom: 5, overflow: 'hidden' }, coursePortrait: { width: '100%', height: '100%' },
   nowExplanation: { flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 5, marginBottom: 7 },
   nowExplanationText: { fontSize: 10, lineHeight: 15 },
   nowLegendDot: { width: 5, height: 5, borderRadius: 3 },

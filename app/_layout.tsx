@@ -59,7 +59,7 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const { data } = useApp();
   const theme = useAppTheme();
-  const dark = data.settings.themeMode === 'dark' || (data.settings.themeMode === 'system' && theme.background === '#000000');
+  const dark = data.settings.jiahaoMode || data.settings.themeMode === 'dark' || (data.settings.themeMode === 'system' && theme.background === '#000000');
   const navigationTheme = {
     ...(dark ? DarkTheme : DefaultTheme),
     colors: {

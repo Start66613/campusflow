@@ -12,15 +12,31 @@ import { scheduleStudyReminder, scheduleWakeReminder } from '@/src/notifications
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
 import { useReduceTransparency } from '@/src/accessibility';
+import { chooseBackup, shareBackup } from '@/src/backup';
+import { jiahaoIcons } from '@/src/jiahao-icons';
 import type { ThemeMode, VisualMode } from '@/src/types';
 
 type IconSpec = Pick<AppIconProps, 'ios' | 'android'>;
 
 export default function ProfileScreen() {
   const theme = useAppTheme();
-  const { data, updateSettings } = useApp();
+  const { data, updateSettings, restoreBackup } = useApp();
   const reduceTransparency = useReduceTransparency();
   const nativeGlass = Platform.OS === 'ios' && isLiquidGlassAvailable() && isGlassEffectAPIAvailable();
+  const exportData = () => Alert.alert('导出本机备份', '备份包含课程、成绩、日程和消费记录，是未加密的 JSON 文件。请保存到你信任的位置，不要公开分享。AI 密钥不在其中。', [
+    { text: '取消', style: 'cancel' },
+    { text: '继续导出', onPress: () => { shareBackup(data).catch((error) => Alert.alert('导出失败', error instanceof Error ? error.message : '请稍后重试')); } },
+  ]);
+  const importData = async () => {
+    try {
+      const backup = await chooseBackup();
+      if (!backup) return;
+      Alert.alert('确认恢复备份？', `文件包含 ${backup.courses.length} 门课程、${backup.tasks.length} 项待办、${backup.grades.length} 门成绩。恢复会覆盖当前应用内数据；覆盖前会在本机保存一份回退副本。自定义图片需要重新选择。`, [
+        { text: '取消', style: 'cancel' },
+        { text: '恢复', style: 'destructive', onPress: () => { restoreBackup(backup).then(() => Alert.alert('恢复完成', '数据已写入本机。')).catch((error) => Alert.alert('恢复失败', error instanceof Error ? error.message : '请稍后重试')); } },
+      ]);
+    } catch (error) { Alert.alert('无法读取备份', error instanceof Error ? error.message : '请换一个文件'); }
+  };
   const setAlarm = async () => {
     try {
       await scheduleWakeReminder(data.settings.wakeHour, data.settings.wakeMinute);
@@ -35,20 +51,23 @@ export default function ProfileScreen() {
   };
   return (
     <Screen>
-      <MotionPressable onPress={() => router.push('/personalize')} style={styles.profileHeader}><View style={[styles.avatar, { backgroundColor: theme.primarySoft }]}>{data.settings.avatarUri ? <Image source={{ uri: data.settings.avatarUri }} style={styles.avatarImage} /> : <AppIcon ios="graduationcap.fill" android="school" color={theme.primary} size={30} />}</View><View style={styles.profileText}><Text style={[styles.name, { color: theme.text }]}>{data.settings.displayName}</Text><Text style={[styles.school, { color: theme.secondary }]}>{data.settings.schoolName}{data.settings.major ? ` · ${data.settings.major}` : ' · 本科生'}</Text><Text style={[styles.profileEdit, { color: theme.primary }]}>点击编辑个人信息与头像</Text></View></MotionPressable>
+      <MotionPressable onPress={() => router.push('/personalize')} style={styles.profileHeader}><View style={[styles.avatar, { backgroundColor: theme.primarySoft }]}>{data.settings.jiahaoMode ? <Image source={jiahaoIcons.profile} style={styles.avatarImage} /> : data.settings.avatarUri ? <Image source={{ uri: data.settings.avatarUri }} style={styles.avatarImage} /> : <AppIcon ios="graduationcap.fill" android="school" color={theme.primary} size={30} />}</View><View style={styles.profileText}><Text style={[styles.name, { color: theme.text }]}>{data.settings.jiahaoMode ? '全体嘉豪，往里豪' : data.settings.displayName}</Text><Text style={[styles.school, { color: theme.secondary }]}>{data.settings.schoolName}{data.settings.major ? ` · ${data.settings.major}` : ' · 本科生'}</Text><Text style={[styles.profileEdit, { color: theme.primary }]}>{data.settings.jiahaoMode ? '原资料未变 · 点此编辑' : '点击编辑个人信息与头像'}</Text></View></MotionPressable>
       <View style={styles.actionRow}>
-        <SmallAction icon={{ ios: 'square.and.arrow.down.fill', android: 'download' }} label="导入课表" onPress={() => router.push('/import')} />
-        <SmallAction icon={{ ios: 'sparkles', android: 'auto_awesome' }} label="连接 AI" onPress={() => router.push('/ai-settings')} />
-        <SmallAction icon={{ ios: 'alarm.fill', android: 'alarm' }} label="早八提醒" onPress={setAlarm} />
+        <SmallAction icon={{ ios: 'square.and.arrow.down.fill', android: 'download' }} jiahaoIcon="import" label="导入课表" onPress={() => router.push('/import')} />
+        <SmallAction icon={{ ios: 'sparkles', android: 'auto_awesome' }} jiahaoIcon="assistant" label="连接 AI" onPress={() => router.push('/ai-settings')} />
+        <SmallAction icon={{ ios: 'alarm.fill', android: 'alarm' }} jiahaoIcon="alarm" label="早八提醒" onPress={setAlarm} />
       </View>
       <SectionTitle title="智能提醒" />
       <Card style={styles.listCard}>
-        <SettingRow icon={{ ios: 'book.fill', android: 'menu_book' }} title="空闲学习提醒" subtitle="根据课表寻找无课时间" right={<SettingToggle label="空闲学习提醒" value={data.settings.studyReminders} onValueChange={toggleStudy} />} />
-        <SettingRow icon={{ ios: 'alarm.fill', android: 'alarm' }} title="早八起床提醒" subtitle={`${String(data.settings.wakeHour).padStart(2, '0')}:${String(data.settings.wakeMinute).padStart(2, '0')} · 点击重新设置`} onPress={setAlarm} />
-        <SettingRow icon={{ ios: 'brain.head.profile.fill', android: 'psychology' }} title="AI 深度思考" subtitle="复杂表达会多一步核对，并显示处理摘要" right={<SettingToggle label="AI 深度思考" value={data.settings.aiThinking} onValueChange={(value) => updateSettings({ aiThinking: value })} />} last />
+        <SettingRow icon={{ ios: 'book.fill', android: 'menu_book' }} jiahaoIcon="study" title="空闲学习提醒" subtitle="根据课表寻找无课时间" right={<SettingToggle label="空闲学习提醒" value={data.settings.studyReminders} onValueChange={toggleStudy} />} />
+        <SettingRow icon={{ ios: 'alarm.fill', android: 'alarm' }} jiahaoIcon="alarm" title="早八起床提醒" subtitle={`${String(data.settings.wakeHour).padStart(2, '0')}:${String(data.settings.wakeMinute).padStart(2, '0')} · 点击重新设置`} onPress={setAlarm} />
+        <SettingRow icon={{ ios: 'brain.head.profile.fill', android: 'psychology' }} jiahaoIcon="thinking" title="AI 深度思考" subtitle="复杂表达会多一步核对，并显示处理摘要" right={<SettingToggle label="AI 深度思考" value={data.settings.aiThinking} onValueChange={(value) => updateSettings({ aiThinking: value })} />} last />
       </Card>
       <SectionTitle title="显示模式" />
-      <Card onPress={() => router.push('/personalize')} style={styles.personalizeCard}><AppIcon ios="paintpalette.fill" android="palette" color={theme.primary} size={22} /><View style={styles.settingCopy}><Text style={[styles.settingTitle, { color: theme.text }]}>背景、头像与主题色</Text><Text style={[styles.settingSubtitle, { color: theme.secondary }]}>上传图片 · 七种色调 · 自由定制</Text></View><AppIcon ios="chevron.right" android="chevron_right" color={theme.secondary} size={17} /></Card>
+      <Card style={styles.listCard}>
+        <SettingRow icon={{ ios: 'bolt.fill', android: 'bolt' }} jiahaoIcon="settings" title="嘉豪模式" subtitle="佐助雨夜主题 · 嘉豪文案 · 随时切回原样" right={<SettingToggle label="嘉豪模式" value={Boolean(data.settings.jiahaoMode)} onValueChange={(value) => updateSettings({ jiahaoMode: value })} />} last />
+      </Card>
+      <Card onPress={() => router.push('/personalize')} style={styles.personalizeCard}>{data.settings.jiahaoMode ? <Image source={jiahaoIcons.settings} style={styles.personalizeIcon} /> : <AppIcon ios="paintpalette.fill" android="palette" color={theme.primary} size={22} />}<View style={styles.settingCopy}><Text style={[styles.settingTitle, { color: theme.text }]}>背景、头像与主题色</Text><Text style={[styles.settingSubtitle, { color: theme.secondary }]}>上传图片 · 七种色调 · 自由定制</Text></View><AppIcon ios="chevron.right" android="chevron_right" color={theme.secondary} size={17} /></Card>
       <SegmentedControl
         items={[{ value: 'system', label: '跟随系统' }, { value: 'light', label: '浅色' }, { value: 'dark', label: '深色' }, { value: 'eye', label: '护眼' }]}
         value={data.settings.themeMode}
@@ -70,30 +89,34 @@ export default function ProfileScreen() {
       <Text style={[styles.visualNote, { color: theme.secondary }]}>{nativeGlass && !reduceTransparency ? '当前设备支持原生 Liquid Glass；iOS 27“设置 > 外观 > Liquid Glass”滑杆会由系统自动作用于原生材质。' : Platform.OS === 'ios' && reduceTransparency ? '已跟随系统“降低透明度”设置，改用更清晰的不透明材质。' : Platform.OS === 'ios' ? '当前设备显示兼容材质；原生效果需要 iOS 26 及系统 API 支持。' : 'Android 使用高对比玻璃模拟材质；苹果原生 Liquid Glass 仅在兼容的 iPhone 上可用。'}</Text>
       <SectionTitle title="数据与同步" />
       <Card style={styles.listCard}>
-        <SettingRow icon={{ ios: 'building.columns.fill', android: 'school' }} title="湘潭大学教务" subtitle="网页登录后导入课表与成绩" onPress={() => router.push('/school')} />
-        <SettingRow icon={{ ios: 'cloud.fill', android: 'cloud' }} title="iCloud / 日历" subtitle="由 iOS 系统负责跨设备同步" onPress={() => router.push('/schedule')} />
-        <SettingRow icon={{ ios: 'lock.shield.fill', android: 'lock' }} title="个人 AI 密钥" subtitle="使用系统安全区加密保存" onPress={() => router.push('/ai-settings')} last />
+        <SettingRow icon={{ ios: 'building.columns.fill', android: 'school' }} jiahaoIcon="school" title="湘潭大学教务" subtitle="网页登录后导入课表与成绩" onPress={() => router.push('/school')} />
+        <SettingRow icon={{ ios: 'cloud.fill', android: 'cloud' }} jiahaoIcon="cloud" title="iCloud / 日历" subtitle="由 iOS 系统负责跨设备同步" onPress={() => router.push('/schedule')} />
+        <SettingRow icon={{ ios: 'lock.shield.fill', android: 'lock' }} jiahaoIcon="lock" title="个人 AI 密钥" subtitle="使用系统安全区加密保存" onPress={() => router.push('/ai-settings')} />
+        <SettingRow icon={{ ios: 'square.and.arrow.up.fill', android: 'ios_share' }} jiahaoIcon="export" title="导出本机备份" subtitle="保存课程、成绩、待办与消费" onPress={exportData} />
+        <SettingRow icon={{ ios: 'square.and.arrow.down.fill', android: 'file_open' }} jiahaoIcon="restore" title="从备份恢复" subtitle="导入前确认，自动保留回退副本" onPress={importData} last />
       </Card>
       <Text style={[styles.version, { color: theme.secondary }]}>CampusFlow 1.0.0 · 为自己的校园生活而做</Text>
     </Screen>
   );
 }
 
-function SmallAction({ icon, label, onPress }: { icon: IconSpec; label: string; onPress: () => void }) {
+function SmallAction({ icon, jiahaoIcon, label, onPress }: { icon: IconSpec; jiahaoIcon: string; label: string; onPress: () => void }) {
   const theme = useAppTheme();
-  return <MotionPressable onPress={onPress} pressedScale={0.96} style={[styles.smallAction, { backgroundColor: theme.surface, borderColor: theme.line, shadowColor: theme.shadow }]}><AppIcon {...icon} color={theme.primary} size={22} /><Text style={[styles.smallLabel, { color: theme.text }]}>{label}</Text></MotionPressable>;
+  const { data } = useApp();
+  return <MotionPressable onPress={onPress} pressedScale={0.96} style={[styles.smallAction, { backgroundColor: theme.surface, borderColor: theme.line, shadowColor: theme.shadow }]}>{data.settings.jiahaoMode ? <Image source={jiahaoIcons[jiahaoIcon]} style={styles.smallActionPortrait} /> : <AppIcon {...icon} color={theme.primary} size={22} />}<Text style={[styles.smallLabel, { color: theme.text }]}>{label}</Text></MotionPressable>;
 }
 
-function SettingRow({ icon, title, subtitle, right, onPress, last = false }: { icon: IconSpec; title: string; subtitle: string; right?: ReactNode; onPress?: () => void; last?: boolean }) {
+function SettingRow({ icon, jiahaoIcon, title, subtitle, right, onPress, last = false }: { icon: IconSpec; jiahaoIcon: string; title: string; subtitle: string; right?: ReactNode; onPress?: () => void; last?: boolean }) {
   const theme = useAppTheme();
+  const { data } = useApp();
   const rowStyle = [styles.settingRow, !last && { borderBottomColor: theme.line, borderBottomWidth: StyleSheet.hairlineWidth }];
-  const content = <><View style={[styles.settingIcon, { backgroundColor: theme.surfaceAlt }]}><AppIcon {...icon} color={theme.primary} size={19} /></View><View style={styles.settingCopy}><Text style={[styles.settingTitle, { color: theme.text }]}>{title}</Text><Text style={[styles.settingSubtitle, { color: theme.secondary }]}>{subtitle}</Text></View>{right ? <View style={styles.settingTrailing}>{right}</View> : <AppIcon ios="chevron.right" android="chevron_right" color={theme.secondary} size={17} />}</>;
+  const content = <><View style={[styles.settingIcon, { backgroundColor: theme.surfaceAlt }]}>{data.settings.jiahaoMode ? <Image source={jiahaoIcons[jiahaoIcon]} style={styles.settingPortrait} /> : <AppIcon {...icon} color={theme.primary} size={19} />}</View><View style={styles.settingCopy}><Text style={[styles.settingTitle, { color: theme.text }]}>{title}</Text><Text style={[styles.settingSubtitle, { color: theme.secondary }]}>{subtitle}</Text></View>{right ? <View style={styles.settingTrailing}>{right}</View> : <AppIcon ios="chevron.right" android="chevron_right" color={theme.secondary} size={17} />}</>;
   return onPress ? <MotionPressable onPress={onPress} style={rowStyle}>{content}</MotionPressable> : <View style={rowStyle}>{content}</View>;
 }
 
 const styles = StyleSheet.create({
   profileHeader: { flexDirection: 'row', alignItems: 'center', gap: 15, paddingTop: 12, marginBottom: 22 }, avatar: { width: 64, height: 64, borderRadius: 22, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, avatarImage: { width: '100%', height: '100%' }, profileText: { flex: 1 }, profileEdit: { fontSize: 11, marginTop: 5, fontWeight: '700' }, name: { fontSize: 27, fontWeight: '600', marginBottom: 5 }, school: { fontSize: 13 },
-  actionRow: { flexDirection: 'row', gap: 10 }, smallAction: { flex: 1, gap: 7, alignItems: 'center', borderRadius: 21, paddingVertical: 15, borderWidth: StyleSheet.hairlineWidth, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 1 }, smallLabel: { fontSize: 12, fontWeight: '600' },
-  personalizeCard: { flexDirection: 'row', alignItems: 'center', gap: 13, marginBottom: 14 }, listCard: { paddingVertical: 0, paddingHorizontal: 15 }, settingRow: { minHeight: 74, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }, settingIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, settingCopy: { flex: 1, minWidth: 0 }, settingTrailing: { width: 56, height: 48, alignItems: 'center', justifyContent: 'center' }, settingTitle: { fontSize: 15, fontWeight: '600', marginBottom: 4 }, settingSubtitle: { fontSize: 11.5, lineHeight: 17 }, chevron: { fontSize: 25 },
+  actionRow: { flexDirection: 'row', gap: 10 }, smallAction: { flex: 1, gap: 7, alignItems: 'center', borderRadius: 21, paddingVertical: 15, borderWidth: StyleSheet.hairlineWidth, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 1, overflow: 'hidden' }, smallActionPortrait: { width: 28, height: 28, borderRadius: 9 }, smallLabel: { fontSize: 12, fontWeight: '600' },
+  personalizeCard: { flexDirection: 'row', alignItems: 'center', gap: 13, marginBottom: 14 }, personalizeIcon: { width: 28, height: 28, borderRadius: 9 }, listCard: { paddingVertical: 0, paddingHorizontal: 15 }, settingRow: { minHeight: 74, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }, settingIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, settingPortrait: { width: '100%', height: '100%' }, settingCopy: { flex: 1, minWidth: 0 }, settingTrailing: { width: 56, height: 48, alignItems: 'center', justifyContent: 'center' }, settingTitle: { fontSize: 15, fontWeight: '600', marginBottom: 4 }, settingSubtitle: { fontSize: 11.5, lineHeight: 17 }, chevron: { fontSize: 25 },
   visualNote: { fontSize: 11, lineHeight: 17, marginTop: 8, paddingHorizontal: 4 }, version: { textAlign: 'center', fontSize: 11, marginTop: 28 },
 });

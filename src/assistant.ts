@@ -92,7 +92,7 @@ export function sanitizeAICourses(value: unknown): Course[] {
   });
 }
 
-async function callDeepSeek(text: string, imageBase64?: string, thinking = false, context?: AssistantContext) {
+async function callDeepSeek(text: string, imageBase64?: string, thinking = false, context?: AssistantContext, jiahaoMode = false) {
   const config = await getAIConfig();
   if (!config.apiKey) return null;
   const now = new Date();
@@ -120,7 +120,7 @@ async function callDeepSeek(text: string, imageBase64?: string, thinking = false
       messages: [
         {
           role: 'system',
-          content: `You are CampusFlow's structured campus-life assistant. Current local time is ${now.toISOString()}, timezone ${Intl.DateTimeFormat().resolvedOptions().timeZone}. ${commandShape}${contextHint}`,
+          content: `You are CampusFlow's structured campus-life assistant. Current local time is ${now.toISOString()}, timezone ${Intl.DateTimeFormat().resolvedOptions().timeZone}. ${commandShape}${contextHint}${jiahaoMode ? ' Presentation style only: in the summary, use a restrained playful 嘉豪 tone and optionally the phrase 全体嘉豪，往里豪. Never alter any extracted command fields, student-provided course names, amounts, dates, grades or factual details for the joke.' : ''}`,
         },
         { role: 'user', content: userContent },
       ],
@@ -196,12 +196,12 @@ export function parseLocally(text: string): AssistantCommand[] {
   return [{ type: 'event', title: text.trim(), startAt: start.toISOString(), endAt: end.toISOString() }];
 }
 
-export async function parseAssistantInput(text: string, imageBase64?: string, thinking = false, context?: AssistantContext): Promise<AssistantParseResult> {
-  const directResult = await callDeepSeek(text, imageBase64, thinking, context);
+export async function parseAssistantInput(text: string, imageBase64?: string, thinking = false, context?: AssistantContext, jiahaoMode = false): Promise<AssistantParseResult> {
+  const directResult = await callDeepSeek(text, imageBase64, thinking, context, jiahaoMode);
   if (directResult) return { commands: directResult.commands, usedAI: true, processSummary: directResult.processSummary };
   if (!apiUrl) {
     const commands = parseLocally(text);
-    return { commands, usedAI: false, processSummary: ['识别表达中的事项', '提取时间与类型', '写入对应页面'] };
+    return { commands, usedAI: false, processSummary: jiahaoMode ? ['嘉豪识别事项', '认真核对时间与类型', '等你确认后往里豪'] : ['识别表达中的事项', '提取时间与类型', '写入对应页面'] };
   }
   const response = await fetch(`${apiUrl}/api/parse`, {
     method: 'POST',

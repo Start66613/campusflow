@@ -42,7 +42,8 @@ function atOffset(days: number, hour: number, minute = 0) {
   return date.toISOString();
 }
 
-export const initialData: AppData = {
+export const legacyDemoData: AppData = {
+  schemaVersion: 2,
   courses: seedCourses,
   tasks: [
     { id: 'task-1', title: '完成高数习题 2.3', dueAt: atOffset(2, 22), courseId: 'course-calculus', completed: false, source: 'homework' },
@@ -64,6 +65,7 @@ export const initialData: AppData = {
     { id: 'grade-4', course: '中国近现代史', score: 94, credit: 2, gpa: 4.0, semester: '2025-2026-2', category: 'required' },
   ],
   attendance: [],
+  focusSessions: [],
   focusMinutesThisWeek: 185,
   settings: {
     displayName: '同学',
@@ -80,4 +82,12 @@ export const initialData: AppData = {
     breakMinutes: 5,
     studyReminders: true,
   },
+};
+
+// New installations begin with real, empty records. The old demo data is
+// retained only to identify and safely migrate records from earlier builds.
+export const initialData: AppData = {
+  ...legacyDemoData,
+  courses: [], tasks: [], expenses: [], events: [], grades: [], attendance: [], focusSessions: [],
+  focusMinutesThisWeek: 0,
 };

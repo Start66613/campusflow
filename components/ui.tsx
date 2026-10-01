@@ -129,10 +129,10 @@ export function SectionTitle({ title, action, onAction }: { title: string; actio
   );
 }
 
-export function Pill({ children, tone = 'primary' }: PropsWithChildren<{ tone?: 'primary' | 'green' | 'orange' | 'neutral' }>) {
+export function Pill({ children, tone = 'primary', glassSurface = true }: PropsWithChildren<{ tone?: 'primary' | 'green' | 'orange' | 'neutral'; glassSurface?: boolean }>) {
   const theme = useAppTheme();
   const { data } = useApp();
-  const glass = data.settings.visualMode === 'glass';
+  const glass = glassSurface && data.settings.visualMode === 'glass';
   const background = tone === 'green' ? `${theme.green}22` : tone === 'orange' ? `${theme.orange}22` : tone === 'neutral' ? theme.surfaceAlt : theme.primarySoft;
   const accent = tone === 'green' ? theme.green : tone === 'orange' ? theme.orange : theme.primary;
   const color = glass ? theme.text : tone === 'neutral' ? theme.secondary : accent;
