@@ -329,3 +329,9 @@ npx.cmd expo export --platform android --output-dir dist-android-check
 底栏原本有跟手胶囊，但 `app/(tabs)/_layout.tsx` 的 Bottom Tabs 明确配置 `animation: 'none'`，导致首页切 AI 记等操作都是内容硬切。React Navigation 的 Bottom Tabs 支持 `fade`、`shift` 与自定义 `sceneStyleInterpolator`；内置 `shift` 同时对整个场景做 opacity，会碰到本项目原生 GlassView 祖先透明度导致材质消失的旧问题。改为自定义全宽水平场景位移，上一页和下一页在 260ms 内对接，底栏保持静止；转场只做 transform，不给玻璃场景做 opacity。按系统“减少动态效果”关闭转场，避免为了视觉效果牺牲无障碍体验。参见 [React Navigation Bottom Tabs 动画文档](https://reactnavigation.org/docs/bottom-tab-navigator/#animations)。
 
 真机验收要连续试首页↔AI 记、相邻与跨多个标签、快速反向点击、深色/自定义壁纸、键盘打开时切页，以及 Android；特别看两页边界是否闪白、原生玻璃是否消失、滑动课表时是否被误认为标签切换。导航转场用原生驱动的 transform，但两个玻璃页面短时同时显示，静态测试与打包通过仍不能证明帧率，必要时减短位移或时长，而不是叠加模糊/淡入。新增 `npm run test:tab-transition` 防止回到 `animation: 'none'` 或误加场景 opacity。
+
+## 35. 底栏无级滑动与课表当前时间标记
+
+底栏原本就能用分数位置驱动胶囊，但横向移动超过 7px 后 Pan 才接管，容易让首段拖动显得迟钝。现在改为 3px 接管，移动中仍直接把触点映射到胶囊位置、图标和标签连续插值，并在两项中间做最多约 6% 的轻微拉伸；选择触感增加 0.58 格迟滞区，避免手指在两项边界轻微抖动时反复振动。跨越标签中心只发选择触感，不在每个经过的标签上立刻导航。松手后才就近落位并触发页面转场，否则中途连续打开多个含原生玻璃的页面会造成跳动和掉帧。快速拖过全栏、反向拖回、从非当前图标起拖、最后停在原标签都要真机试。
+
+旧「当前时间线」用醒目的红色短线压在今日课程卡上，既遮文字也没有说明。现在使用主题色的极细线与左侧小圆点，线先于课程卡渲染，让课程内容保持最上层；课表顶部用同色圆点解释细线代表今天当前时间，仅本周上课时段显示。圆点放在时间列边界，不遮住节次与时间文字；不要为了永久显示而捏造课间的线性时间位置。新增 `test:fluid-tab-and-time-indicator` 防止高亮退回离散跳动、时间线重新变红或盖住课程。

@@ -37,18 +37,28 @@ function currentTimeY(now: Date) {
   return null;
 }
 
-function CurrentTimeLine({ columnWidth, color }: { columnWidth: number; color: string }) {
+function CurrentTimeLine({ color }: { color: string }) {
   const focused = useIsFocused();
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     if (!focused) return;
     setNow(new Date());
-    const timer = setInterval(() => setNow(new Date()), 60_000);
-    return () => clearInterval(timer);
+    let interval: ReturnType<typeof setInterval> | undefined;
+    const timeout = setTimeout(() => {
+      setNow(new Date());
+      interval = setInterval(() => setNow(new Date()), 60_000);
+    }, 60_000 - Date.now() % 60_000);
+    return () => {
+      clearTimeout(timeout);
+      if (interval) clearInterval(interval);
+    };
   }, [focused]);
   const timeLineY = currentTimeY(now);
   if (timeLineY === null) return null;
-  return <View pointerEvents="none" style={[styles.nowLine, { top: timeLineY, left: timeColumnWidth + ((now.getDay() || 7) - 1) * columnWidth + 2, width: columnWidth - 4, backgroundColor: color }]}><View style={[styles.nowDot, { backgroundColor: color }]} /></View>;
+  return <>
+    <View pointerEvents="none" style={[styles.nowLine, { top: timeLineY, left: timeColumnWidth, borderTopColor: color }]} />
+    <View pointerEvents="none" style={[styles.nowDot, { top: Math.max(0, Math.min(12 * rowHeight - 6, timeLineY - 3)), backgroundColor: color }]} />
+  </>;
 }
 
 function courseInk(color: string, glass: boolean, dark: boolean) {
@@ -300,6 +310,7 @@ export default function ScheduleScreen() {
               </View>
             ))}
             {days.map((_, index) => <View key={index} style={[styles.verticalLine, { left: timeColumnWidth + index * columnWidth, borderLeftColor: theme.line }]} />)}
+            {pageOffset === 0 ? <CurrentTimeLine color={theme.primary} /> : null}
             {data.courses.filter((course) => course.weekday >= 1 && course.weekday <= 7 && course.weeks.includes(pageWeek)).map((course) => {
               const ink = courseInk(course.color, glass, dark);
               const position = {
@@ -320,7 +331,6 @@ export default function ScheduleScreen() {
                 onEdit={(courseId) => router.push({ pathname: '/course-editor', params: { id: courseId } })}
               /> : <View key={course.id} style={[styles.courseBlock, position, { backgroundColor: 'transparent' }]}><CourseFace course={course} height={position.height} ink={ink} compact={compact} /></View>;
             })}
-            {pageOffset === 0 ? <CurrentTimeLine columnWidth={columnWidth} color={theme.red} /> : null}
           </View>
       </View>
     );
@@ -338,6 +348,7 @@ export default function ScheduleScreen() {
         <MotionPressable accessibilityLabel="下一周" onPress={() => weekTrackRef.current?.changeWeek(1)} style={[styles.weekButton, { backgroundColor: theme.surfaceAlt }]}><AppIcon ios="chevron.right" android="chevron_right" color={theme.primary} size={18} /></MotionPressable>
         <MotionPressable accessibilityLabel="添加课程" onPress={() => router.push('/course-editor')} style={[styles.addButton, { backgroundColor: theme.primarySoft }]}><Text style={[styles.addText, { color: theme.primary }]}>＋ 课程</Text></MotionPressable>
       </View>
+      <View style={styles.nowExplanation}><View style={[styles.nowLegendDot, { backgroundColor: theme.primary }]} /><Text style={[styles.nowExplanationText, { color: theme.secondary }]}>细线表示今天的当前时间，仅本周上课时段显示</Text></View>
       <View style={styles.weekViewport}>
         <Card animateLayout={false} style={[styles.gridCard, glass && { backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.72)' }]}>
           <WeekTrack key={`${week}:${gridWidth}`} ref={weekTrackRef} week={week} pageWidth={pageWidth} onCommit={completeWeek} renderPage={renderWeekGrid} />
@@ -362,7 +373,11 @@ const styles = StyleSheet.create({
   periodNumber: { width: timeColumnWidth, textAlign: 'center', fontSize: 11, lineHeight: 14, fontWeight: '800' },
   periodTime: { width: timeColumnWidth, textAlign: 'center', fontSize: 8, lineHeight: 10, fontVariant: ['tabular-nums'] },
   verticalLine: { position: 'absolute', top: 0, bottom: 0, borderLeftWidth: StyleSheet.hairlineWidth }, courseBlock: { position: 'absolute', borderRadius: 15, padding: 8, shadowColor: '#203060', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.1, shadowRadius: 9, elevation: 3 }, courseContents: { flex: 1 }, dropTarget: { position: 'absolute', borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 15, justifyContent: 'center', alignItems: 'center', zIndex: 0 }, dropHint: { fontSize: 8, fontWeight: '600', opacity: 0.8 }, courseGlyph: { width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.42)', alignItems: 'center', justifyContent: 'center', marginBottom: 5 },
-  nowLine: { position: 'absolute', height: 2, borderRadius: 1, zIndex: 8 }, nowDot: { position: 'absolute', left: -3, top: -2, width: 6, height: 6, borderRadius: 3 },
+  nowExplanation: { flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 5, marginBottom: 7 },
+  nowExplanationText: { fontSize: 10, lineHeight: 15 },
+  nowLegendDot: { width: 5, height: 5, borderRadius: 3 },
+  nowLine: { position: 'absolute', right: 0, borderTopWidth: StyleSheet.hairlineWidth, opacity: 0.55 },
+  nowDot: { position: 'absolute', left: timeColumnWidth - 3, width: 6, height: 6, borderRadius: 3 },
   courseName: { color: '#FFFFFF', fontSize: 11, lineHeight: 14, fontWeight: '600', textShadowColor: 'rgba(20,22,45,0.28)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }, courseNameCompact: { fontSize: 10, lineHeight: 13 }, courseMeta: { color: 'rgba(255,255,255,0.96)', fontSize: 8.5, lineHeight: 10, marginTop: 4, fontWeight: '500', textShadowColor: 'rgba(20,22,45,0.24)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }, courseMetaCompact: { fontSize: 8, lineHeight: 9 }, courseTeacher: { fontSize: 8, lineHeight: 10, marginTop: 5, fontWeight: '500', opacity: 0.72 },
   buttonRow: { flexDirection: 'row', marginTop: 16 }, tip: { fontSize: 12, lineHeight: 18, marginTop: 10, paddingHorizontal: 4 },
 });

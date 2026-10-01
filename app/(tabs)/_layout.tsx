@@ -12,7 +12,7 @@ import { motion } from '@/components/motion';
 import { GlassBackdrop } from '@/components/ui';
 import { FLOATING_TAB_BAR_HEIGHT, FLOATING_TAB_BAR_SIDE } from '@/src/layout';
 import { selectionTick } from '@/src/native-motion';
-import { selectionIndex, selectionPosition } from '@/src/selection-geometry';
+import { selectionIndex, selectionPosition, selectionTickIndex } from '@/src/selection-geometry';
 import { useApp } from '@/src/store';
 import { useAppTheme } from '@/src/theme';
 import { useReduceTransparency } from '@/src/accessibility';
@@ -109,7 +109,12 @@ function LiquidTabBar({ state, navigation }: TabBarProps) {
   }, [itemWidth, scrubbing, state.index, travel]);
 
   const lensStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: travel.value }],
+    // The position never snaps between tabs while the finger is down.
+    // A very small stretch midway between centers makes the lens read as fluid.
+    transform: [
+      { translateX: travel.value },
+      { scaleX: itemWidth > 0 ? 1 + 0.06 * Math.abs(travel.value / itemWidth - Math.round(travel.value / itemWidth)) * 2 : 1 },
+    ],
   }));
   const tick = useCallback(selectionTick, []);
   const selectTab = useCallback((index: number, withHaptic: boolean) => {
@@ -130,7 +135,7 @@ function LiquidTabBar({ state, navigation }: TabBarProps) {
   const barGesture = useMemo(() => {
     const pan = Gesture.Pan()
       .enabled(itemWidth > 0)
-      .activeOffsetX([-7, 7])
+      .activeOffsetX([-3, 3])
       .failOffsetY([-14, 14])
       .onStart(() => {
         scrubbing.value = true;
@@ -139,7 +144,7 @@ function LiquidTabBar({ state, navigation }: TabBarProps) {
       .onUpdate((event) => {
         const position = selectionPosition(event.x, 5, itemWidth, count);
         travel.value = position * itemWidth;
-        const index = Math.round(position);
+        const index = selectionTickIndex(position, lastTicked.value, count);
         if (index !== lastTicked.value) {
           lastTicked.value = index;
           runOnJS(tick)();
@@ -147,6 +152,7 @@ function LiquidTabBar({ state, navigation }: TabBarProps) {
       })
       .onEnd(() => {
         const index = Math.round(travel.value / itemWidth);
+        if (index !== lastTicked.value) runOnJS(tick)();
         scrubbing.value = false;
         travel.value = withSpring(index * itemWidth, motion.selectionSpring);
         runOnJS(selectTab)(index, false);
@@ -222,6 +228,7 @@ function LiquidTabBar({ state, navigation }: TabBarProps) {
             accessibilityRole="tab"
             accessibilityState={focused ? { selected: true } : {}}
             accessibilityLabel={item.title}
+            accessibilityHint="按住底栏左右滑动，松手切换页面"
             onPress={() => selectTab(index, true)}
             onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
             style={styles.item}
