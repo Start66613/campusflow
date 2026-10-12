@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-resolution="landscape">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <script src="assets/gsap.min.js"></script>
+  <style>
+    @font-face { font-family:"Microsoft YaHei"; src:local("Microsoft YaHei"); font-weight:100 900; }
+    @font-face { font-family:"Segoe UI"; src:local("Segoe UI"); font-weight:100 900; }
+    :root { --pearl:#F4F3FA; --violet:#655CE8; --ink:#202033; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html,body { width:1920px; height:1080px; overflow:hidden; background:var(--pearl); }
+    #root { width:1920px; height:1080px; position:relative; isolation:isolate; overflow:hidden; color:var(--ink); font-family:"Microsoft YaHei","Segoe UI",sans-serif; }
+    .scene-content { width:100%; height:100%; padding:85px 128px 102px; display:flex; flex-direction:column; justify-content:space-between; gap:30px; position:relative; z-index:5; }
+    .eyebrow { font-family:"Segoe UI",sans-serif; display:flex; align-items:center; gap:18px; font-size:29px; letter-spacing:4px; font-weight:600; color:var(--ink); }
+    .eyebrow .dot { width:12px; height:12px; border-radius:50%; background:var(--violet); }
+    .material-stage { width:100%; height:408px; position:relative; display:flex; align-items:center; justify-content:center; }
+    .capsule { position:relative; width:960px; height:264px; border-radius:132px; background:linear-gradient(146deg,rgba(255,255,255,.92) 0%,rgba(235,232,255,.54) 26%,rgba(158,150,243,.4) 53%,rgba(237,235,255,.72) 85%,rgba(255,255,255,.95) 100%); border:2px solid rgba(255,255,255,.95); box-shadow:inset 0 4px 8px rgba(255,255,255,.97),inset 0 -7px 12px rgba(85,70,175,.2),inset 7px 0 5px rgba(255,255,255,.65),inset -6px 0 9px rgba(129,116,212,.21),0 26px 54px rgba(63,45,122,.17),0 3px 5px rgba(87,78,147,.18); display:flex; align-items:center; justify-content:center; gap:40px; }
+    .capsule:before { content:""; position:absolute; inset:8px 24px auto; height:72px; border-radius:999px; background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,0)); pointer-events:none; }
+    .capsule:after { content:""; position:absolute; inset:8px; border:1px solid rgba(255,255,255,.57); border-radius:128px; pointer-events:none; }
+    .brand-icon { width:178px; height:178px; border-radius:43px; position:relative; z-index:2; box-shadow:0 13px 29px rgba(76,62,144,.19); }
+    .brand-word { font-family:"Segoe UI",sans-serif; font-size:96px; line-height:1.06; font-weight:600; letter-spacing:-3px; position:relative; z-index:2; }
+    .brand-note { display:block; font-size:26px; line-height:1.4; letter-spacing:3px; margin-top:15px; color:#4E487B; font-weight:500; }
+    .droplets { position:absolute; inset:0; z-index:4; display:flex; justify-content:center; align-items:center; pointer-events:none; }
+    .drop { position:absolute; width:256px; height:256px; border-radius:50%; background:radial-gradient(circle at 30% 18%,rgba(255,255,255,.98) 0%,rgba(217,213,255,.82) 15%,rgba(122,110,239,.8) 43%,rgba(101,92,232,.88) 65%,rgba(87,75,167,.45) 84%,rgba(255,255,255,.7) 100%); border:2px solid rgba(255,255,255,.8); box-shadow:inset 9px 11px 14px rgba(255,255,255,.64),inset -6px -15px 24px rgba(46,23,124,.21),0 25px 35px rgba(76,57,140,.19),0 2px 6px rgba(51,44,120,.22); }
+    .drop:before { content:""; position:absolute; width:40%; height:15%; top:11%; left:22%; border-radius:50%; background:rgba(255,255,255,.84); filter:blur(7px); transform:rotate(-18deg); }
+    .drop:after { content:""; position:absolute; inset:7px; border:1px solid rgba(255,255,255,.5); border-radius:50%; }
+    #drop-left { margin-left:-370px; width:178px; height:178px; }
+    #drop-right { margin-left:480px; width:124px; height:124px; }
+    .caustic { position:absolute; width:740px; height:76px; border-radius:50%; background:radial-gradient(ellipse,rgba(129,111,227,.27),rgba(160,143,232,.12) 42%,rgba(255,255,255,0) 70%); filter:blur(12px); bottom:14px; left:calc(50% - 370px); z-index:1; }
+    .heading { width:100%; display:flex; flex-direction:column; gap:25px; align-items:flex-start; }
+    h1 { font-size:99px; line-height:1.23; font-weight:700; letter-spacing:0; white-space:nowrap; }
+    .subline { font-size:35px; line-height:1.4; font-weight:400; color:#56516F; }
+    .shine { position:absolute; width:120px; height:250px; top:5px; left:0; border-radius:60px; background:linear-gradient(100deg,transparent,rgba(255,255,255,.62),transparent); filter:blur(8px); transform:skewX(-24deg); pointer-events:none; }
+    .glow { position:absolute; width:1000px; height:750px; left:calc(50% - 500px); top:20px; border-radius:50%; background:radial-gradient(ellipse,rgba(133,112,245,.13),rgba(175,162,239,.05) 42%,transparent 70%); filter:blur(38px); z-index:0; }
+    .topline { position:absolute; left:128px; right:128px; top:144px; height:1px; background:rgba(101,92,232,.15); z-index:1; transform-origin:left center; }
+  </style>
+</head>
+<body>
+  <div data-hf-id="hf-3j7c" id="root" data-composition-id="campusflow-intro" data-start="0" data-duration="6.4" data-width="1920" data-height="1080" data-fps="60">
+    <div data-hf-id="hf-78qa" class="glow" data-layout-ignore=""></div>
+    <div data-hf-id="hf-offm" class="topline" data-layout-ignore=""></div>
+    <main data-hf-id="hf-bgts" class="scene-content">
+      <div data-hf-id="hf-rk6h" class="eyebrow"><span data-hf-id="hf-9gry" class="dot"></span><span data-hf-id="hf-aa78">CAMPUSFLOW</span></div>
+      <div data-hf-id="hf-lxzi" class="material-stage">
+        <div data-hf-id="hf-ku49" class="caustic" data-layout-ignore=""></div>
+        <div data-hf-id="hf-up4o" class="capsule" data-layout-allow-overflow="">
+          <div data-hf-id="hf-rvy8" class="shine" data-layout-ignore=""></div>
+          <img data-hf-id="hf-redy" class="brand-icon" src="assets/icon-2026.png" alt="CampusFlow app icon">
+          <div data-hf-id="hf-8475" class="brand-word">CampusFlow<span data-hf-id="hf-pbjc" class="brand-note">YOUR CAMPUS, IN FLOW</span></div>
+        </div>
+        <div data-hf-id="hf-nyqs" class="droplets" data-layout-ignore="">
+          <div data-hf-id="hf-fou8" class="drop" id="drop-left"></div>
+          <div data-hf-id="hf-n1f8" class="drop" id="drop-center"></div>
+          <div data-hf-id="hf-h7fz" class="drop" id="drop-right"></div>
+        </div>
+      </div>
+      <div data-hf-id="hf-had6" class="heading">
+        <h1 data-hf-id="hf-jenu">大学生活，进入顺滑模式</h1>
+        <p data-hf-id="hf-a0us" class="subline">课表 · AI 快记 · 学习与生活，在同一条流里。</p>
+      </div>
+    </main>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused:true });
+    tl.from('.eyebrow',{x:-22,opacity:0,duration:.6,ease:'power3.out'},.18);
+    tl.from('.topline',{scaleX:0,duration:1.1,ease:'expo.out'},.3);
+    tl.from('.glow',{scale:.83,opacity:.5,duration:3.1,ease:'sine.out'},.12);
+    tl.from('#drop-center',{scale:.74,y:-12,opacity:0,duration:.65,ease:'back.out(1.15)'},.12);
+    tl.from('#drop-left',{x:-115,y:25,scale:.4,opacity:0,duration:.78,ease:'power4.out'},.25);
+    tl.from('#drop-right',{x:118,y:-31,scale:.35,opacity:0,duration:.82,ease:'circ.out'},.38);
+    tl.to('#drop-left',{x:185,scaleX:1.24,scaleY:.92,duration:.8,ease:'power2.inOut'},1.1);
+    tl.to('#drop-right',{x:-240,scaleX:1.18,scaleY:.92,duration:.87,ease:'power3.inOut'},1.22);
+    tl.to('#drop-center',{scaleX:2.38,scaleY:.83,duration:.77,ease:'sine.inOut'},1.28);
+    tl.from('.capsule',{scaleX:.3,scaleY:.9,opacity:0,duration:1.12,ease:'back.out(.7)'},1.68);
+    tl.to('.droplets',{opacity:0,duration:.3,ease:'power2.in'},1.92);
+    tl.from('.brand-icon',{scale:.75,y:12,opacity:0,duration:.72,ease:'back.out(.95)'},2.26);
+    tl.from('.brand-word',{x:34,opacity:0,duration:.67,ease:'power3.out'},2.44);
+    tl.from('.heading h1',{y:35,opacity:0,duration:.83,ease:'expo.out'},2.78);
+    tl.from('.subline',{y:16,opacity:0,duration:.62,ease:'sine.out'},3.05);
+    tl.from('.caustic',{scaleX:.5,opacity:0,duration:1.25,ease:'power1.out'},1.3);
+    tl.fromTo('.shine',{x:85,opacity:0},{x:770,opacity:.82,duration:1.24,ease:'sine.inOut'},3.45);
+    tl.to('.shine',{opacity:0,duration:.5,ease:'power1.out'},4.7);
+    tl.to('.capsule',{y:-3,duration:1.6,ease:'sine.inOut'},4.7);
+    window.__timelines['campusflow-intro'] = tl;
+    tl.seek(0);
+  </script>
+</body>
+</html>

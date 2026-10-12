@@ -1,0 +1,15 @@
+**/node_modules/
+**/.git/
+edit/app-web/
+edit/verify/
+edit/audio/
+edit/clips_graded/
+edit/*.mp4
+edit/*.wav
+edit/*.mp3
+edit/*.log
+edit/animations/remotion/out/
+edit/animations/remotion/build/
+edit/animations/hyperframes/*.mp4
+edit/animations/hyperframes/.hyperframes/
+edit/animations/hyperframes/renders/

@@ -1,0 +1,34 @@
+{
+  "configuredOn": "2026-10-12",
+  "remotion": {
+    "source": "https://github.com/remotion-dev/remotion",
+    "skillsSource": "https://github.com/remotion-dev/skills",
+    "runtime": "4.0.534",
+    "skills": ["remotion-best-practices", "remotion-create", "remotion-markup", "remotion-render", "remotion-studio", "remotion-docs"]
+  },
+  "hyperframes": {
+    "plugin": "hyperframes@openai-curated",
+    "skillsSource": "https://github.com/heygen-com/hyperframes",
+    "standaloneSkills": ["hyperframes", "hyperframes-cli"],
+    "runtime": "0.8.147",
+    "role": "Seekable HTML/GSAP liquid intro"
+  },
+  "videoUse": {
+    "source": "https://github.com/browser-use/video-use",
+    "commit": "43cfc56",
+    "skillDirectory": "C:/Users/ASUS/.codex/skills/video-use",
+    "venv": ".venv",
+    "configuredDependencies": ["requirements.txt", "edge-tts", "imageio-ffmpeg"],
+    "ffmpeg": "bin/ffmpeg.exe",
+    "ffprobe": "bin/ffprobe.exe",
+    "role": "Cut/frame inspection and production audio checks",
+    "elevenlabsKeyConfigured": false
+  },
+  "seedance": {
+    "source": "https://github.com/songguoxs/seedance-prompt-skill",
+    "version": "2.0.0",
+    "role": "Chinese shot and motion prompt design",
+    "generationEndpointConfigured": false
+  },
+  "browser": "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"
+}
