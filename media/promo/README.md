@@ -41,6 +41,6 @@ node ../../deliver-video.mjs ../../verify/render-vertical-fullrange.mp4 ../../Ca
 
 HyperFrames 的 lint、validate、inspect、contrast 均通过。Remotion 通过 TypeScript 和横竖屏代表帧检查。最终媒体参数、切点与响度记录保存在 `edit/qa-report.md`。画面包含源代码还原的操作演示，以清晰说明功能；不是 iPhone 原生材质的逐帧实机录屏。所有成绩和消费数字为演示数据。
 
-影片源文件与开发记录同步 GitHub；大型成片及临时渲染缓存只保存在本机。
+影片源文件与开发记录已保存到本地 Git 提交；2026-10-12 尝试推送 GitHub 时连接重置/无法连接，远端同步尚未完成。网络恢复后在仓库根目录执行 `git push origin main`。大型成片及临时渲染缓存只保存在本机。
 
 本机安装后的技能会在后续会话自动发现；本次制作已直接读取各技能。安装位置和工具依赖见 `edit/installed-tools.json`。
