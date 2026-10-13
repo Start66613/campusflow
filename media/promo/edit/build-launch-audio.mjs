@@ -8,8 +8,8 @@ const source=path.join(root,'downloads/3-strikes-reference.m4a');
 const raw=path.join(root,'audio/launch-music-raw.wav');
 const output=path.join(root,'animations/remotion/public/audio/launch-3-strikes.wav');
 const start=11.4242;
-// Full feature cut, built from the restored author's 30s timeline.
-const duration=48;
+// Rebuilt glass / DIY / focus chapters need visible interaction time.
+const duration=66;
 const extract=spawnSync(ffmpeg,['-y','-v','error','-ss',String(start),'-i',source,'-t',String(duration),'-af',`afade=t=in:d=0.03,afade=t=out:st=${(duration-0.8).toFixed(1)}:d=0.8`,'-ar','48000','-ac','2',raw],{encoding:'utf8'});
 if(extract.status!==0)throw new Error(extract.stderr);
 const stats=(s)=>{const i=s.lastIndexOf('{');return JSON.parse(s.slice(i,s.indexOf('}',i)+1));};
@@ -21,7 +21,7 @@ const second=spawnSync(ffmpeg,['-y','-hide_banner','-i',raw,'-af',filter,'-ar','
 if(second.status!==0)throw new Error(second.stderr);
 const measured=JSON.parse(readFileSync(path.join(root,'launch-beats.json'),'utf8'));
 const beats=measured.beats.filter(t=>t>=start&&t<=start+duration).map(t=>t-start);
-const nominal=[3,6,9,12,18,21,27,30,33,39,42,45];
+const nominal=[3,6,15,18,24,27,33,36,39,54,60,63];
 const cuts=nominal.map(t=>beats.reduce((a,b)=>Math.abs(b-t)<Math.abs(a-t)?b:a,beats[0]));
 const record={source:'User-provided https://www.bilibili.com/video/BV1dBpRzsEsd/',excerptStart:start,duration,estimatedBpm:measured.estimatedBpm,beatCutsSeconds:cuts,beatCutsFrames:cuts.map(t=>Math.round(t*60)),master:stats(second.stderr),note:'Music excerpt for the requested test edit. Not a music license; reference files and audio cache excluded from Git.'};
 writeFileSync(path.join(root,'launch-audio.json'),JSON.stringify(record,null,2));

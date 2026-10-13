@@ -1,6 +1,8 @@
 # CampusFlow 宣传片
 
-70 秒中文产品介绍，横屏 1920×1080 和竖屏 1080×1920，均为 60 fps。
+当前版本：66 秒 DIY 重制版，横屏 1920×1080 / 60 fps，无配音、无解说字幕条。玻璃、主题 DIY、番茄钟采用全新镜头，详细制作见 `edit/launch-brief.md` 和 `edit/project.md`。本机成片为 `edit/CampusFlow-Launch-DIY重制版.mp4`；旧版保留，不覆盖。
+
+历史版本：70 秒中文产品介绍，横屏 1920×1080 和竖屏 1080×1920，均为 60 fps。
 
 成片保存到 `edit/CampusFlow-宣传片-横屏.mp4` 与 `edit/CampusFlow-宣传片-竖屏.mp4`；可编辑的 Remotion 工程在 `edit/animations/remotion`，独立 HyperFrames 液态片头在 `edit/animations/hyperframes`。
 
@@ -41,6 +43,6 @@ node ../../deliver-video.mjs ../../verify/render-vertical-fullrange.mp4 ../../Ca
 
 HyperFrames 的 lint、validate、inspect、contrast 均通过。Remotion 通过 TypeScript 和横竖屏代表帧检查。最终媒体参数、切点与响度记录保存在 `edit/qa-report.md`。画面包含源代码还原的操作演示，以清晰说明功能；不是 iPhone 原生材质的逐帧实机录屏。所有成绩和消费数字为演示数据。
 
-影片源文件与开发记录已保存到本地 Git 提交；2026-10-12 尝试推送 GitHub 时连接重置/无法连接，远端同步尚未完成。网络恢复后在仓库根目录执行 `git push origin main`。大型成片及临时渲染缓存只保存在本机。
+2026-10-12 的推送曾遇到连接重置；2026-10-13 已恢复连接并推送包含48秒版的 `7c7fc33`。新版源文件与记录在每次验收后单独提交/推送，并核对远端提交；大型成片、指定音乐和渲染缓存只保存在本机。
 
 本机安装后的技能会在后续会话自动发现；本次制作已直接读取各技能。安装位置和工具依赖见 `edit/installed-tools.json`。

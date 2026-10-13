@@ -1,31 +1,31 @@
 {
-  "version": 1,
+  "version": 2,
   "composition": "CampusFlow-Launch",
-  "authorBase": "2026-10-12 restored 30s source, not the rejected external 39s edit",
+  "authorBase": "2026-10-12 restored 30s source; Glass, DIY and Focus rebuilt from scratch on 2026-10-13",
   "fps": 60,
   "width": 1920,
   "height": 1080,
-  "durationFrames": 2880,
+  "durationFrames": 3960,
   "music": {
     "source": "user-provided BV1dBpRzsEsd",
     "startSeconds": 11.4242,
-    "durationSeconds": 48,
+    "durationSeconds": 66,
     "voiceover": false,
     "license": "test edit only; commercial permission not established"
   },
   "ranges": [
     {"scene": "LaunchIntro", "from": 0, "duration": 180, "headline": "重新定义 / 课程表"},
     {"scene": "LaunchProduct", "from": 180, "duration": 179, "headline": "为湘大同学"},
-    {"scene": "LaunchGlass", "from": 359, "duration": 179, "headline": "Liquid Glass"},
-    {"scene": "LaunchImport", "from": 538, "duration": 179, "headline": "湘大课表 一键导入"},
-    {"scene": "LaunchSchedule", "from": 717, "duration": 356, "headline": "一周一眼"},
-    {"scene": "LaunchModels", "from": 1073, "duration": 179, "headline": "你的 AI 自己掌控"},
-    {"scene": "LaunchAI", "from": 1252, "duration": 358, "headline": "说一句"},
-    {"scene": "LaunchGrades", "from": 1610, "duration": 178, "headline": "成绩不止数字"},
-    {"scene": "LaunchAdvice", "from": 1788, "duration": 180, "headline": "下一步 有方向"},
-    {"scene": "LaunchThemes", "from": 1968, "duration": 357, "headline": "换个心情"},
-    {"scene": "LaunchFocus", "from": 2325, "duration": 179, "headline": "番茄钟"},
-    {"scene": "LaunchReminders", "from": 2504, "duration": 179, "headline": "智能提醒 / 早八不慌"},
-    {"scene": "LaunchEnding", "from": 2683, "duration": 197, "headline": "湘大学生专供 / 重新定义课程表"}
+    {"scene": "LaunchGlassRebuilt", "from": 359, "duration": 535, "headline": "液态玻璃 全面覆盖", "actions": ["磨砂变透亮", "玻璃关闭", "玻璃重新开启"]},
+    {"scene": "LaunchImport", "from": 894, "duration": 179, "headline": "湘大课表 一键导入"},
+    {"scene": "LaunchSchedule", "from": 1073, "duration": 360, "headline": "一周一眼"},
+    {"scene": "LaunchModels", "from": 1433, "duration": 177, "headline": "你的 AI 自己掌控"},
+    {"scene": "LaunchAI", "from": 1610, "duration": 358, "headline": "说一句"},
+    {"scene": "LaunchGrades", "from": 1968, "duration": 178, "headline": "成绩不止数字"},
+    {"scene": "LaunchAdvice", "from": 2146, "duration": 179, "headline": "下一步 有方向"},
+    {"scene": "LaunchDiyRebuilt", "from": 2325, "duration": 895, "headline": "主题色随你切换 / 自由 DIY 由你定义", "actions": ["七种主题色", "动漫背景切换", "背景可见度调整"]},
+    {"scene": "LaunchFocusRebuilt", "from": 3220, "duration": 358, "headline": "专注25分 留给自己", "actions": ["开始", "专注中", "25:00→24:56"]},
+    {"scene": "LaunchReminders", "from": 3578, "duration": 223, "headline": "智能提醒 / 早八不慌"},
+    {"scene": "LaunchEnding", "from": 3801, "duration": 159, "headline": "湘大学生专供 / 重新定义课程表"}
   ]
 }

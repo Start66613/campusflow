@@ -12,7 +12,7 @@ source = ROOT / 'downloads/3-strikes-reference.m4a'
 work = ROOT / 'audio'
 work.mkdir(exist_ok=True)
 sample = work / '3-strikes-analysis.wav'
-subprocess.run([str(FFMPEG), '-y', '-v', 'error', '-i', str(source), '-t', '60',
+subprocess.run([str(FFMPEG), '-y', '-v', 'error', '-i', str(source), '-t', '90',
                 '-ac', '1', '-ar', '22050', str(sample)], check=True)
 y, sr = librosa.load(sample, sr=22050)
 onset = librosa.onset.onset_strength(y=y, sr=sr, hop_length=256)

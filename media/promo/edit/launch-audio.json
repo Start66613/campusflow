@@ -1,47 +1,47 @@
 {
   "source": "User-provided https://www.bilibili.com/video/BV1dBpRzsEsd/",
   "excerptStart": 11.4242,
-  "duration": 48,
+  "duration": 66,
   "estimatedBpm": 80.74951171875,
   "beatCutsSeconds": [
     3.0069999999999997,
     5.990799999999998,
-    8.9745,
-    11.946699999999998,
+    14.8956,
     17.879399999999997,
-    20.863100000000003,
+    23.881700000000002,
     26.8307,
-    29.802799999999998,
     32.7982,
+    35.7704,
     38.7425,
-    41.7379,
-    44.71
+    53.6613,
+    59.6289,
+    63.3557
   ],
   "beatCutsFrames": [
     180,
     359,
-    538,
-    717,
+    894,
     1073,
-    1252,
+    1433,
     1610,
-    1788,
     1968,
+    2146,
     2325,
-    2504,
-    2683
+    3220,
+    3578,
+    3801
   ],
   "master": {
-    "input_i": "-8.64",
+    "input_i": "-8.45",
     "input_tp": "0.00",
-    "input_lra": "1.30",
-    "input_thresh": "-18.67",
-    "output_i": "-13.84",
-    "output_tp": "-5.20",
-    "output_lra": "1.30",
-    "output_thresh": "-23.87",
+    "input_lra": "1.90",
+    "input_thresh": "-18.46",
+    "output_i": "-13.98",
+    "output_tp": "-5.53",
+    "output_lra": "1.80",
+    "output_thresh": "-23.99",
     "normalization_type": "linear",
-    "target_offset": "-0.16"
+    "target_offset": "-0.02"
   },
   "note": "Music excerpt for the requested test edit. Not a music license; reference files and audio cache excluded from Git."
 }

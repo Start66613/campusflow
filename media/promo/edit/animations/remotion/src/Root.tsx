@@ -14,14 +14,14 @@ import { LaunchFilm } from "./launch/LaunchFilm";
 import { LaunchProduct } from "./launch/LaunchProduct";
 import { LaunchSchedule } from "./launch/LaunchSchedule";
 import { LaunchAI } from "./launch/LaunchAI";
-import { LaunchThemes } from "./launch/LaunchThemes";
-import { LaunchGlass } from "./launch/LaunchGlass";
 import { LaunchImport } from "./launch/LaunchImport";
-import { LaunchFocus } from "./launch/LaunchFocus";
 import { LaunchModels } from "./launch/LaunchModels";
 import { LaunchGrades } from "./launch/LaunchGrades";
 import { LaunchAdvice } from "./launch/LaunchAdvice";
 import { LaunchReminders } from "./launch/LaunchReminders";
+import { LaunchGlassRebuilt } from "./launch/LaunchGlassRebuilt";
+import { LaunchDiyRebuilt } from "./launch/LaunchDiyRebuilt";
+import { LaunchFocusRebuilt } from "./launch/LaunchFocusRebuilt";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -29,12 +29,36 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="CampusFlow-Launch"
         component={LaunchFilm}
-        durationInFrames={2880}
+        durationInFrames={3960}
         fps={60}
         width={1920}
         height={1080}
       />
       <Folder name="Launch-Scenes">
+        <Composition
+          id="Rebuilt-Glass"
+          component={LaunchGlassRebuilt}
+          durationInFrames={540}
+          fps={60}
+          width={1920}
+          height={1080}
+        />
+        <Composition
+          id="Rebuilt-DIY"
+          component={LaunchDiyRebuilt}
+          durationInFrames={900}
+          fps={60}
+          width={1920}
+          height={1080}
+        />
+        <Composition
+          id="Rebuilt-Focus"
+          component={LaunchFocusRebuilt}
+          durationInFrames={360}
+          fps={60}
+          width={1920}
+          height={1080}
+        />
         <Composition
           id="Launch-Models"
           component={LaunchModels}
@@ -93,16 +117,16 @@ export const RemotionRoot: React.FC = () => {
         />
         <Composition
           id="Launch-Themes"
-          component={LaunchThemes}
-          durationInFrames={360}
+          component={LaunchDiyRebuilt}
+          durationInFrames={900}
           fps={60}
           width={1920}
           height={1080}
         />
         <Composition
           id="Launch-Glass"
-          component={LaunchGlass}
-          durationInFrames={180}
+          component={LaunchGlassRebuilt}
+          durationInFrames={540}
           fps={60}
           width={1920}
           height={1080}
@@ -117,8 +141,8 @@ export const RemotionRoot: React.FC = () => {
         />
         <Composition
           id="Launch-Focus"
-          component={LaunchFocus}
-          durationInFrames={180}
+          component={LaunchFocusRebuilt}
+          durationInFrames={360}
           fps={60}
           width={1920}
           height={1080}
