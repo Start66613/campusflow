@@ -10,17 +10,25 @@ import {
   useVideoConfig,
 } from "remotion";
 
-loadFont({
+const campusRegular = loadFont({
   family: "Campus",
   url: staticFile("fonts/msyh.ttc"),
   weight: "400",
   format: "truetype",
 });
-loadFont({
+const campusBold = loadFont({
   family: "Campus",
   url: staticFile("fonts/msyhbd.ttc"),
   weight: "700",
   format: "truetype",
+});
+// R3F must suspend until fonts exist, rather than draw an empty first canvas frame
+// and asynchronously insert text after ThreeCanvas has already captured it.
+export const campusFontsReady = Promise.all([campusRegular, campusBold]).then(() => {
+  if (!document.fonts.check('400 100px "Campus"') ||
+      !document.fonts.check('700 100px "Campus"')) {
+    throw new Error("Campus fonts did not load; refusing fallback typography");
+  }
 });
 export const palette = {
   pearl: "#F4F3FA",

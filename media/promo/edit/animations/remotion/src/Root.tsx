@@ -9,10 +9,129 @@ import { Grades } from "./scenes/Grades";
 import { Life } from "./scenes/Life";
 import { DIY } from "./scenes/DIY";
 import { Ending } from "./scenes/Ending";
+import { LaunchMaterials } from "./launch/LaunchMaterials";
+import { LaunchFilm } from "./launch/LaunchFilm";
+import { LaunchProduct } from "./launch/LaunchProduct";
+import { LaunchSchedule } from "./launch/LaunchSchedule";
+import { LaunchAI } from "./launch/LaunchAI";
+import { LaunchThemes } from "./launch/LaunchThemes";
+import { LaunchGlass } from "./launch/LaunchGlass";
+import { LaunchImport } from "./launch/LaunchImport";
+import { LaunchFocus } from "./launch/LaunchFocus";
+import { LaunchModels } from "./launch/LaunchModels";
+import { LaunchGrades } from "./launch/LaunchGrades";
+import { LaunchAdvice } from "./launch/LaunchAdvice";
+import { LaunchReminders } from "./launch/LaunchReminders";
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      <Composition
+        id="CampusFlow-Launch"
+        component={LaunchFilm}
+        durationInFrames={2880}
+        fps={60}
+        width={1920}
+        height={1080}
+      />
+      <Folder name="Launch-Scenes">
+        <Composition
+          id="Launch-Models"
+          component={LaunchModels}
+          durationInFrames={180}
+          fps={60}
+          width={1920}
+          height={1080}
+        />
+        <Composition
+          id="Launch-Grades"
+          component={LaunchGrades}
+          durationInFrames={180}
+          fps={60}
+          width={1920}
+          height={1080}
+        />
+        <Composition
+          id="Launch-Advice"
+          component={LaunchAdvice}
+          durationInFrames={180}
+          fps={60}
+          width={1920}
+          height={1080}
+        />
+        <Composition
+          id="Launch-Reminders"
+          component={LaunchReminders}
+          durationInFrames={180}
+          fps={60}
+          width={1920}
+          height={1080}
+        />
+        <Composition
+          id="Launch-Product"
+          component={LaunchProduct}
+          durationInFrames={180}
+          fps={60}
+          width={1920}
+          height={1080}
+        />
+        <Composition
+          id="Launch-Schedule"
+          component={LaunchSchedule}
+          durationInFrames={360}
+          fps={60}
+          width={1920}
+          height={1080}
+        />
+        <Composition
+          id="Launch-AI"
+          component={LaunchAI}
+          durationInFrames={360}
+          fps={60}
+          width={1920}
+          height={1080}
+        />
+        <Composition
+          id="Launch-Themes"
+          component={LaunchThemes}
+          durationInFrames={360}
+          fps={60}
+          width={1920}
+          height={1080}
+        />
+        <Composition
+          id="Launch-Glass"
+          component={LaunchGlass}
+          durationInFrames={180}
+          fps={60}
+          width={1920}
+          height={1080}
+        />
+        <Composition
+          id="Launch-Import"
+          component={LaunchImport}
+          durationInFrames={180}
+          fps={60}
+          width={1920}
+          height={1080}
+        />
+        <Composition
+          id="Launch-Focus"
+          component={LaunchFocus}
+          durationInFrames={180}
+          fps={60}
+          width={1920}
+          height={1080}
+        />
+      </Folder>
+      <Composition
+        id="Launch-Materials"
+        component={LaunchMaterials}
+        durationInFrames={300}
+        fps={60}
+        width={1920}
+        height={1080}
+      />
       <Composition
         id="CampusFlow-Film"
         component={Film}

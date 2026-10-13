@@ -1,0 +1,47 @@
+{
+  "source": "User-provided https://www.bilibili.com/video/BV1dBpRzsEsd/",
+  "excerptStart": 11.4242,
+  "duration": 48,
+  "estimatedBpm": 80.74951171875,
+  "beatCutsSeconds": [
+    3.0069999999999997,
+    5.990799999999998,
+    8.9745,
+    11.946699999999998,
+    17.879399999999997,
+    20.863100000000003,
+    26.8307,
+    29.802799999999998,
+    32.7982,
+    38.7425,
+    41.7379,
+    44.71
+  ],
+  "beatCutsFrames": [
+    180,
+    359,
+    538,
+    717,
+    1073,
+    1252,
+    1610,
+    1788,
+    1968,
+    2325,
+    2504,
+    2683
+  ],
+  "master": {
+    "input_i": "-8.64",
+    "input_tp": "0.00",
+    "input_lra": "1.30",
+    "input_thresh": "-18.67",
+    "output_i": "-13.84",
+    "output_tp": "-5.20",
+    "output_lra": "1.30",
+    "output_thresh": "-23.87",
+    "normalization_type": "linear",
+    "target_offset": "-0.16"
+  },
+  "note": "Music excerpt for the requested test edit. Not a music license; reference files and audio cache excluded from Git."
+}
