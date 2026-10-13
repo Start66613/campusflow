@@ -10,7 +10,10 @@ import { Life } from "./scenes/Life";
 import { DIY } from "./scenes/DIY";
 import { Ending } from "./scenes/Ending";
 import { LaunchMaterials } from "./launch/LaunchMaterials";
-import { LaunchFilm } from "./launch/LaunchFilm";
+import { LaunchCohesiveFilm } from "./launch/LaunchCohesiveFilm";
+import { LaunchImportDetailed, LaunchScheduleDetailed } from "./launch/LaunchImportDetailed";
+import { LaunchAiSetupDetailed, LaunchAiQuickDetailed, LaunchAiAnalysisDetailed } from "./launch/LaunchAiDetailed";
+import { LaunchOpeningCohesive, LaunchFocusCohesive, LaunchRemindersCohesive, LaunchClosingCohesive } from "./launch/LaunchCohesiveScenes";
 import { LaunchProduct } from "./launch/LaunchProduct";
 import { LaunchSchedule } from "./launch/LaunchSchedule";
 import { LaunchAI } from "./launch/LaunchAI";
@@ -28,12 +31,25 @@ export const RemotionRoot: React.FC = () => {
     <>
       <Composition
         id="CampusFlow-Launch"
-        component={LaunchFilm}
-        durationInFrames={3960}
+        component={LaunchCohesiveFilm}
+        durationInFrames={5940}
         fps={60}
         width={1920}
         height={1080}
       />
+      <Folder name="Cohesive-Scenes">
+        <Composition id="Cohesive-Opening" component={LaunchOpeningCohesive} durationInFrames={276} fps={60} width={1920} height={1080}/>
+        <Composition id="Cohesive-Import" component={LaunchImportDetailed} durationInFrames={696} fps={60} width={1920} height={1080}/>
+        <Composition id="Cohesive-Schedule" component={LaunchScheduleDetailed} durationInFrames={396} fps={60} width={1920} height={1080}/>
+        <Composition id="Cohesive-AI-Setup" component={LaunchAiSetupDetailed} durationInFrames={456} fps={60} width={1920} height={1080}/>
+        <Composition id="Cohesive-AI-Quick" component={LaunchAiQuickDetailed} durationInFrames={876} fps={60} width={1920} height={1080}/>
+        <Composition id="Cohesive-AI-Analysis" component={LaunchAiAnalysisDetailed} durationInFrames={876} fps={60} width={1920} height={1080}/>
+        <Composition id="Cohesive-Focus" component={LaunchFocusCohesive} durationInFrames={456} fps={60} width={1920} height={1080}/>
+        <Composition id="Cohesive-Reminders" component={LaunchRemindersCohesive} durationInFrames={456} fps={60} width={1920} height={1080}/>
+        <Composition id="Cohesive-DIY" component={LaunchDiyRebuilt} durationInFrames={996} fps={60} width={1920} height={1080} defaultProps={{pace:16/15}}/>
+        <Composition id="Cohesive-Glass" component={LaunchGlassRebuilt} durationInFrames={576} fps={60} width={1920} height={1080}/>
+        <Composition id="Cohesive-Closing" component={LaunchClosingCohesive} durationInFrames={240} fps={60} width={1920} height={1080}/>
+      </Folder>
       <Folder name="Launch-Scenes">
         <Composition
           id="Rebuilt-Glass"

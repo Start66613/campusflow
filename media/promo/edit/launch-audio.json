@@ -1,47 +1,55 @@
 {
   "source": "User-provided https://www.bilibili.com/video/BV1dBpRzsEsd/",
   "excerptStart": 11.4242,
-  "duration": 66,
+  "duration": 99,
   "estimatedBpm": 80.74951171875,
-  "beatCutsSeconds": [
-    3.0069999999999997,
-    5.990799999999998,
-    14.8956,
-    17.879399999999997,
-    23.881700000000002,
-    26.8307,
-    32.7982,
-    35.7704,
-    38.7425,
-    53.6613,
-    59.6289,
-    63.3557
+  "visualCutsSeconds": [
+    4,
+    15,
+    21,
+    28,
+    42,
+    56,
+    63,
+    70,
+    86,
+    95
   ],
-  "beatCutsFrames": [
-    180,
-    359,
-    894,
-    1073,
-    1433,
-    1610,
-    1968,
-    2146,
-    2325,
-    3220,
-    3578,
-    3801
+  "visualCutsFrames": [
+    240,
+    900,
+    1260,
+    1680,
+    2520,
+    3360,
+    3780,
+    4200,
+    5160,
+    5700
+  ],
+  "nearestBeatCandidatesSeconds": [
+    3.7383999999999986,
+    14.8956,
+    20.863100000000003,
+    28.3168,
+    41.7379,
+    55.913700000000006,
+    63.3557,
+    70.0662,
+    85.69330000000001,
+    95.2947
   ],
   "master": {
-    "input_i": "-8.45",
+    "input_i": "-8.59",
     "input_tp": "0.00",
-    "input_lra": "1.90",
-    "input_thresh": "-18.46",
-    "output_i": "-13.98",
-    "output_tp": "-5.53",
-    "output_lra": "1.80",
-    "output_thresh": "-23.99",
+    "input_lra": "2.70",
+    "input_thresh": "-18.59",
+    "output_i": "-13.92",
+    "output_tp": "-5.33",
+    "output_lra": "2.60",
+    "output_thresh": "-23.93",
     "normalization_type": "linear",
-    "target_offset": "-0.02"
+    "target_offset": "-0.08"
   },
-  "note": "Music excerpt for the requested test edit. Not a music license; reference files and audio cache excluded from Git."
+  "note": "Continuous music for the requested test edit. Visual holds deliberately lead; beat candidates are not the actual cuts. Not a music license; audio cache excluded from Git."
 }

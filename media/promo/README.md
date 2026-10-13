@@ -1,6 +1,6 @@
 # CampusFlow 宣传片
 
-当前版本：66 秒 DIY 重制版，横屏 1920×1080 / 60 fps，无配音、无解说字幕条。玻璃、主题 DIY、番茄钟采用全新镜头，详细制作见 `edit/launch-brief.md` 和 `edit/project.md`。本机成片为 `edit/CampusFlow-Launch-DIY重制版.mp4`；旧版保留，不覆盖。
+当前交付版本：99 秒连贯详解版，横屏 1920×1080 / 60 fps，无配音、无解说字幕条。导入和AI集中展开，统一浅色舞台/正面大手机，相关功能按系列排列并缓动交接，详情见 `edit/launch-brief.md`、`edit/project.md` 和 `edit/qa-cohesive-99.md`。新成片为 `edit/CampusFlow-Launch-连贯详解版.mp4`；66秒DIY重制版与更早版本保留，不覆盖。
 
 历史版本：70 秒中文产品介绍，横屏 1920×1080 和竖屏 1080×1920，均为 60 fps。
 
@@ -16,6 +16,21 @@
 Seedance 技能提供提示词设计，未接入 Seedance 在线生成服务。video-use 的 ElevenLabs 原始素材转写需使用者自己的 API Key；本片是新创作产品动效，无需原片 ASR，配音使用 Microsoft Yunxi，配乐由 `make_audio.py` 原创合成。
 
 ## 制作与重渲染
+
+当前99秒版（在 `edit/animations/remotion` 执行，输出新文件不覆盖历史成片）：
+
+```powershell
+$promoTemp = 'D:\软件开发\课程表\campusflow\media\promo\edit\verify\runtime-temp'
+$env:TEMP = $promoTemp
+$env:TMP = $promoTemp
+npm.cmd run lint
+npx.cmd remotion bundle src/index.ts --out-dir=build/cohesive99
+npx.cmd remotion render build/cohesive99 CampusFlow-Launch ../../verify/render-cohesive99-fullrange.mp4 --browser-executable='C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe' --crf=18 --concurrency=2
+node.exe ../../deliver-video.mjs ../../verify/render-cohesive99-fullrange.mp4 ../../CampusFlow-Launch-连贯详解版.mp4
+node.exe ../../check-launch-delivery.mjs ../../CampusFlow-Launch-连贯详解版.mp4
+```
+
+交叠转场的净时长以 `edit/launch-edl.json` 为准；指定歌曲缓存不入Git，缺音轨时不能假装可独立重渲染有声成片。旧版制作方法保留如下。
 
 主片由 HyperFrames 片头 + Remotion 九场景组成，配音、字幕、演示数据与素材均保留在工程内。Studio 每个场景可单独编辑。此机器自动下载 Chromium 不稳定，因此渲染显式使用已安装的 Edge：
 

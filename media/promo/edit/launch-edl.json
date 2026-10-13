@@ -1,31 +1,145 @@
 {
-  "version": 2,
+  "version": 3,
   "composition": "CampusFlow-Launch",
-  "authorBase": "2026-10-12 restored 30s source; Glass, DIY and Focus rebuilt from scratch on 2026-10-13",
+  "authorBase": "66s author revision backed up; readable grouped 99s narrative, no rejected external scenes",
   "fps": 60,
   "width": 1920,
   "height": 1080,
-  "durationFrames": 3960,
+  "durationFrames": 5940,
+  "transition": "36-frame eased fade, exiting scene stays opaque; consistent light stage",
   "music": {
     "source": "user-provided BV1dBpRzsEsd",
     "startSeconds": 11.4242,
-    "durationSeconds": 66,
+    "durationSeconds": 99,
     "voiceover": false,
-    "license": "test edit only; commercial permission not established"
+    "license": "test edit only; commercial permission not established",
+    "editNote": "Continuous music, readable scene holds take priority over snapping every visual to a drum hit"
   },
   "ranges": [
-    {"scene": "LaunchIntro", "from": 0, "duration": 180, "headline": "重新定义 / 课程表"},
-    {"scene": "LaunchProduct", "from": 180, "duration": 179, "headline": "为湘大同学"},
-    {"scene": "LaunchGlassRebuilt", "from": 359, "duration": 535, "headline": "液态玻璃 全面覆盖", "actions": ["磨砂变透亮", "玻璃关闭", "玻璃重新开启"]},
-    {"scene": "LaunchImport", "from": 894, "duration": 179, "headline": "湘大课表 一键导入"},
-    {"scene": "LaunchSchedule", "from": 1073, "duration": 360, "headline": "一周一眼"},
-    {"scene": "LaunchModels", "from": 1433, "duration": 177, "headline": "你的 AI 自己掌控"},
-    {"scene": "LaunchAI", "from": 1610, "duration": 358, "headline": "说一句"},
-    {"scene": "LaunchGrades", "from": 1968, "duration": 178, "headline": "成绩不止数字"},
-    {"scene": "LaunchAdvice", "from": 2146, "duration": 179, "headline": "下一步 有方向"},
-    {"scene": "LaunchDiyRebuilt", "from": 2325, "duration": 895, "headline": "主题色随你切换 / 自由 DIY 由你定义", "actions": ["七种主题色", "动漫背景切换", "背景可见度调整"]},
-    {"scene": "LaunchFocusRebuilt", "from": 3220, "duration": 358, "headline": "专注25分 留给自己", "actions": ["开始", "专注中", "25:00→24:56"]},
-    {"scene": "LaunchReminders", "from": 3578, "duration": 223, "headline": "智能提醒 / 早八不慌"},
-    {"scene": "LaunchEnding", "from": 3801, "duration": 159, "headline": "湘大学生专供 / 重新定义课程表"}
+    {
+      "scene": "LaunchOpeningCohesive",
+      "group": "positioning",
+      "from": 0,
+      "duration": 276,
+      "transitionOutFrames": 36,
+      "headline": "湘大学生专供 / 重新定义课程表"
+    },
+    {
+      "scene": "LaunchImportDetailed",
+      "group": "school-timetable",
+      "from": 240,
+      "duration": 696,
+      "transitionOutFrames": 36,
+      "headline": "湘大课表一键导入",
+      "actions": [
+        "统一认证登录",
+        "读取课表和成绩",
+        "完整结果"
+      ]
+    },
+    {
+      "scene": "LaunchScheduleDetailed",
+      "group": "school-timetable",
+      "from": 900,
+      "duration": 396,
+      "transitionOutFrames": 36,
+      "headline": "一周一眼 / 随你编辑"
+    },
+    {
+      "scene": "LaunchAiSetupDetailed",
+      "group": "ai",
+      "from": 1260,
+      "duration": 456,
+      "transitionOutFrames": 36,
+      "headline": "你的 AI 自己掌控",
+      "actions": [
+        "个人密钥",
+        "DeepSeek模型设置"
+      ]
+    },
+    {
+      "scene": "LaunchAiQuickDetailed",
+      "group": "ai",
+      "from": 1680,
+      "duration": 876,
+      "transitionOutFrames": 36,
+      "headline": "说一句 记下来",
+      "actions": [
+        "自然语言",
+        "日程与消费预览",
+        "确认写入",
+        "撤销",
+        "图片课程预览"
+      ]
+    },
+    {
+      "scene": "LaunchAiAnalysisDetailed",
+      "group": "ai",
+      "from": 2520,
+      "duration": 876,
+      "transitionOutFrames": 36,
+      "headline": "成绩不止数字 / 提升更有方向",
+      "actions": [
+        "必修GPA",
+        "优势与优先提升",
+        "具体方法",
+        "学习考研求职建议"
+      ]
+    },
+    {
+      "scene": "LaunchFocusCohesive",
+      "group": "study-routine",
+      "from": 3360,
+      "duration": 456,
+      "transitionOutFrames": 36,
+      "headline": "专注25分 留给自己",
+      "actions": [
+        "目标",
+        "开始",
+        "倒计时"
+      ]
+    },
+    {
+      "scene": "LaunchRemindersCohesive",
+      "group": "study-routine",
+      "from": 3780,
+      "duration": 456,
+      "transitionOutFrames": 36,
+      "headline": "智能提醒 / 早八不慌",
+      "actions": [
+        "空闲学习",
+        "早八通知"
+      ]
+    },
+    {
+      "scene": "LaunchDiyRebuilt",
+      "group": "appearance",
+      "from": 4200,
+      "duration": 996,
+      "transitionOutFrames": 36,
+      "headline": "主题色随你切换 / 自由 DIY 由你定义",
+      "pace": 1.0666666666666667
+    },
+    {
+      "scene": "LaunchGlassRebuilt",
+      "group": "appearance",
+      "from": 5160,
+      "duration": 576,
+      "transitionOutFrames": 36,
+      "headline": "液态玻璃 全面覆盖",
+      "actions": [
+        "磨砂变透亮",
+        "关闭",
+        "重新开启"
+      ]
+    },
+    {
+      "scene": "LaunchClosingCohesive",
+      "group": "positioning",
+      "from": 5700,
+      "duration": 240,
+      "transitionOutFrames": 0,
+      "headline": "湘大学生专供 / 重新定义课程表"
+    }
   ]
 }

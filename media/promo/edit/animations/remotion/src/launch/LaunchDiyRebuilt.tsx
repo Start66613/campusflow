@@ -8,8 +8,8 @@ const colorIds=[0,1,2,3,5,4,6,0];
 const colorNames=["紫色","蓝色","浅绿","浅蓝","珊瑚","黑色","炫彩"];
 
 /** One large phone, actual choices, clear results. Replaces the old three-phone fan. */
-export const LaunchDiyRebuilt=()=>{
-  const frame=useCurrentFrame();const {fps}=useVideoConfig();const t=frame/fps;
+export const LaunchDiyRebuilt=({pace=1}:{pace?:number})=>{
+  const frame=useCurrentFrame();const {fps}=useVideoConfig();const t=frame/fps/pace;
   // Hold each named color; blend only during the final 0.26s before the next choice.
   // A continuous interpolation across the whole chapter showed pink while “浅蓝” was selected.
   const currentChoice=colorTimes.reduce((latest,time,i)=>t>=time?i:latest,0);
