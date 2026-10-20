@@ -1,4 +1,5 @@
 import type { AppData, Course } from './types';
+import { emptyDailyData } from './daily';
 
 const allWeeks = Array.from({ length: 18 }, (_, index) => index + 1);
 
@@ -44,6 +45,7 @@ function atOffset(days: number, hour: number, minute = 0) {
 
 export const legacyDemoData: AppData = {
   schemaVersion: 2,
+  daily: emptyDailyData(),
   courses: seedCourses,
   tasks: [
     { id: 'task-1', title: '完成高数习题 2.3', dueAt: atOffset(2, 22), courseId: 'course-calculus', completed: false, source: 'homework' },

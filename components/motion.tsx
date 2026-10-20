@@ -1,5 +1,5 @@
-import type { PropsWithChildren } from 'react';
-import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import { useEffect, type PropsWithChildren } from 'react';
+import { Platform, Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, {
   Easing,
   Keyframe,
@@ -9,6 +9,7 @@ import Animated, {
   useSharedValue,
   withSpring,
   withTiming,
+  withDelay,
 } from 'react-native-reanimated';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -27,18 +28,21 @@ export const motion = {
   pressSpring: { damping: 22, stiffness: 380, mass: 0.62, reduceMotion: ReduceMotion.System },
 } as const;
 
-export const gentleEnter = (delay = 0) => new Keyframe({
+// Web keyframe entering wrappers can retain absolute positioning when animation
+// completion is interrupted (reduced motion / browser preview). Keep normal
+// document flow there; MotionReveal provides a transform-only web entrance.
+export const gentleEnter = (delay = 0) => Platform.OS === 'web' ? undefined : new Keyframe({
   0: { transform: [{ translateY: 11 }] },
   100: { transform: [{ translateY: 0 }], easing: Easing.out(Easing.cubic) },
 }).delay(delay).duration(motion.standard).reduceMotion(ReduceMotion.System);
 
 // Only use on content without a native GlassView ancestor.
-export const gentleTextEnter = (delay = 0) => new Keyframe({
+export const gentleTextEnter = (delay = 0) => Platform.OS === 'web' ? undefined : new Keyframe({
   0: { opacity: 0.65, transform: [{ translateY: 10 }] },
   100: { opacity: 1, transform: [{ translateY: 0 }], easing: Easing.out(Easing.cubic) },
 }).delay(delay).duration(motion.standard).reduceMotion(ReduceMotion.System);
 
-export const gentleTextExit = () => new Keyframe({
+export const gentleTextExit = () => Platform.OS === 'web' ? undefined : new Keyframe({
   0: { opacity: 1, transform: [{ translateY: 0 }] },
   100: { opacity: 0, transform: [{ translateY: -5 }], easing: Easing.in(Easing.cubic) },
 }).duration(160).reduceMotion(ReduceMotion.System);
@@ -48,6 +52,16 @@ export const gentleLayout = LinearTransition
   .damping(motion.spring.damping)
   .stiffness(motion.spring.stiffness)
   .reduceMotion(ReduceMotion.System);
+
+/** Transform-only reveal stays in normal layout on both native and React Native Web. */
+export function MotionReveal({ children, delay = 0, style }: PropsWithChildren<{ delay?: number; style?: StyleProp<ViewStyle> }>) {
+  const offset = useSharedValue(10);
+  useEffect(() => {
+    offset.value = withDelay(delay, withTiming(0, { duration: motion.standard, easing: Easing.out(Easing.cubic), reduceMotion: ReduceMotion.System }));
+  }, [delay, offset]);
+  const animated = useAnimatedStyle(() => ({ transform: [{ translateY: offset.value }] }));
+  return <Animated.View style={[style, animated]}>{children}</Animated.View>;
+}
 
 type MotionPressableProps = Omit<PressableProps, 'style'> & {
   style?: StyleProp<ViewStyle>;

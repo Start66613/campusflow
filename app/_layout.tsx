@@ -8,6 +8,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { AppProvider, useApp } from '@/src/store';
+import { DailyServices } from '@/components/daily-services';
+import { FocusProvider } from '@/src/focus-session';
+import { StorageStatus } from '@/components/storage-status';
 import { OptionalHapticProvider } from '@/src/native-motion';
 import { useAppTheme } from '@/src/theme';
 
@@ -53,11 +56,11 @@ export default function RootLayout() {
     return null;
   }
 
-  return <GestureHandlerRootView style={{ flex: 1 }}><OptionalHapticProvider><AppProvider><RootLayoutNav /></AppProvider></OptionalHapticProvider></GestureHandlerRootView>;
+  return <GestureHandlerRootView style={{ flex: 1 }}><OptionalHapticProvider><AppProvider><FocusProvider><RootLayoutNav /><DailyServices /></FocusProvider></AppProvider></OptionalHapticProvider></GestureHandlerRootView>;
 }
 
 function RootLayoutNav() {
-  const { data } = useApp();
+  const { data, hydrated, restoring } = useApp();
   const theme = useAppTheme();
   const dark = data.settings.jiahaoMode || data.settings.themeMode === 'dark' || (data.settings.themeMode === 'system' && theme.background === '#000000');
   const navigationTheme = {
@@ -73,6 +76,7 @@ function RootLayoutNav() {
     },
   };
 
+  if (!hydrated || restoring) return <StorageStatus blocking />;
   return (
     <ThemeProvider value={navigationTheme}>
       <StatusBar style={dark ? 'light' : 'dark'} animated />
@@ -90,10 +94,14 @@ function RootLayoutNav() {
         <Stack.Screen name="school" options={{ title: '湘潭大学教务', presentation: 'modal', animation: 'slide_from_right' }} />
         <Stack.Screen name="ai-settings" options={{ title: '个人 AI', presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="focus" options={{ title: '专注计时', presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="daily" options={{ title: '我的日常', headerShown: false, animation: 'slide_from_right' }} />
+        <Stack.Screen name="habit-editor" options={{ title: '编辑习惯', headerShown: false, presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="daily-review" options={{ title: '日常复盘', headerShown: false, animation: 'slide_from_right' }} />
         <Stack.Screen name="personalize" options={{ title: '个性化', presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="course-editor" options={{ title: '编辑课程', presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="modal" options={{ title: '关于 CampusFlow', presentation: 'modal', animation: 'slide_from_bottom' }} />
       </Stack>
+      <StorageStatus />
     </ThemeProvider>
   );
 }

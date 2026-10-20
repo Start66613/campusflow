@@ -12,14 +12,20 @@ import { rainbowGradient, useAppTheme } from '@/src/theme';
 import { summarizeWeek } from '@/src/weekly-report';
 import { jiahaoCopy } from '@/src/jiahao';
 import { jiahaoIcons } from '@/src/jiahao-icons';
+import { AppIcon } from '@/components/app-icon';
+import { dailySummary, localDateKey } from '@/src/daily';
+import { useFocusSession } from '@/src/focus-session';
+import { useToday } from '@/src/use-today';
 
 export default function HomeScreen() {
   const theme = useAppTheme();
   const { data, toggleTask } = useApp();
+  const { timer: focusTimer } = useFocusSession();
+  const today = useToday();
   const jiahao = Boolean(data.settings.jiahaoMode);
-  const upcoming = useMemo(() => nextCourse(data.courses, new Date(), data.settings.termStart), [data.courses, data.settings.termStart]);
+  const upcoming = useMemo(() => nextCourse(data.courses, today, data.settings.termStart), [data.courses, data.settings.termStart, today]);
   const pendingTasks = data.tasks.filter((task) => !task.completed).slice(0, 3);
-  const today = new Date();
+  const daily = dailySummary(data.daily, localDateKey(today));
   const week = currentWeek(data.settings.termStart);
   const weekStats = summarizeWeek(data, today);
   const spentToday = data.expenses
@@ -61,9 +67,19 @@ export default function HomeScreen() {
       <View style={styles.quickGrid}>
         <QuickAction icon="✦" iconKey="assistant" label={jiahao ? 'AI 豪记' : 'AI 快记'} color="#ECECFF" delay={60} onPress={() => router.push('/assistant')} />
         <QuickAction icon="▦" iconKey="import" label={jiahao ? '豪课导入' : '导入课表'} color="#E3F4EE" delay={85} onPress={() => router.push('/import')} />
-        <QuickAction icon="◎" iconKey="focus" label={jiahao ? '专注修炼' : '专注 25 分'} color="#FFF0E8" delay={110} onPress={() => router.push('/focus')} />
+        <QuickAction icon="◎" iconKey="focus" label={jiahao ? '专注修炼' : focusTimer?.status === 'running' ? '返回专注' : '专注计时'} color="#FFF0E8" delay={110} onPress={() => router.push('/focus')} />
         <QuickAction icon="↗" iconKey="grades" label={jiahao ? '战绩分析' : '成绩分析'} color="#F2E9FA" delay={135} onPress={() => router.push('/insights')} />
       </View>
+
+      <Card onPress={() => router.push('/daily')} style={styles.dailyCard}>
+        <View style={[styles.dailyIcon, { backgroundColor: theme.primarySoft }]}><AppIcon ios="leaf.fill" android="eco" color={theme.primary} size={26} /></View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.studyTitle, { color: theme.text }]}>我的日常</Text>
+          <Text style={[styles.studyBody, { color: theme.secondary }]}>{daily.total ? `今天已完成 ${daily.completed} / ${daily.total} 个习惯 · ${daily.completed === daily.total ? '日签已解锁' : '慢慢来，做一点就很好'}` : '习惯打卡 · 手记心情 · 积攒自己的小进步'}</Text>
+          <View style={[styles.dailyTrack, { backgroundColor: theme.surfaceAlt }]}><View style={{ height: '100%', width: `${daily.rate * 100}%`, backgroundColor: theme.primary, borderRadius: 3 }} /></View>
+        </View>
+        <AppIcon ios="chevron.right" android="chevron_right" color={theme.secondary} size={18} />
+      </Card>
 
       <SectionTitle title={jiahao ? jiahaoCopy.home : '今日概览'} />
       <View style={styles.metricRow}>
@@ -147,6 +163,9 @@ const styles = StyleSheet.create({
   quickPortrait: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
   quickGlyph: { fontSize: 23, fontWeight: '800' },
   quickLabel: { fontSize: 12, fontWeight: '600' },
+  dailyCard: { marginTop: 23, flexDirection: 'row', alignItems: 'center', gap: 13, padding: 17 },
+  dailyIcon: { width: 48, height: 48, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  dailyTrack: { height: 5, borderRadius: 3, marginTop: 10, overflow: 'hidden' },
   metricRow: { flexDirection: 'row', gap: 12 },
   metricCard: { flex: 1, padding: 16 },
   metricLabel: { fontSize: 12, fontWeight: '600' },

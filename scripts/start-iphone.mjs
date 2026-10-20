@@ -1,12 +1,19 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { setTimeout as delay } from 'node:timers/promises';
+import { writeIphonePreviewQr } from './iphone-preview-qr.mjs';
 
 const require = createRequire(import.meta.url);
 const expoCli = require.resolve('expo/bin/cli');
 const account = 'start66613';
 const performanceMode = process.argv.includes('--perf');
 const port = Number(process.env.CAMPUSFLOW_EXPO_PORT ?? (performanceMode ? 8082 : 8081));
+const showPreview = () => {
+  try {
+    const preview = writeIphonePreviewQr(port);
+    if (preview) console.log(`iPhone 测试地址：${preview.url}\n二维码图片：${preview.path}`);
+  } catch { console.warn('二维码图片未能生成；Expo 服务仍可正常使用。'); }
+};
 
 function fail(message) {
   console.error(`\n无法启动 iPhone 测试：${message}`);
@@ -58,6 +65,7 @@ async function inspectManifest() {
 const existing = await inspectManifest();
 if (existing.valid) {
   console.log(`端口 ${port} 上已有账号匹配的 CampusFlow 服务，无需重复启动。`);
+  showPreview();
   process.exit(0);
 }
 if (existing.reachable) fail(`端口 ${port} 已有服务，但 iOS 项目清单未通过账号检查（HTTP ${existing.status}）。请先关闭旧的 Expo 终端。`);
@@ -76,6 +84,7 @@ for (let attempt = 0; attempt < 30 && server.exitCode === null; attempt += 1) {
   if (manifest.valid) {
     verified = true;
     console.log(`\n✓ iOS 项目清单已验证：CampusFlow / ${account}${performanceMode ? ' / 性能对比模式' : ''}。现在可以在 iPhone Expo Go 扫码。\n`);
+    showPreview();
     break;
   }
 }

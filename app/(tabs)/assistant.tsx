@@ -11,6 +11,7 @@ import { motion, MotionPressable } from '@/components/motion';
 import { GlassBackdrop, Pill, Screen } from '@/components/ui';
 import { hasAIKey } from '@/src/ai-config';
 import { parseAssistantInput, parseLocally } from '@/src/assistant';
+import { describeHabit, habitIdentity, parseLocalHabit } from '@/src/daily-ai';
 import { formatCurrency, formatDateTime, weekdays } from '@/src/date';
 import { FLOATING_TAB_BAR_HEIGHT, FLOATING_TAB_CONTENT_GAP } from '@/src/layout';
 import { useApp } from '@/src/store';
@@ -28,10 +29,11 @@ function describeCommand(command: AssistantCommand) {
   if (command.type === 'expense') return `消费 ${formatCurrency(command.amount)} · ${command.category} · ${command.note || '无备注'}`;
   if (command.type === 'task') return `待办 ${command.title} · ${formatDateTime(command.dueAt)}`;
   if (command.type === 'event') return `日程 ${command.title} · ${formatDateTime(command.startAt)}`;
+  if (command.type === 'habit') return describeHabit(command.habit);
   return command.courses.map((course) => `课程 ${course.name} · ${weekdays[course.weekday - 1] ?? '星期待确认'} 第 ${course.startPeriod}—${course.endPeriod} 节 · ${course.weeks.length} 周`).join('\n');
 }
 
-const examples = ['午饭花了 25 元', '明天下午 3 点图书馆复习两小时', '下周五交高数作业', '加一门周三 5-6 节实验课'];
+const examples = ['每天阅读20分钟', '每周一三五跑步', '午饭花了 25 元', '明天下午 3 点图书馆复习两小时', '下周五交高数作业', '加一门周三 5-6 节实验课'];
 const loadingStages = ['理解你的表达…', '核对时间与课程…', '准备写入对应页面…'];
 const jiahaoLoadingStages = ['嘉豪正在读懂你的话…', '嘉豪正在核对时间与课程…', '等你确认后再往里豪…'];
 
@@ -42,6 +44,8 @@ export default function AssistantScreen() {
   const glass = app.data.settings.visualMode === 'glass';
   const scrollRef = useRef<ScrollView>(null);
   const committingRef = useRef(false);
+  const submittingRef = useRef(false);
+  const createdHabitsRef = useRef(new Set<string>());
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -52,7 +56,7 @@ export default function AssistantScreen() {
   const [pending, setPending] = useState<PendingWrite | null>(null);
   const [undoWrite, setUndoWrite] = useState<UndoWrite | null>(null);
   const [messages, setMessages] = useState<Message[]>([
-    { id: 'hello', role: 'assistant', text: '想记什么，直接告诉我', detail: '我能理解日程、待办、作业和消费，也能从照片里识别作业。' },
+    { id: 'hello', role: 'assistant', text: '想记什么，直接告诉我', detail: '日程、待办、消费和重复习惯都可以说；图片也能识别课程与作业。核对后再写入。' },
   ]);
   const assistantContext = useMemo(() => ({
     courses: app.data.courses.map(({ name, weekday, startTime, endTime }) => ({ name, weekday, startTime, endTime })),
@@ -71,7 +75,7 @@ export default function AssistantScreen() {
 
   useEffect(() => {
     setMessages((current) => current.map((message) => message.id === 'hello'
-      ? { ...message, text: app.data.settings.jiahaoMode ? '全体嘉豪，往里豪。想记什么？' : '想记什么，直接告诉我', detail: app.data.settings.jiahaoMode ? '作业、课表、消费、日程都能豪记；写入前你先确认。' : '我能理解日程、待办、作业和消费，也能从照片里识别作业。' }
+      ? { ...message, text: app.data.settings.jiahaoMode ? '全体嘉豪，往里豪。想记什么？' : '想记什么，直接告诉我', detail: app.data.settings.jiahaoMode ? '作业、课表、消费、日程和习惯都能豪记；写入前你先确认。' : '日程、待办、消费和重复习惯都可以说；图片也能识别课程与作业。核对后再写入。' }
       : message));
   }, [app.data.settings.jiahaoMode]);
 
@@ -98,6 +102,15 @@ export default function AssistantScreen() {
       const id = app.addEvent({ title: command.title, startAt: command.startAt, endAt: command.endAt, note: command.note, kind: 'study' });
       return { summary: `已加入日程 · ${formatDateTime(command.startAt)}`, records: [{ kind: 'event', id }] };
     }
+    if (command.type === 'habit') {
+      const identity = habitIdentity(command.habit);
+      if (createdHabitsRef.current.has(identity) || app.data.daily.habits.some((habit) => !habit.archived && habitIdentity(habit) === identity)) {
+        return { summary: `「${command.habit.title}」已有相同安排，未重复添加`, records: [] };
+      }
+      const id = app.saveHabit(command.habit);
+      createdHabitsRef.current.add(identity);
+      return { summary: `已加入日常 · ${command.habit.title}`, records: [{ kind: 'habit', id }] };
+    }
     if (!command.courses.length) return { summary: '课程安排缺少星期、节次或周次，尚未写入课表。', records: [] };
     const ids = app.addCourses(command.courses);
     return { summary: `已尝试添加 ${command.courses.length} 门课程到课表，请核对周次与地点`, records: ids.map((id) => ({ kind: 'course', id })) };
@@ -106,7 +119,10 @@ export default function AssistantScreen() {
   const confirmPending = async () => {
     if (!pending || committingRef.current) return;
     committingRef.current = true;
-    const results = pending.commands.map(commit);
+    createdHabitsRef.current.clear();
+    const results: { summary: string; records: CreatedRecord[] }[] = [];
+    try {
+    for (const command of pending.commands) results.push(commit(command));
     const messageId = `a-${Date.now()}`;
     setMessages((current) => [...current, {
       id: messageId, role: 'assistant', text: `${app.data.settings.jiahaoMode ? '全体嘉豪，写入成功：\n' : ''}${results.map((item) => item.summary).join('\n')}`,
@@ -116,19 +132,26 @@ export default function AssistantScreen() {
     setUndoWrite({ messageId, records: results.flatMap((item) => item.records) });
     setPending(null);
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-    committingRef.current = false;
+    } catch (error) {
+      // Roll back only records from this batch; preserved earlier data never participates.
+      app.undoCreated(results.flatMap((result) => result.records));
+      createdHabitsRef.current.clear();
+      setMessages((current) => [...current, { id: `failed-${Date.now()}`, role: 'assistant', text: '这次没有完成写入', detail: error instanceof Error ? error.message : '请核对内容后重试。' }]);
+    } finally { committingRef.current = false; }
   };
 
   const undoPendingWrite = () => {
     if (!undoWrite) return;
     app.undoCreated(undoWrite.records);
+    createdHabitsRef.current.clear();
     setUndoWrite(null);
     setMessages((current) => [...current, { id: `undo-${Date.now()}`, role: 'assistant', text: app.data.settings.jiahaoMode ? '嘉豪已撤回刚才的写入，原始记录没变。' : '已撤销刚才写入的内容。' }]);
   };
 
   const submit = async (content = text, imageBase64?: string) => {
     if (!content.trim() && !imageBase64) return;
-    if (pending) return;
+    if (pending || submittingRef.current) return;
+    submittingRef.current = true;
     const userText = imageBase64 ? '📷 请识别这张课程或作业图片' : content.trim();
     setMessages((current) => [...current, { id: `u-${Date.now()}`, role: 'user', text: userText }]);
     setText('');
@@ -145,14 +168,15 @@ export default function AssistantScreen() {
         result = await parseAssistantInput(content || '识别图片中的作业与截止时间', imageBase64, app.data.settings.aiThinking, assistantContext, Boolean(app.data.settings.jiahaoMode));
       } catch (error) {
         if (imageBase64 || aiReady) throw error;
-        result = { commands: parseLocally(content), usedAI: false, processSummary: app.data.settings.jiahaoMode ? ['嘉豪识别事项', '核对时间信息', '等你确认后写入'] : ['识别事项类型', '提取时间信息', '等待确认写入'] };
+        const localHabit = parseLocalHabit(content);
+        result = { commands: parseLocally(content), usedAI: false, processSummary: localHabit.recognized && localHabit.message ? [localHabit.message] : app.data.settings.jiahaoMode ? ['嘉豪识别事项', '核对时间信息', '等你确认后写入'] : ['识别事项类型', '提取时间信息', '等待确认写入'] };
       }
       if (result.commands.length === 0) {
         setMessages((current) => [...current, {
           id: `a-${Date.now()}`, role: 'assistant', text: app.data.settings.jiahaoMode ? '这条还不能安全地往里豪' : '还不能安全地写入',
           detail: imageBase64
             ? '图片里没有识别到同时具备星期、节次和周次的课程，或明确的作业截止时间。请补充信息后再试；现有课表未更改。'
-            : '请补充课程的星期、节次和周次，或说明事项的具体时间；现有数据未更改。',
+            : result.processSummary.join('\n') || '请补充习惯的重复频率、课程周次或事项时间；现有数据未更改。',
           processSummary: result.processSummary,
         }]);
         return;
@@ -162,6 +186,7 @@ export default function AssistantScreen() {
       setMessages((current) => [...current, { id: `e-${Date.now()}`, role: 'assistant', text: app.data.settings.jiahaoMode ? '嘉豪这次没识别准' : '这次没有识别成功', detail: error instanceof Error ? error.message : '请换种说法再试一次。' }]);
     } finally {
       setLoading(false);
+      submittingRef.current = false;
     }
   };
 
@@ -222,7 +247,7 @@ export default function AssistantScreen() {
           {pending ? <View style={[styles.preview, { backgroundColor: app.data.settings.visualMode === 'glass' ? 'transparent' : theme.surface }]}>
             {app.data.settings.visualMode === 'glass' ? <GlassBackdrop radius={20} readable /> : null}
             <Text style={[styles.previewTitle, { color: theme.text }]}>{app.data.settings.jiahaoMode ? '嘉豪先核对，确认后再写入' : '确认后才会写入'}</Text>
-            <Text style={[styles.previewNote, { color: theme.secondary }]}>请核对金额、日期、周次和课程；不对就取消并重新描述。</Text>
+            <Text style={[styles.previewNote, { color: theme.secondary }]}>请核对金额、日期、习惯目标与重复频率；不对就取消并重新描述。</Text>
             {pending.commands.map((command, index) => <Text key={index} style={[styles.previewItem, { color: theme.text }]}>{describeCommand(command)}</Text>)}
             <View style={styles.previewActions}>
               <MotionPressable onPress={() => setPending(null)} style={[styles.previewCancel, { borderColor: theme.line }]}><Text style={[styles.previewActionText, { color: theme.secondary }]}>取消</Text></MotionPressable>
@@ -249,7 +274,7 @@ export default function AssistantScreen() {
               multiline
             />
             <View style={styles.composerTools}>
-              <MotionPressable accessibilityLabel="选择课程或作业照片" disabled={Boolean(pending)} onPress={pickHomework} style={styles.photoButton}>{app.data.settings.jiahaoMode ? <Image source={jiahaoIcons.camera} style={styles.toolPortrait} /> : <AppIcon ios="plus" android="add" color={theme.text} size={27} />}</MotionPressable>
+              <MotionPressable accessibilityLabel="选择课程或作业照片" disabled={loading || Boolean(pending)} onPress={pickHomework} style={styles.photoButton}>{app.data.settings.jiahaoMode ? <Image source={jiahaoIcons.camera} style={styles.toolPortrait} /> : <AppIcon ios="plus" android="add" color={theme.text} size={27} />}</MotionPressable>
               <MotionPressable accessibilityRole="button" accessibilityState={{ selected: webMode }} accessibilityLabel="切换联网问答" onPress={() => setWebMode((value) => !value)} style={[styles.webButton, { backgroundColor: glass ? 'transparent' : webMode ? theme.primarySoft : theme.surfaceAlt }]}>
                 {glass ? <GlassBackdrop radius={13} tintColor={webMode ? theme.primary : undefined} tintStrength="soft" readable lightweight /> : null}
                 {app.data.settings.jiahaoMode ? <Image source={jiahaoIcons.web} style={styles.webPortrait} /> : <AppIcon ios="globe" android="public" color={webMode ? theme.primary : theme.secondary} size={16} />}

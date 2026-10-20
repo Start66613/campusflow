@@ -2,7 +2,8 @@ import * as DocumentPicker from 'expo-document-picker';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
-import { hydrateStoredData } from './data-migration';
+import { assertFocusSessions, hydrateStoredData } from './data-migration';
+import { assertDailyData } from './daily';
 import type { AppData } from './types';
 
 const FORMAT = 'campusflow-backup';
@@ -32,14 +33,15 @@ export function parseBackup(source: string): AppData {
   const record = envelope as Record<string, unknown>;
   if (record.format !== FORMAT || record.version !== 1 || !record.data || typeof record.data !== 'object') throw new Error('这不是 CampusFlow 备份文件。');
   const data = record.data as Record<string, unknown>;
+  if (data.schemaVersion !== undefined && data.schemaVersion !== 1 && data.schemaVersion !== 2) throw new Error('备份来自更新版本，请先升级 CampusFlow，未覆盖本机数据。');
   for (const key of ['courses', 'tasks', 'expenses', 'events', 'grades', 'attendance']) {
     if (!objects(data[key])) throw new Error(`备份中的 ${key} 记录格式不正确。`);
   }
-  if (!data.settings || typeof data.settings !== 'object') throw new Error('备份缺少设置。');
+  if (!data.settings || typeof data.settings !== 'object' || Array.isArray(data.settings)) throw new Error('备份缺少设置。');
   if (data.focusSessions !== undefined && !objects(data.focusSessions)) throw new Error('专注记录格式不正确。');
   const checks: Array<[string, (item: Record<string, unknown>) => boolean]> = [
     ['courses', (item) => hasText(item, 'id') && hasText(item, 'name') && hasText(item, 'teacher') && hasText(item, 'location') && hasText(item, 'startTime') && hasText(item, 'endTime') && hasText(item, 'color') && hasText(item, 'type') && hasFiniteNumber(item, 'weekday') && hasFiniteNumber(item, 'startPeriod') && hasFiniteNumber(item, 'endPeriod') && Array.isArray(item.weeks) && item.weeks.every((week) => typeof week === 'number' && Number.isFinite(week))],
-    ['tasks', (item) => hasText(item, 'id') && hasText(item, 'title') && hasText(item, 'dueAt') && typeof item.completed === 'boolean'],
+    ['tasks', (item) => hasText(item, 'id') && hasText(item, 'title') && hasText(item, 'dueAt') && typeof item.completed === 'boolean' && (item.completedAt === undefined || (hasText(item, 'completedAt') && Number.isFinite(Date.parse(item.completedAt as string))))],
     ['expenses', (item) => hasText(item, 'id') && hasFiniteNumber(item, 'amount') && hasText(item, 'category') && hasText(item, 'note') && hasText(item, 'occurredAt')],
     ['events', (item) => hasText(item, 'id') && hasText(item, 'title') && hasText(item, 'startAt') && hasText(item, 'endAt')],
     ['grades', (item) => hasText(item, 'id') && hasText(item, 'course') && hasText(item, 'semester') && hasFiniteNumber(item, 'score') && hasFiniteNumber(item, 'credit') && hasFiniteNumber(item, 'gpa')],
@@ -48,7 +50,8 @@ export function parseBackup(source: string): AppData {
   for (const [key, check] of checks) {
     if (!(data[key] as Record<string, unknown>[]).every(check)) throw new Error(`备份中的 ${key} 记录不完整，未覆盖本机数据。`);
   }
-  if (data.focusSessions && !(data.focusSessions as Record<string, unknown>[]).every((item) => hasText(item, 'id') && hasFiniteNumber(item, 'minutes') && hasText(item, 'completedAt'))) throw new Error('专注记录不完整。');
+  if (data.focusSessions !== undefined) assertFocusSessions(data.focusSessions);
+  if (data.daily !== undefined) assertDailyData(data.daily);
   return hydrateStoredData(data as Partial<AppData>);
 }
 

@@ -1,0 +1,52 @@
+export type HabitMode = 'check' | 'count' | 'minutes';
+export type HabitPeriod = 'any' | 'morning' | 'afternoon' | 'evening';
+export type HabitSchedule = {
+  mode: HabitMode;
+  target: number;
+  unit: string;
+  weekdays: number[];
+  everyNDays: number;
+  startDate: string;
+  endDate?: string;
+  archived: boolean;
+};
+export type HabitHistory = HabitSchedule & { before: string };
+export type Habit = {
+  id: string;
+  title: string;
+  icon: string;
+  color: string;
+  category: string;
+  mode: HabitMode;
+  target: number;
+  unit: string;
+  weekdays: number[];
+  everyNDays: number;
+  period: HabitPeriod;
+  startDate: string;
+  endDate?: string;
+  reminderTime?: string;
+  important: boolean;
+  archived: boolean;
+  createdAt: string;
+  order: number;
+  /** The previous schedule applies strictly before this local date. */
+  history?: HabitHistory[];
+};
+export type HabitInput = Omit<Habit, 'id' | 'createdAt' | 'order' | 'history'> & Partial<Pick<Habit, 'id' | 'order'>>;
+export type HabitLog = { id: string; habitId: string; date: string; value: number; note: string; updatedAt: string };
+export type DailyNote = { id: string; date: string; title: string; body: string; mood: 1 | 2 | 3 | 4 | 5; createdAt: string; updatedAt: string };
+export type DailyNoteInput = Omit<DailyNote, 'id' | 'createdAt' | 'updatedAt'> & { id?: string };
+export type DailyCard = { date: string; note: string; earnedAt: string };
+export type DailyReward = { id: string; title: string; cost: number; createdAt: string };
+export type DailyRedemption = { id: string; rewardId: string; title: string; cost: number; createdAt: string };
+export type DailyPointEntry = { id: string; sourceKey: string; points: number; createdAt: string };
+export type DailyData = {
+  habits: Habit[];
+  logs: HabitLog[];
+  notes: DailyNote[];
+  cards: DailyCard[];
+  rewards: DailyReward[];
+  redemptions: DailyRedemption[];
+  points: DailyPointEntry[];
+};

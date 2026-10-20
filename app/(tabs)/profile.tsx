@@ -23,7 +23,7 @@ export default function ProfileScreen() {
   const { data, updateSettings, restoreBackup } = useApp();
   const reduceTransparency = useReduceTransparency();
   const nativeGlass = Platform.OS === 'ios' && isLiquidGlassAvailable() && isGlassEffectAPIAvailable();
-  const exportData = () => Alert.alert('导出本机备份', '备份包含课程、成绩、日程和消费记录，是未加密的 JSON 文件。请保存到你信任的位置，不要公开分享。AI 密钥不在其中。', [
+  const exportData = () => Alert.alert('导出本机备份', '备份包含课程、成绩、日程、消费、习惯、日记与心愿记录，是未加密的 JSON 文件。请保存到你信任的位置。AI 密钥不在其中。', [
     { text: '取消', style: 'cancel' },
     { text: '继续导出', onPress: () => { shareBackup(data).catch((error) => Alert.alert('导出失败', error instanceof Error ? error.message : '请稍后重试')); } },
   ]);
@@ -31,7 +31,7 @@ export default function ProfileScreen() {
     try {
       const backup = await chooseBackup();
       if (!backup) return;
-      Alert.alert('确认恢复备份？', `文件包含 ${backup.courses.length} 门课程、${backup.tasks.length} 项待办、${backup.grades.length} 门成绩。恢复会覆盖当前应用内数据；覆盖前会在本机保存一份回退副本。自定义图片需要重新选择。`, [
+      Alert.alert('确认恢复备份？', `文件包含 ${backup.courses.length} 门课程、${backup.tasks.length} 项待办、${backup.grades.length} 门成绩、${backup.daily.habits.length} 个习惯和 ${backup.daily.notes.length} 篇手记。恢复会覆盖当前应用内数据；覆盖前会在本机保存一份回退副本。自定义图片需要重新选择。`, [
         { text: '取消', style: 'cancel' },
         { text: '恢复', style: 'destructive', onPress: () => { restoreBackup(backup).then(() => Alert.alert('恢复完成', '数据已写入本机。')).catch((error) => Alert.alert('恢复失败', error instanceof Error ? error.message : '请稍后重试')); } },
       ]);
@@ -57,6 +57,11 @@ export default function ProfileScreen() {
         <SmallAction icon={{ ios: 'sparkles', android: 'auto_awesome' }} jiahaoIcon="assistant" label="连接 AI" onPress={() => router.push('/ai-settings')} />
         <SmallAction icon={{ ios: 'alarm.fill', android: 'alarm' }} jiahaoIcon="alarm" label="早八提醒" onPress={setAlarm} />
       </View>
+      <SectionTitle title="日常与成长" />
+      <Card style={styles.listCard}>
+        <SettingRow icon={{ ios: 'leaf.fill', android: 'eco' }} jiahaoIcon="study" title="我的日常" subtitle="习惯、手记、成长足迹与心愿" onPress={() => router.push('/daily')} />
+        <SettingRow icon={{ ios: 'sparkles', android: 'auto_awesome' }} jiahaoIcon="assistant" title="近七天复盘" subtitle="真实记录概览与 AI 行动建议" onPress={() => router.push('/daily-review')} last />
+      </Card>
       <SectionTitle title="智能提醒" />
       <Card style={styles.listCard}>
         <SettingRow icon={{ ios: 'book.fill', android: 'menu_book' }} jiahaoIcon="study" title="空闲学习提醒" subtitle="根据课表寻找无课时间" right={<SettingToggle label="空闲学习提醒" value={data.settings.studyReminders} onValueChange={toggleStudy} />} />
@@ -90,9 +95,9 @@ export default function ProfileScreen() {
       <SectionTitle title="数据与同步" />
       <Card style={styles.listCard}>
         <SettingRow icon={{ ios: 'building.columns.fill', android: 'school' }} jiahaoIcon="school" title="湘潭大学教务" subtitle="网页登录后导入课表与成绩" onPress={() => router.push('/school')} />
-        <SettingRow icon={{ ios: 'cloud.fill', android: 'cloud' }} jiahaoIcon="cloud" title="iCloud / 日历" subtitle="由 iOS 系统负责跨设备同步" onPress={() => router.push('/schedule')} />
+        <SettingRow icon={{ ios: 'cloud.fill', android: 'cloud' }} jiahaoIcon="cloud" title="系统日历同步" subtitle="将课程写入系统日历；日常数据保存在本机" onPress={() => router.push('/schedule')} />
         <SettingRow icon={{ ios: 'lock.shield.fill', android: 'lock' }} jiahaoIcon="lock" title="个人 AI 密钥" subtitle="使用系统安全区加密保存" onPress={() => router.push('/ai-settings')} />
-        <SettingRow icon={{ ios: 'square.and.arrow.up.fill', android: 'ios_share' }} jiahaoIcon="export" title="导出本机备份" subtitle="保存课程、成绩、待办与消费" onPress={exportData} />
+        <SettingRow icon={{ ios: 'square.and.arrow.up.fill', android: 'ios_share' }} jiahaoIcon="export" title="导出本机备份" subtitle="包含习惯、日记、心愿与校园记录" onPress={exportData} />
         <SettingRow icon={{ ios: 'square.and.arrow.down.fill', android: 'file_open' }} jiahaoIcon="restore" title="从备份恢复" subtitle="导入前确认，自动保留回退副本" onPress={importData} last />
       </Card>
       <Text style={[styles.version, { color: theme.secondary }]}>CampusFlow 1.0.0 · 为自己的校园生活而做</Text>

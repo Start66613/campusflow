@@ -1,8 +1,8 @@
 # CampusFlow
 
-CampusFlow 是一个面向 iPhone 和 Android 的个人校园助手。它把课表、自然语言日程、作业待办、消费记录、番茄钟、成绩与周报放在同一个离线优先的 App 里。
+CampusFlow 是一个面向 iPhone 和 Android 的个人校园助手。它把课表、自然语言日程、习惯打卡、手记心情、待办、消费、番茄钟、成绩与周报放在同一个离线优先的 App 里。
 
-当前工程基于 Expo SDK 57、React Native 0.86 和 TypeScript，可在 Windows 上开发，通过 Expo Go 预览通用界面，并使用 EAS 构建带系统日历和 iOS 小组件的开发版/TestFlight 包。
+当前工程基于 Expo SDK 57、React Native 0.86 和 TypeScript，可在 Windows 上开发，通过 Expo Go 测试通用功能，并使用 EAS 构建独立原生包。小组件当前未接入打包。
 
 iPhone Expo Go 测试请在项目目录运行 `npm run start:iphone`。这个入口会先确认电脑端 Expo CLI 登录为 `start66613`，再启动局域网服务并检查 iOS 项目清单的账号；检查没通过时不要扫描二维码。首次登录可运行 `npx expo login --browser`。不要用 `EXPO_OFFLINE=1` 启动 iPhone 真机测试；电脑与手机需连接同一局域网。
 
@@ -16,16 +16,17 @@ iPhone Expo Go 测试请在项目目录运行 `npm run start:iphone`。这个入
 npx eas-cli build --platform android --profile android-apk
 ```
 
-构建配置会复用 EAS 托管的 Android 签名密钥，并自动递增版本号。当前 Android 版包含通用核心功能、日历和通知；“下一节课”桌面小组件目前仅在 iOS 版提供。
+构建配置会复用 EAS 托管的 Android 签名密钥，并自动递增版本号。当前 Android 版包含通用核心功能、日历和通知；系统小组件目前暂停接入。
 
 ## 已完成
 
+- 新增「我的日常」：习惯目标与提醒、手记心情、热力图、成就日签、心愿兑换、AI 习惯创建与近七天复盘。完整范围与未实现项见 [日常功能记录](docs/daily-development.md)。
 - 周一到周日固定一屏显示的周课表、单双周数据结构、课程类型与颜色。
 - CSV 导入，以及由 DeepSeek Flash 多模态模型驱动的课表截图识别入口。
 - 聊天式 AI 快记：日程、待办、作业和消费；未配置 AI 时有中文离线规则兜底。
 - 课程批量写入 iPhone 日历，默认课前 15 分钟提醒。
 - 本地通知式早八提醒和基于次日课表的空闲学习提醒。
-- 番茄钟、本周专注时长、任务完成率和消费分类。
+- 可恢复的倒计时/正计时、休息轮数、补记、习惯关联、环境音、本周专注时长、任务完成率和消费分类。
 - 成绩列表、学分加权 GPA 与每周学习/消费/出勤摘要。
 - 浅色、深色、护眼与跟随系统模式。
 - iOS “下一节课”小组件已完成原型，当前暂停打包接入，优先保证通用核心功能。
@@ -85,6 +86,7 @@ App 内的“湘潭大学教务”入口使用内置网页登录，登录成功�
 
 ```bash
 npm run typecheck
+npm run test:daily
 npx expo config --type public
 npx expo export --platform web
 ```

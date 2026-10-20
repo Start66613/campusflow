@@ -6,6 +6,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "@renegades/react-native-tickle": "0.1.2",
     "expo": "~57.0.24",
+    "expo-audio": "~57.0.5",
     "expo-blur": "~57.0.3",
     "expo-calendar": "~57.0.4",
     "expo-constants": "~57.0.19",
@@ -35,12 +36,14 @@
     "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
+    "react-native-view-shot": "5.1.0",
     "react-native-web": "~0.21.0",
     "react-native-webview": "13.16.1",
     "react-native-worklets": "0.10.1"
   },
   "devDependencies": {
     "@types/react": "~19.2.4",
+    "toqr": "0.1.1",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -61,6 +64,7 @@
     "test:fluid-tab-and-time-indicator": "node --test scripts/test-fluid-tab-and-time-indicator.mjs",
     "test:grade-classification": "node --test scripts/test-grade-classification.mjs",
     "test:jiahao-mode": "node --test scripts/test-jiahao-mode.mjs",
+    "test:daily": "node --test scripts/test-daily.mjs scripts/test-daily-ai.mjs scripts/test-focus-timer.mjs",
     "server": "node --env-file=.env server/index.mjs"
   },
   "private": true

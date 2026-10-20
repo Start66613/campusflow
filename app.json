@@ -45,6 +45,15 @@
       "expo-secure-store",
       "expo-sharing",
       [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundRecording": false,
+          "enableBackgroundPlayback": true
+        }
+      ],
+      [
         "expo-calendar",
         {
           "calendarPermission": "允许 CampusFlow 将课程和日程添加到你的日历。",

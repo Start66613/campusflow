@@ -15,6 +15,8 @@
     "expo-env.d.ts"
   ],
   "exclude": [
-    "widgets"
+    "widgets",
+    "media/promo",
+    "node_modules"
   ]
 }

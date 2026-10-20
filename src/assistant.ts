@@ -2,6 +2,7 @@ import type { AssistantCommand, Course, ExpenseCategory, Task } from './types';
 import { getAIConfig } from './ai-config';
 import { periodEnds, periodStarts } from './periods';
 import { courseColors } from './theme';
+import { parseLocalHabit, sanitizeAIHabit } from './daily-ai';
 
 const apiUrl = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, '');
 const deepSeekUrl = 'https://api.deepseek.com/chat/completions';
@@ -11,8 +12,9 @@ Return only JSON in this exact shape: {"summary":["short user-facing step",...],
 - {"type":"expense","amount":number,"category":"餐饮|交通|学习|娱乐|生活|其他","note":string,"occurredAt":ISO8601}
 - {"type":"task","title":string,"dueAt":ISO8601,"courseName"?:string}
 - {"type":"event","title":string,"startAt":ISO8601,"endAt":ISO8601,"note"?:string}
+- {"type":"habit","habit":{"title":string,"mode":"check|count|minutes","target":number,"unit":string,"weekdays":number[],"everyNDays":number,"startDate":"YYYY-MM-DD","endDate"?:"YYYY-MM-DD","reminderTime"?:"HH:mm","period":"any|morning|afternoon|evening","category":string}}
 - {"type":"courses","courses":[{"name":string,"teacher":string,"location":string,"weekday":1-7,"startPeriod":number,"endPeriod":number,"startTime":"HH:mm","endTime":"HH:mm","weeks":number[],"color":string,"type":"major|general|lab|elective"}]}
-When the user asks to add a class, lab session, or uploads a course arrangement, use the courses command. Extract each explicit class/week; never replace an existing timetable. Do not invent weekday, periods or weeks. If any essential scheduling field is missing, return no courses and explain what to clarify in summary. Never invent a due time when the image or text does not contain one; use 20:00 local time only when a date is clear. Keep Chinese titles concise.`;
+When the user asks for a repeating personal habit (daily reading, weekday vocabulary, running on Monday/Wednesday/Friday), use habit, never a one-off event/task. Monday=1, Sunday=7. Daily weekdays=[1,2,3,4,5,6,7]; workdays mean Monday-Friday, not holiday-aware. everyNDays=1 unless an explicit interval is stated. check requires target=1/unit=次; minutes stores minutes (convert hours); count keeps the stated unit. Use today's local date only when no start date was given. Never invent a reminder, deadline or goal quantity. For a named habit without a quantity use check. Ambiguous recurrence or multiple conflicting dates require clarification with no command. Never change, delete, archive or mark completed any existing habit. When the user asks to add a class, lab session, or uploads a course arrangement, use the courses command. Extract each explicit class/week; never replace an existing timetable. Do not invent weekday, periods or weeks. If any essential scheduling field is missing, return no courses and explain what to clarify in summary. Never invent a due time when the image or text does not contain one; use 20:00 local time only when a date is clear. Keep Chinese titles concise.`;
 
 export type AssistantParseResult = {
   commands: AssistantCommand[];
@@ -43,12 +45,16 @@ function validDate(value: unknown): value is string {
   return typeof value === 'string' && Number.isFinite(Date.parse(value));
 }
 
-function sanitizeCommands(value: unknown): AssistantCommand[] {
+export function sanitizeCommands(value: unknown): AssistantCommand[] {
   if (!Array.isArray(value)) return [];
   const categories: ExpenseCategory[] = ['餐饮', '交通', '学习', '娱乐', '生活', '其他'];
   return value.slice(0, 30).flatMap((raw): AssistantCommand[] => {
     if (!raw || typeof raw !== 'object') return [];
     const command = raw as Record<string, unknown>;
+    if (command.type === 'habit') {
+      const habit = sanitizeAIHabit(command.habit);
+      return habit ? [{ type: 'habit', habit }] : [];
+    }
     if (command.type === 'courses') {
       const courses = sanitizeAICourses(command.courses);
       return courses.length ? [{ type: 'courses', courses }] : [];
@@ -173,6 +179,8 @@ function parseDate(text: string) {
 }
 
 export function parseLocally(text: string): AssistantCommand[] {
+  const localHabit = parseLocalHabit(text);
+  if (localHabit.recognized) return localHabit.habit ? [{ type: 'habit', habit: localHabit.habit }] : [];
   const money = text.match(/(?:花了?|消费|买|吃了?)?\s*(\d+(?:\.\d+)?)\s*(?:元|块)/);
   if (money) {
     return [{
@@ -199,9 +207,20 @@ export function parseLocally(text: string): AssistantCommand[] {
 export async function parseAssistantInput(text: string, imageBase64?: string, thinking = false, context?: AssistantContext, jiahaoMode = false): Promise<AssistantParseResult> {
   const directResult = await callDeepSeek(text, imageBase64, thinking, context, jiahaoMode);
   if (directResult) return { commands: directResult.commands, usedAI: true, processSummary: directResult.processSummary };
+  // The optional legacy proxy predates habits. Do not send an understood
+  // recurring habit through it and accidentally turn it into a one-off event.
+  if (!imageBase64) {
+    const localHabit = parseLocalHabit(text);
+    if (localHabit.recognized) return {
+      commands: localHabit.habit ? [{ type: 'habit', habit: localHabit.habit }] : [],
+      usedAI: false,
+      processSummary: localHabit.habit ? ['已识别重复习惯', '请核对频率、目标与开始日期', '确认后加入日常'] : [localHabit.message ?? '请补充习惯的频率与目标'],
+    };
+  }
   if (!apiUrl) {
+    if (imageBase64) throw new Error('图片识别需要配置个人 AI 或可用的 AI 代理；没有写入任何内容。');
     const commands = parseLocally(text);
-    return { commands, usedAI: false, processSummary: jiahaoMode ? ['嘉豪识别事项', '认真核对时间与类型', '等你确认后往里豪'] : ['识别表达中的事项', '提取时间与类型', '写入对应页面'] };
+    return { commands, usedAI: false, processSummary: jiahaoMode ? ['嘉豪识别事项', '认真核对时间与类型', '等你确认后往里豪'] : ['识别表达中的事项', '提取时间与类型', '等待确认写入'] };
   }
   const response = await fetch(`${apiUrl}/api/parse`, {
     method: 'POST',

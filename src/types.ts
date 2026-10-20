@@ -1,3 +1,5 @@
+import type { DailyData, HabitInput } from './daily-types';
+
 export type CourseType = 'major' | 'general' | 'lab' | 'elective';
 export type CourseIcon = 'book' | 'flask' | 'code' | 'atom' | 'art' | 'sport' | 'calendar' | 'sparkles';
 
@@ -25,6 +27,7 @@ export type Task = {
   dueAt: string;
   courseId?: string;
   completed: boolean;
+  completedAt?: string;
   source: 'manual' | 'ai' | 'homework';
 };
 
@@ -73,6 +76,10 @@ export type FocusSession = {
   id: string;
   minutes: number;
   completedAt: string;
+  habitId?: string;
+  taskId?: string;
+  note?: string;
+  source?: 'timer' | 'manual';
 };
 
 export type ThemeMode = 'system' | 'light' | 'dark' | 'eye';
@@ -97,6 +104,9 @@ export type AppSettings = {
   wakeMinute: number;
   focusMinutes: number;
   breakMinutes: number;
+  focusSound?: 'none' | 'rain' | 'wind';
+  focusVolume?: number;
+  focusCompletionSound?: boolean;
   studyReminders: boolean;
 };
 
@@ -110,6 +120,7 @@ export type AppData = {
   attendance: Attendance[];
   focusSessions: FocusSession[];
   focusMinutesThisWeek: number;
+  daily: DailyData;
   settings: AppSettings;
 };
 
@@ -117,6 +128,7 @@ export type AssistantCommand =
   | { type: 'expense'; amount: number; category: ExpenseCategory; note: string; occurredAt: string }
   | { type: 'task'; title: string; dueAt: string; courseName?: string }
   | { type: 'event'; title: string; startAt: string; endAt: string; note?: string }
+  | { type: 'habit'; habit: HabitInput }
   | { type: 'courses'; courses: Course[] };
 
-export type CreatedRecord = { kind: 'task' | 'expense' | 'event' | 'course'; id: string };
+export type CreatedRecord = { kind: 'task' | 'expense' | 'event' | 'course' | 'habit'; id: string };
