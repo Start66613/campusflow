@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { AppState, View } from 'react-native';
 
@@ -28,7 +28,7 @@ export default function DailyScreen() {
     const subscription = AppState.addEventListener('change', (state) => { if (state === 'active') refresh(); });
     return () => { clearInterval(timer); subscription.remove(); };
   }, []);
-  return <><Stack.Screen options={{ headerShown: false }} /><DailyPage title="我的日常" subtitle="照顾学习，也照顾生活">
+  return <DailyPage tabRoot title="我的日常" subtitle="照顾学习，也照顾生活">
     <SegmentedControl items={sections} value={section} onChange={setSection} />
     <MotionReveal key={section} style={{ width: '100%', minWidth: 0, gap: 16 }}>
       {section === 'today' ? <TodayPanel date={date} onDate={setDate} /> : null}
@@ -37,5 +37,5 @@ export default function DailyScreen() {
       {section === 'rewards' ? <RewardsPanel /> : null}
     </MotionReveal>
     <View style={{ height: 4 }} />
-  </DailyPage></>;
+  </DailyPage>;
 }

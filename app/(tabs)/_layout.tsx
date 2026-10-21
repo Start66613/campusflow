@@ -26,6 +26,7 @@ const tabs: Record<string, { title: string; icon: IconName }> = {
   index: { title: '首页', icon: { ios: 'house.fill', android: 'home', fallback: '⌂' } },
   schedule: { title: '课表', icon: { ios: 'calendar', android: 'calendar_month', fallback: '□' } },
   assistant: { title: 'AI 记', icon: { ios: 'sparkles', android: 'auto_awesome', fallback: '✦' } },
+  daily: { title: '日常', icon: { ios: 'leaf.fill', android: 'eco', fallback: '♧' } },
   insights: { title: '数据', icon: { ios: 'chart.bar.fill', android: 'bar_chart', fallback: '▥' } },
   profile: { title: '我的', icon: { ios: 'person.crop.circle', android: 'person', fallback: '○' } },
 };
@@ -63,6 +64,7 @@ export default function TabLayout() {
       <Tabs.Screen name="index" options={{ title: '首页' }} />
       <Tabs.Screen name="schedule" options={{ title: '课表' }} />
       <Tabs.Screen name="assistant" options={{ title: 'AI 记' }} />
+      <Tabs.Screen name="daily" options={{ title: '日常' }} />
       <Tabs.Screen name="insights" options={{ title: '数据' }} />
       <Tabs.Screen name="profile" options={{ title: '我的' }} />
     </Tabs>
@@ -262,7 +264,7 @@ function TabItemVisual({ item, iconKey, jiahao, index, focused, itemWidth, trave
   });
   return <>
     <View style={styles.iconSlot}>
-      {jiahao ? <Image source={jiahaoIcons[iconKey]} style={styles.jiahaoTabPortrait} /> : <><AppIcon {...item.icon} color={inactiveColor} size={22} /><Animated.View pointerEvents="none" style={[styles.activeIcon, activeStyle]}><AppIcon {...item.icon} color={activeColor} size={22} active /></Animated.View></>}
+      {jiahao ? <Image source={jiahaoIcons[iconKey === 'daily' ? 'study' : iconKey === 'index' ? 'home' : iconKey]} style={styles.jiahaoTabPortrait} /> : <><AppIcon {...item.icon} color={inactiveColor} size={22} /><Animated.View pointerEvents="none" style={[styles.activeIcon, activeStyle]}><AppIcon {...item.icon} color={activeColor} size={22} active /></Animated.View></>}
     </View>
     <Animated.Text style={[styles.label, labelStyle]}>{jiahao ? `豪${item.title}` : item.title}</Animated.Text>
   </>;

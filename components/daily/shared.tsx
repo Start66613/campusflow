@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
 import { type PropsWithChildren } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBackdrop } from '@/components/app-backdrop';
 import { AppIcon, type AppIconProps } from '@/components/app-icon';
 import { MotionPressable } from '@/components/motion';
+import { FLOATING_TAB_BAR_HEIGHT, FLOATING_TAB_CONTENT_GAP } from '@/src/layout';
 import { radii, useAppTheme } from '@/src/theme';
 
 export const habitSymbols: { key: string; label: string; ios: AppIconProps['ios']; android: AppIconProps['android'] }[] = [
@@ -30,16 +31,18 @@ export function HabitSymbol({ name, color, size = 22 }: { name: string; color: s
   return <AppIcon ios={item.ios} android={item.android} color={color} size={size} />;
 }
 
-export function DailyPage({ title, subtitle, children, action }: PropsWithChildren<{ title: string; subtitle?: string; action?: React.ReactNode }>) {
+export function DailyPage({ title, subtitle, children, action, tabRoot = false }: PropsWithChildren<{ title: string; subtitle?: string; action?: React.ReactNode; tabRoot?: boolean }>) {
   const theme = useAppTheme();
-  return <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top', 'bottom']}>
+  const insets = useSafeAreaInsets();
+  const bottomSpace = tabRoot ? FLOATING_TAB_BAR_HEIGHT + Math.max(insets.bottom, 8) + FLOATING_TAB_CONTENT_GAP : 32;
+  return <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={tabRoot ? ['top'] : ['top', 'bottom']}>
     <AppBackdrop />
     <View style={dailyStyles.header}>
-      <MotionPressable accessibilityLabel="返回" onPress={() => router.canGoBack() ? router.back() : router.replace('/')} style={[dailyStyles.iconButton, { backgroundColor: theme.surfaceAlt }]}><AppIcon ios="chevron.left" android="arrow_back" color={theme.text} size={20} /></MotionPressable>
+      {!tabRoot ? <MotionPressable accessibilityLabel="返回" onPress={() => router.canGoBack() ? router.back() : router.replace('/')} style={[dailyStyles.iconButton, { backgroundColor: theme.surfaceAlt }]}><AppIcon ios="chevron.left" android="arrow_back" color={theme.text} size={20} /></MotionPressable> : null}
       <View style={{ flex: 1 }}><Text style={[dailyStyles.pageTitle, { color: theme.text }]}>{title}</Text>{subtitle ? <Text style={[dailyStyles.caption, { color: theme.secondary }]}>{subtitle}</Text> : null}</View>{action}
     </View>
     <KeyboardAvoidingView style={{ flex: 1, width: '100%', overflow: 'hidden' }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView style={{ flex: 1, width: '100%' }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false} contentContainerStyle={dailyStyles.pageContent}>{children}</ScrollView>
+      <ScrollView style={{ flex: 1, width: '100%' }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false} contentContainerStyle={[dailyStyles.pageContent, { paddingBottom: bottomSpace }]}>{children}</ScrollView>
     </KeyboardAvoidingView>
   </SafeAreaView>;
 }

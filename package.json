@@ -49,6 +49,7 @@
   "scripts": {
     "start": "expo start",
     "start:iphone": "node scripts/start-iphone.mjs",
+    "start:iphone:background": "node scripts/start-iphone-background.mjs",
     "start:iphone:perf": "node scripts/start-iphone.mjs --perf",
     "android": "expo start --android",
     "ios": "expo start --ios",
